@@ -1,0 +1,120 @@
+// ============================================================================
+// dsaService.ts — DSA Tracker API Service
+// ============================================================================
+// HTTP-only. Returns raw API types. No transformations.
+// ============================================================================
+
+import axiosClient from '../utils/axiosClient';
+import type {
+  ApiResponse,
+  ApiDsaListResponse,
+  ApiDsaProblem,
+  ApiDsaStats,
+  ApiDsaFilters,
+  ApiDsaProblemCreatePayload,
+  ApiDsaProblemUpdatePayload,
+  ApiMutationResponse,
+  ApiDeleteResponse,
+} from '../types/api.types';
+
+const DSA_BASE = '/dsa';
+
+/**
+ * Fetch paginated DSA problem list with filters and stats.
+ */
+export async function fetchDsaProblems(
+  filters: ApiDsaFilters = {}
+): Promise<ApiResponse<ApiDsaListResponse>> {
+  const { data } = await axiosClient.get<ApiResponse<ApiDsaListResponse>>(
+    `${DSA_BASE}/problems`,
+    { params: filters }
+  );
+  return data;
+}
+
+/**
+ * Fetch a single DSA problem by ID.
+ */
+export async function fetchDsaProblem(
+  problemId: string
+): Promise<ApiResponse<ApiDsaProblem>> {
+  const { data } = await axiosClient.get<ApiResponse<ApiDsaProblem>>(
+    `${DSA_BASE}/problems/${problemId}`
+  );
+  return data;
+}
+
+/**
+ * Fetch DSA stats/overview.
+ */
+export async function fetchDsaStats(): Promise<ApiResponse<ApiDsaStats>> {
+  const { data } = await axiosClient.get<ApiResponse<ApiDsaStats>>(
+    `${DSA_BASE}/stats`
+  );
+  return data;
+}
+
+/**
+ * Create a new DSA problem entry.
+ */
+export async function createDsaProblem(
+  payload: ApiDsaProblemCreatePayload
+): Promise<ApiResponse<ApiDsaProblem>> {
+  const { data } = await axiosClient.post<ApiResponse<ApiDsaProblem>>(
+    `${DSA_BASE}/problems`,
+    payload
+  );
+  return data;
+}
+
+/**
+ * Update an existing DSA problem.
+ */
+export async function updateDsaProblem(
+  problemId: string,
+  payload: ApiDsaProblemUpdatePayload
+): Promise<ApiResponse<ApiDsaProblem>> {
+  const { data } = await axiosClient.patch<ApiResponse<ApiDsaProblem>>(
+    `${DSA_BASE}/problems/${problemId}`,
+    payload
+  );
+  return data;
+}
+
+/**
+ * Delete a DSA problem.
+ */
+export async function deleteDsaProblem(
+  problemId: string
+): Promise<ApiDeleteResponse> {
+  const { data } = await axiosClient.delete<ApiDeleteResponse>(
+    `${DSA_BASE}/problems/${problemId}`
+  );
+  return data;
+}
+
+/**
+ * Toggle favorite on a DSA problem.
+ */
+export async function toggleDsaFavorite(
+  problemId: string
+): Promise<ApiResponse<ApiDsaProblem>> {
+  const { data } = await axiosClient.post<ApiResponse<ApiDsaProblem>>(
+    `${DSA_BASE}/problems/${problemId}/favorite`
+  );
+  return data;
+}
+
+/**
+ * Bulk update problem status.
+ */
+export async function bulkUpdateDsaStatus(
+  problemIds: string[],
+  status: ApiDsaProblem['status']
+): Promise<ApiMutationResponse> {
+  const { data } = await axiosClient.patch<ApiMutationResponse>(
+    `${DSA_BASE}/problems/bulk-status`,
+    { problemIds, status }
+  );
+  return data;
+}
