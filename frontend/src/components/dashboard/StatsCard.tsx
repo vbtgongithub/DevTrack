@@ -30,7 +30,7 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   const a = ACCENT[accent];
 
   return (
-    <div className="bg-white border border-zinc-200 shadow-sm rounded-xl p-4">
+    <div className="bg-white border border-gray-300 shadow-md rounded-xl p-4">
       <div className="flex items-center justify-between">
         <div className="text-sm font-medium text-zinc-700">{label}</div>
         <div className="text-zinc-400">→</div>

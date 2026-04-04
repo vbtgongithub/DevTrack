@@ -38,7 +38,7 @@ const PLATFORMS: PlatformStatCardProps[] = [
   { name: 'LeetCode', problems: 600, rating: 1850, logo: leetcodeLogo, color: 'yellow' },
   { name: 'Codeforces', problems: 300, rating: 1800, logo: codeforcesLogo, color: 'blue' },
   { name: 'CodeChef', problems: 200, rating: 1700, logo: codechefLogo, color: 'orange' },
-  { name: 'HackerRank', problems: 150, rating: '5★', logo: hackerrankLogo, color: 'green' },
+  { name: 'HackerRank', problems: 150, rating: '★ 5', logo: hackerrankLogo, color: 'green' },
 ];
 
 export const StatsGrid: React.FC = () => {

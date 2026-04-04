@@ -50,7 +50,7 @@ const AppShell: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-full bg-zinc-50 text-zinc-900 overflow-hidden">
+    <div className="flex min-h-screen w-full bg-[#fff7f0] text-zinc-900 overflow-hidden">
       <Sidebar
         navItems={navItems}
         isCollapsed={false}

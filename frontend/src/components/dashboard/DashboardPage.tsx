@@ -72,18 +72,18 @@ const DashboardPage: React.FC = () => {
       };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <DashboardHeader data={safeData.header} />
 
       <StatsGrid />
 
       <AnnouncementSection />
 
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
         <div className="h-full">
           <InsightsCard />
         </div>
-        <div className="h-full bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 flex flex-col gap-3">
+        <div className="h-full bg-white border border-gray-300 rounded-2xl p-5 shadow-md hover:shadow-lg hover:-translate-y-[1px] transition-all duration-200 ease-in-out flex flex-col gap-3">
           <ActionsPanel />
         </div>
         <div className="h-full">

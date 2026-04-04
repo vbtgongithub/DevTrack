@@ -11,8 +11,8 @@ export const SkeletonTable: React.FC<SkeletonTableProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden ${className}`}>
-      <div className="flex gap-4 px-5 py-4 border-b border-zinc-200">
+    <div className={`rounded-2xl border border-gray-300 bg-white shadow-md overflow-hidden ${className}`}>
+      <div className="flex gap-4 px-5 py-4 border-b border-gray-300">
         {Array.from({ length: columns }).map((_, i) => (
           <div
             key={`h-${i}`}
@@ -31,7 +31,7 @@ export const SkeletonTable: React.FC<SkeletonTableProps> = ({
           className={
             rowIdx === rows - 1
               ? 'flex gap-4 px-5 py-4'
-              : 'flex gap-4 px-5 py-4 border-b border-zinc-200'
+              : 'flex gap-4 px-5 py-4 border-b border-gray-300'
           }
         >
           {Array.from({ length: columns }).map((_, colIdx) => (

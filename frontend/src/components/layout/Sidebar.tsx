@@ -9,7 +9,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNavigate,
 }) => {
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+    <aside className="w-64 bg-[#fff7f0] border-r border-gray-300 shadow-sm flex flex-col">
       <div className="h-16 px-6 flex items-center">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-black text-white">
@@ -28,18 +28,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => onNavigate(item.path)}
                 className={
                   item.isActive
-                    ? 'w-full flex items-center gap-3 px-3 py-2 rounded-md bg-gray-100 text-black transition-colors duration-200'
-                    : 'w-full flex items-center gap-3 px-3 py-2 rounded-md text-gray-600 transition-colors duration-200 hover:bg-gray-50 hover:text-black'
+                    ? 'w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-white text-black font-semibold shadow-sm transition-all duration-200'
+                    : 'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 font-medium hover:bg-white transition-all duration-200'
                 }
               >
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0">
                   <Icon
                     name={item.icon}
                     size={20}
-                    className={item.isActive ? 'w-5 h-5 object-contain text-gray-900' : 'w-5 h-5 object-contain text-gray-500'}
+                    className={
+                      item.isActive
+                        ? 'w-5 h-5 object-contain text-gray-900'
+                        : 'w-5 h-5 object-contain text-gray-500'
+                    }
                   />
                 </div>
-                <span className="truncate text-sm font-medium whitespace-nowrap">{item.label}</span>
+                <span className="truncate text-sm whitespace-nowrap">{item.label}</span>
               </button>
             </li>
           ))}

@@ -8,7 +8,7 @@ import './Dashboard.css';
 
 export const StreakBanner: React.FC<StreakBannerProps> = ({ data }) => {
   return (
-    <div className="bg-white border border-zinc-200/60 shadow-sm rounded-xl p-4 hover:shadow-md transition-all">
+    <div className="bg-white border border-gray-300 shadow-md rounded-2xl p-5 hover:shadow-lg hover:-translate-y-[1px] transition-all duration-200 ease-in-out">
       <div className="flex items-center justify-between gap-6">
         <div className="flex items-center gap-3 min-w-0">
           <span

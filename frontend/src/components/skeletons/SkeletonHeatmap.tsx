@@ -10,7 +10,7 @@ export const SkeletonHeatmap: React.FC<SkeletonHeatmapProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`rounded-xl border border-zinc-200 bg-white shadow-sm p-5 ${className}`}>
+    <div className={`rounded-2xl border border-gray-300 bg-white shadow-md p-5 ${className}`}>
       <div className="flex flex-wrap gap-[3px]">
         {Array.from({ length: weeks * 7 }).map((_, i) => (
           <div

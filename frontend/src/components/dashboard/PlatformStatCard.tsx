@@ -2,11 +2,11 @@ import React from 'react';
 
 export type PlatformStatCardColor = 'yellow' | 'blue' | 'orange' | 'green';
 
-const COLOR_STYLE: Record<PlatformStatCardColor, { bg: string; border: string }> = {
-  yellow: { bg: 'bg-yellow-50/70', border: 'border-yellow-100' },
-  blue: { bg: 'bg-blue-50', border: 'border-blue-100' },
-  orange: { bg: 'bg-orange-50/60', border: 'border-orange-100' },
-  green: { bg: 'bg-green-50', border: 'border-green-100' },
+const COLOR_STYLE: Record<PlatformStatCardColor, { bg: string }> = {
+  yellow: { bg: 'bg-yellow-50' },
+  blue: { bg: 'bg-blue-50' },
+  orange: { bg: 'bg-white' },
+  green: { bg: 'bg-green-50' },
 };
 
 export type PlatformStatCardProps = {
@@ -29,23 +29,23 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
   return (
     <div
       className={[
-        'h-[150px]',
         'h-full',
         'rounded-xl',
-        'shadow-sm',
-        'hover:shadow-md',
-        'hover:-translate-y-[1px]',
+        'shadow-md',
+        'hover:shadow-lg',
+        'hover:scale-[1.01]',
         'transition-all',
         'duration-200',
+        'ease-in-out',
         'border',
-        'p-6',
+        'border-gray-400',
+        'p-5',
         'flex',
         'flex-col',
         'justify-between',
         'gap-4',
         'min-w-0',
         style.bg,
-        style.border,
       ].join(' ')}
     >
       <div className="mb-3 flex items-center gap-2 min-w-0">
@@ -56,17 +56,17 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
       </div>
 
       <div className="min-w-0">
-        <div className="text-2xl font-semibold text-zinc-900 leading-none tabular-nums whitespace-nowrap">
+        <div className="text-3xl font-bold text-gray-900 leading-none tabular-nums whitespace-nowrap">
           {problems}
         </div>
-        <div className="mt-1 text-xs text-gray-500 whitespace-nowrap">Problems</div>
+        <div className="mt-1 text-sm text-gray-600 whitespace-nowrap">Problems</div>
       </div>
 
-      <div className="min-w-0 mt-2">
-        <div className="flex items-center gap-1 whitespace-nowrap truncate">
-          <span className="text-base font-semibold text-zinc-900 leading-none">{rating}</span>
-          <span className="text-xs text-gray-500">Rating</span>
-        </div>
+      <div className="min-w-0 mt-4 flex items-center justify-between gap-4">
+        <span className="text-xs text-gray-500">Rating</span>
+        <span className="text-base font-semibold text-gray-900 tracking-tight whitespace-nowrap">
+          {rating}
+        </span>
       </div>
     </div>
   );
