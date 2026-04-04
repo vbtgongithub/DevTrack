@@ -11,13 +11,13 @@ export const ActionsPanel: React.FC = () => {
       </button>
       <button
         type="button"
-        className="w-full border border-[#d6d0c7] rounded-xl py-3 hover:bg-[#f0ebe5] transition-all duration-200 active:scale-95 text-sm font-medium text-[#1f1f1f]"
+        className="w-full border border-gray-200 rounded-xl py-3 hover:bg-gray-100 transition-all duration-200 active:scale-95 text-sm font-medium text-gray-900"
       >
         Log Activity
       </button>
       <button
         type="button"
-        className="w-full border border-[#d6d0c7] rounded-xl py-3 hover:bg-[#f0ebe5] transition-all duration-200 active:scale-95 text-sm font-medium text-[#1f1f1f]"
+        className="w-full border border-gray-200 rounded-xl py-3 hover:bg-gray-100 transition-all duration-200 active:scale-95 text-sm font-medium text-gray-900"
       >
         Review Mistakes
       </button>

@@ -1,52 +1,66 @@
 import React from 'react';
-import type { StatsGridProps } from '../../types/ui.types';
+import { PlatformStatCard, type PlatformStatCardProps } from './PlatformStatCard';
+import { StatCard, type StatCardProps } from './StatCard';
 import { Icon } from '../shared/Icon';
 
-export const StatsGrid: React.FC<StatsGridProps> = () => {
+import githubLogo from '../../assets/logos/github.png';
+import fireLogo from '../../assets/logos/FireLogo.png';
+
+import leetcodeLogo from '../../assets/logos/LeetCode.png';
+import codeforcesLogo from '../../assets/logos/Codeforces.png';
+import codechefLogo from '../../assets/logos/CodeChef.png';
+import hackerrankLogo from '../../assets/logos/HackerRank.png';
+
+const GENERAL_STATS: StatCardProps[] = [
+  {
+    label: 'Total Problems',
+    value: 1250,
+    leading: <Icon name="chart-bar" size={24} className="w-8 h-8 text-gray-700" />,
+  },
+  {
+    label: 'GitHub Contributions',
+    value: 350,
+    leading: <img src={githubLogo} alt="GitHub" className="w-8 h-8 object-contain" />,
+  },
+  {
+    label: 'Current Streak',
+    value: 45,
+    leading: <img src={fireLogo} alt="Streak" className="w-8 h-8 object-contain" />,
+  },
+  {
+    label: 'Active Days',
+    value: 180,
+    leading: <Icon name="calendar" size={24} className="w-8 h-8 text-gray-700" />,
+  },
+];
+
+const PLATFORMS: PlatformStatCardProps[] = [
+  { name: 'LeetCode', problems: 600, rating: 1850, logo: leetcodeLogo, color: 'yellow' },
+  { name: 'Codeforces', problems: 300, rating: 1800, logo: codeforcesLogo, color: 'blue' },
+  { name: 'CodeChef', problems: 200, rating: 1700, logo: codechefLogo, color: 'orange' },
+  { name: 'HackerRank', problems: 150, rating: '5★', logo: hackerrankLogo, color: 'green' },
+];
+
+export const StatsGrid: React.FC = () => {
   return (
-    <section className="space-y-4">
-      <h2 className="text-lg font-semibold text-[#1f1f1f]">Stats Section</h2>
+    <section className="space-y-6">
+      <div className="grid grid-cols-4 gap-6 items-stretch">
+        {GENERAL_STATS.map((s) => (
+          <StatCard key={s.label} label={s.label} value={s.value} leading={s.leading} />
+        ))}
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-[#faf7f2] border border-[#e5dfd6] rounded-2xl p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#f0ebe5] text-[#444]">
-            <Icon name="eye" size={20} className="w-5 h-5 object-contain" />
-          </div>
-          <div className="space-y-1">
-            <div className="text-xl font-semibold text-[#1f1f1f]">1250</div>
-            <div className="text-sm text-[#6b6b6b]">Total Problems Solved</div>
-          </div>
-        </div>
-
-        <div className="bg-[#faf7f2] border border-[#e5dfd6] rounded-2xl p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#f0ebe5] text-[#444]">
-            <Icon name="git-commit" size={20} className="w-5 h-5 object-contain" />
-          </div>
-          <div className="space-y-1">
-            <div className="text-xl font-semibold text-[#1f1f1f]">350</div>
-            <div className="text-sm text-[#6b6b6b]">GitHub Contributions</div>
-          </div>
-        </div>
-
-        <div className="bg-[#faf7f2] border border-[#e5dfd6] rounded-2xl p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#f0ebe5] text-[#444]">
-            <Icon name="calendar" size={20} className="w-5 h-5 object-contain" />
-          </div>
-          <div className="space-y-1">
-            <div className="text-xl font-semibold text-[#1f1f1f]">45</div>
-            <div className="text-sm text-[#6b6b6b]">Current Streak</div>
-          </div>
-        </div>
-
-        <div className="bg-[#faf7f2] border border-[#e5dfd6] rounded-2xl p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#f0ebe5] text-[#444]">
-            <Icon name="chart-bar" size={20} className="w-5 h-5 object-contain" />
-          </div>
-          <div className="space-y-1">
-            <div className="text-xl font-semibold text-[#1f1f1f]">1800</div>
-            <div className="text-sm text-[#6b6b6b]">Codeforces Rating</div>
-          </div>
-        </div>
+      <div className="grid grid-cols-4 gap-6 items-stretch">
+        {PLATFORMS.map((p) => (
+          <PlatformStatCard
+            key={p.name}
+            name={p.name}
+            problems={p.problems}
+            rating={p.rating}
+            logo={p.logo}
+            color={p.color}
+          />
+        ))}
       </div>
     </section>
   );

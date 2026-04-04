@@ -2,6 +2,7 @@ import React from 'react';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { DashboardHeader } from './DashboardHeader';
 import { StatsGrid } from './StatsGrid';
+import { AnnouncementSection } from './AnnouncementSection';
 import { InsightsCard } from './InsightsCard';
 import { ActionsPanel } from './ActionsPanel';
 import { MissionCard } from './MissionCard';
@@ -74,13 +75,15 @@ const DashboardPage: React.FC = () => {
     <div className="space-y-6">
       <DashboardHeader data={safeData.header} />
 
-      <StatsGrid data={safeData.stats} />
+      <StatsGrid />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+      <AnnouncementSection />
+
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
         <div className="h-full">
           <InsightsCard />
         </div>
-        <div className="h-full bg-[#faf7f2] border border-[#e5dfd6] rounded-2xl p-5 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200 flex flex-col gap-3">
+        <div className="h-full bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-[1px] transition-all duration-200 flex flex-col gap-3">
           <ActionsPanel />
         </div>
         <div className="h-full">

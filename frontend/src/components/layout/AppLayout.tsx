@@ -64,7 +64,7 @@ export const AppLayout: React.FC = () => {
           onProfileClick={() => navigate('/settings')}
           onSearchClick={() => {}}
         />
-        <main className="h-[calc(100vh-64px)] overflow-y-auto px-6 py-6">
+        <main className="h-[calc(100vh-64px)] overflow-y-auto bg-white text-gray-900 px-6 py-6">
           <Outlet />
         </main>
       </div>
