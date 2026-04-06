@@ -9,11 +9,11 @@ export const Topbar: React.FC<TopbarProps> = ({
   onSearchClick,
 }) => {
   return (
-    <header className="h-16 bg-white border-b border-gray-300 flex items-center justify-between px-6">
-      <div className="w-[560px] max-w-full rounded-full bg-gray-100 px-4 py-2 flex items-center gap-3">
-        <Icon name="search" size={20} className="w-5 h-5 object-contain text-gray-600" />
+    <header className="h-16 bg-dt-surface/80 backdrop-blur border-b border-black/5 flex items-center justify-between px-6">
+      <div className="w-[560px] max-w-full rounded-lg bg-white border border-black/5 px-4 py-2 flex items-center gap-3 dt-pop">
+        <Icon name="search" size={18} className="w-5 h-5 object-contain text-dt-muted" />
         <input
-          className="w-full bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-500"
+          className="w-full bg-transparent outline-none text-sm text-dt-text placeholder:text-dt-muted"
           placeholder="Search problems, contributions, activity..."
           onFocus={onSearchClick}
           aria-label="Search"
@@ -24,20 +24,26 @@ export const Topbar: React.FC<TopbarProps> = ({
         <button
           type="button"
           onClick={onNotificationsClick}
-          className="w-12 h-12 rounded-xl flex items-center justify-center text-gray-600 transition-all duration-200 hover:bg-gray-100"
+          className="w-11 h-11 rounded-lg flex items-center justify-center text-dt-muted dt-pop hover:bg-[#F3F4F6]"
           aria-label="Notifications"
         >
-          <Icon name="bell" size={20} className="w-5 h-5 object-contain" />
+          <Icon name="bell" size={18} className="w-5 h-5 object-contain" />
         </button>
 
         <button
           type="button"
           onClick={onProfileClick}
-          className="flex items-center gap-3"
+          className="flex items-center gap-3 dt-pop"
           aria-label="Profile"
         >
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gray-100" />
-          <div className="text-sm font-medium text-gray-900">{data.displayName}</div>
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white border border-black/5 overflow-hidden">
+            {data.avatarUrl ? (
+              <img src={data.avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <Icon name="user" size={18} className="text-dt-muted" />
+            )}
+          </div>
+          <div className="text-[13px] font-medium text-dt-text">{data.displayName}</div>
         </button>
       </div>
 

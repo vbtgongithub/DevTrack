@@ -24,7 +24,7 @@ export const ErrorState: React.FC<ErrorStateProps> = React.memo(
         {onRetry ? (
           <button
             type="button"
-            className="mt-4 inline-flex items-center justify-center rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-black hover:scale-[1.03] active:scale-[0.98]"
+            className="mt-4 inline-flex items-center justify-center rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-black"
             onClick={onRetry}
           >
             Try Again

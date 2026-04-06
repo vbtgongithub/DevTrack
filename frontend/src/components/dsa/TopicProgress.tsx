@@ -7,35 +7,50 @@ export type TopicProgressProps = {
   className?: string;
 };
 
-const progressClass = (progress: number) => {
-  if (progress >= 80) return 'bg-green-500';
-  if (progress >= 50) return 'bg-yellow-500';
-  return 'bg-red-500';
-};
-
 export const TopicProgress: React.FC<TopicProgressProps> = React.memo(({ title, topics, className }) => {
+  const strongest = React.useMemo(() => {
+    return topics.reduce<Topic | null>((best, t) => (!best || t.progress > best.progress ? t : best), null);
+  }, [topics]);
+
+  const weakest = React.useMemo(() => {
+    return topics.reduce<Topic | null>((best, t) => (!best || t.progress < best.progress ? t : best), null);
+  }, [topics]);
+
   return (
     <section
       className={[
-        'bg-white border border-gray-300 shadow-md rounded-xl p-5 transition-all duration-200',
-        'hover:shadow-lg hover:scale-[1.01]',
+        'dt-card p-4',
         className,
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      <div className="flex items-start justify-between gap-4">
+        <h3 className="text-lg font-semibold tracking-tight text-dt-text">{title}</h3>
+        <div className="text-right">
+          <div className="text-xs text-dt-muted">Insight</div>
+          <div className="text-sm font-medium text-dt-text">
+            {strongest ? `Strongest: ${strongest.name}` : '—'}
+          </div>
+          <div className="text-xs text-dt-muted">
+            {weakest ? `${weakest.name} needs improvement` : ''}
+          </div>
+        </div>
+      </div>
 
       <ul className="mt-4 space-y-4">
         {topics.map((topic) => (
           <li key={topic.name}>
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">{topic.name}</span>
-              <span className="text-xs text-gray-500">{topic.progress}%</span>
+              <span className="text-sm font-medium text-dt-text">{topic.name}</span>
+              <span className="text-xs text-dt-muted">{topic.progress}%</span>
             </div>
-            <div className="h-2.5 w-full rounded-full bg-gray-200 overflow-hidden">
+            <div className="h-2 w-full rounded-sm bg-[#E5E7EB] overflow-hidden">
               <div
-                className={['h-full rounded-full transition-all duration-500', progressClass(topic.progress)].join(' ')}
+                className={[
+                  'h-full rounded-sm transition-all duration-700',
+                  'bg-[#6B7280]',
+                ].join(' ')}
                 style={{ width: `${topic.progress}%` }}
               />
             </div>

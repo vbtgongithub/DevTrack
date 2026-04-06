@@ -56,6 +56,11 @@ export interface SidebarProps {
   onToggleCollapse: () => void;
   currentPath: string;
   onNavigate: (path: string) => void;
+  profile?: {
+    displayName: string;
+    avatarUrl: string | null;
+    subtitle?: string;
+  };
 }
 
 export interface TopbarProps {

@@ -9,6 +9,7 @@ export type Submission = {
   platform: Platform;
   language: string;
   date: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
 };
 
 export type Topic = {

@@ -1,5 +1,19 @@
 import type { DsaData } from '../types/dsa';
 
+// Generate 365 days of realistic heatmap data
+const generateHeatmap = (): number[] => {
+  const data: number[] = [];
+  for (let i = 0; i < 365; i++) {
+    const r = Math.random();
+    if (r < 0.3) data.push(0);
+    else if (r < 0.55) data.push(1);
+    else if (r < 0.75) data.push(2);
+    else if (r < 0.9) data.push(3);
+    else data.push(4 + Math.floor(Math.random() * 2));
+  }
+  return data;
+};
+
 export const mockData: DsaData = {
   stats: [
     { label: 'Problems Solved', value: '247', icon: 'check-circle' },
@@ -16,6 +30,7 @@ export const mockData: DsaData = {
       platform: 'leetcode',
       language: 'TypeScript',
       date: 'Apr 05, 2026',
+      difficulty: 'easy',
     },
     {
       id: 's2',
@@ -25,6 +40,7 @@ export const mockData: DsaData = {
       platform: 'leetcode',
       language: 'Python',
       date: 'Apr 05, 2026',
+      difficulty: 'medium',
     },
     {
       id: 's3',
@@ -34,6 +50,7 @@ export const mockData: DsaData = {
       platform: 'codeforces',
       language: 'C++',
       date: 'Apr 04, 2026',
+      difficulty: 'hard',
     },
     {
       id: 's4',
@@ -43,6 +60,7 @@ export const mockData: DsaData = {
       platform: 'leetcode',
       language: 'Java',
       date: 'Apr 04, 2026',
+      difficulty: 'medium',
     },
     {
       id: 's5',
@@ -52,6 +70,7 @@ export const mockData: DsaData = {
       platform: 'codechef',
       language: 'Python',
       date: 'Apr 03, 2026',
+      difficulty: 'hard',
     },
     {
       id: 's6',
@@ -61,6 +80,7 @@ export const mockData: DsaData = {
       platform: 'leetcode',
       language: 'TypeScript',
       date: 'Apr 03, 2026',
+      difficulty: 'medium',
     },
   ],
   topics: [
@@ -79,18 +99,5 @@ export const mockData: DsaData = {
     { platform: 'codeforces', stat: 'Rating 1426' },
     { platform: 'codechef', stat: 'Solved 41' },
   ],
-  heatmap: [
-    0, 1, 0, 2, 1, 0, 3,
-    2, 3, 1, 0, 2, 3, 1,
-    1, 2, 3, 4, 2, 1, 0,
-    0, 1, 2, 2, 3, 4, 2,
-    1, 0, 1, 1, 2, 3, 2,
-    2, 3, 4, 3, 2, 1, 0,
-    1, 2, 2, 3, 2, 1, 0,
-    0, 1, 2, 3, 3, 4, 2,
-    1, 0, 1, 2, 3, 2, 1,
-    2, 3, 2, 1, 0, 1, 2,
-    3, 2, 1, 0, 1, 2, 3,
-    2, 1, 0, 1, 2, 3, 4,
-  ],
+  heatmap: generateHeatmap(),
 };

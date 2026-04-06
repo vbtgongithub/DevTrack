@@ -6,6 +6,49 @@
 // ============================================================================
 
 import React from 'react';
+import {
+  Home,
+  BarChart3,
+  Code2,
+  Folder,
+  Settings,
+  Flame,
+  Search,
+  Bell,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle2,
+  GitBranch,
+  GitCommit,
+  GitMerge,
+  Globe,
+  Trophy,
+  Calendar,
+  Send,
+  Terminal,
+  Lock,
+  Star,
+  Zap,
+  Moon,
+  Sun,
+  Link,
+  FolderPlus,
+  GraduationCap,
+  ArrowUp,
+  ArrowDown,
+  RefreshCcw,
+  Minus,
+  MinusCircle,
+  Circle,
+  Play,
+  Eye,
+  TriangleAlert,
+  FileText,
+  MessageCircle,
+  Monitor,
+  Clock,
+  User,
+} from 'lucide-react';
 
 interface IconProps {
   name: string;
@@ -13,6 +56,50 @@ interface IconProps {
   color?: string;
   className?: string;
 }
+
+const LUCIDE: Record<string, React.ComponentType<{ size?: number; color?: string; className?: string }>> = {
+  home: Home,
+  'chart-bar': BarChart3,
+  'code-bracket': Code2,
+  folder: Folder,
+  cog: Settings,
+  fire: Flame,
+  search: Search,
+  bell: Bell,
+  'chevron-left': ChevronLeft,
+  'chevron-right': ChevronRight,
+  'check-circle': CheckCircle2,
+  'git-branch': GitBranch,
+  'git-commit': GitCommit,
+  'git-merge': GitMerge,
+  globe: Globe,
+  trophy: Trophy,
+  calendar: Calendar,
+  'paper-airplane': Send,
+  terminal: Terminal,
+  'lock-closed': Lock,
+  star: Star,
+  bolt: Zap,
+  moon: Moon,
+  sun: Sun,
+  link: Link,
+  'folder-plus': FolderPlus,
+  'academic-cap': GraduationCap,
+  'arrow-up': ArrowUp,
+  'arrow-down': ArrowDown,
+  'arrow-path': RefreshCcw,
+  minus: Minus,
+  'minus-circle': MinusCircle,
+  circle: Circle,
+  play: Play,
+  eye: Eye,
+  'exclamation-triangle': TriangleAlert,
+  'document-text': FileText,
+  'chat-bubble': MessageCircle,
+  'computer-desktop': Monitor,
+  clock: Clock,
+  user: User,
+};
 
 const ICONS: Record<string, string> = {
   'home': 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
@@ -64,6 +151,11 @@ export const Icon: React.FC<IconProps> = ({
   color = 'currentColor',
   className = '',
 }) => {
+  const LucideIcon = LUCIDE[name];
+  if (LucideIcon) {
+    return <LucideIcon size={size} color={color} className={className} />;
+  }
+
   const path = ICONS[name];
 
   if (!path) {

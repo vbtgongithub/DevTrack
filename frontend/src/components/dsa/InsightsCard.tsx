@@ -1,12 +1,12 @@
 import React from 'react';
-import { Icon } from '../shared/Icon';
 import { PlatformLogo } from './PlatformLogo';
-import type { Platform, Submission, Topic } from '../../types/dsa';
+import type { DsaStat, Platform, Submission, Topic } from '../../types/dsa';
 
 export type InsightsCardProps = {
   title: string;
   submissions: Submission[];
   topics: Topic[];
+  stats?: DsaStat[];
   className?: string;
 };
 
@@ -26,7 +26,7 @@ const parseSubmissionDate = (value: string) => {
 };
 
 export const InsightsCard: React.FC<InsightsCardProps> = React.memo(
-  ({ title, submissions, topics, className }) => {
+  ({ title, submissions, topics, stats, className }) => {
     const total = submissions.length;
     const accepted = submissions.filter((s) => s.status === 'accepted').length;
     const acceptanceRate = total > 0 ? Math.round((accepted / total) * 100) : 0;
@@ -47,6 +47,41 @@ export const InsightsCard: React.FC<InsightsCardProps> = React.memo(
       if (!best) return t;
       return t.progress > best.progress ? t : best;
     }, null);
+
+    const weakestTopic = topics.reduce<Topic | null>((best, t) => {
+      if (!best) return t;
+      return t.progress < best.progress ? t : best;
+    }, null);
+
+    const insights = React.useMemo(() => {
+      const parsed = submissions
+        .map((s) => ({ ...s, parsedDate: parseSubmissionDate(s.date) }))
+        .filter((s): s is Submission & { parsedDate: Date } => Boolean(s.parsedDate));
+
+      const weekend = parsed.filter((s) => {
+        const day = s.parsedDate.getDay();
+        return day === 0 || day === 6;
+      }).length;
+      const weekday = parsed.length - weekend;
+
+      const recent = parsed
+        .slice()
+        .sort((a, b) => b.parsedDate.getTime() - a.parsedDate.getTime())
+        .slice(0, 6);
+
+      const recentWrongByTopic = recent.reduce<Record<string, number>>((acc, s) => {
+        if (s.status === 'wrong') acc[s.topic] = (acc[s.topic] ?? 0) + 1;
+        return acc;
+      }, {});
+
+      const recentWorstTopic = Object.keys(recentWrongByTopic).sort((a, b) => (recentWrongByTopic[b] ?? 0) - (recentWrongByTopic[a] ?? 0))[0] ?? null;
+
+      const weekendBias = weekend > weekday ? 'You solve more on weekends — keep that ritual.' : 'Weekdays are your strength — protect those focus blocks.';
+      const accuracyHint = recentWorstTopic ? `Accuracy dipped in ${recentWorstTopic} recently — do 3 focused reps.` : 'Accuracy looks stable — push one harder problem today.';
+      const rec = weakestTopic ? `Try solving 3 ${weakestTopic.name} problems to improve.` : 'Pick one weak topic and do 3 reps.';
+
+      return [weekendBias, accuracyHint, rec];
+    }, [submissions, weakestTopic]);
 
     const trendData = React.useMemo(() => {
       const today = new Date();
@@ -71,81 +106,144 @@ export const InsightsCard: React.FC<InsightsCardProps> = React.memo(
 
     const max = Math.max(1, ...trendData.map((d) => d.count));
 
+    const weeklyGoal = 18;
+    const weeklyDone = trendData.reduce((a, b) => a + b.count, 0);
+
+    const difficultyDist = React.useMemo(() => {
+      const dist = { easy: 0, medium: 0, hard: 0 };
+      submissions.forEach((s) => {
+        if (s.difficulty === 'easy') dist.easy += 1;
+        else if (s.difficulty === 'medium') dist.medium += 1;
+        else if (s.difficulty === 'hard') dist.hard += 1;
+      });
+      return dist;
+    }, [submissions]);
+
+    const rating = React.useMemo(() => {
+      const item = (stats ?? []).find((s) => s.label.toLowerCase().includes('rating'));
+      const n = item ? Number(String(item.value).replace(/[^0-9]/g, '')) : NaN;
+      return Number.isFinite(n) ? n : null;
+    }, [stats]);
+
     return (
       <section
         className={[
-          'border border-gray-300 shadow-md rounded-xl p-5 transition-all duration-200',
-          'bg-white hover:shadow-lg hover:scale-[1.01]',
+          'dt-card p-4',
           className,
         ]
           .filter(Boolean)
           .join(' ')}
       >
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        <h3 className="text-lg font-semibold tracking-tight text-dt-text">{title}</h3>
 
-        <div className="mt-4 rounded-lg border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-4">
-          <div className="grid grid-cols-1 gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="h-7 w-7 rounded-md bg-gray-100 flex items-center justify-center shrink-0">
-                  <Icon name="check-circle" size={14} className="text-gray-700" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-xs text-gray-500">Acceptance rate</p>
-                  <p className="text-sm font-semibold text-gray-900 truncate">{acceptanceRate}%</p>
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 whitespace-nowrap">
-                {accepted}/{total} accepted
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center shrink-0">
-                  <PlatformLogo platform={mostActivePlatform} iconSize={14} className="" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-gray-500">Most active</p>
-                  <p className="text-sm font-semibold text-gray-900 truncate">{platformLabel[mostActivePlatform]}</p>
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 whitespace-nowrap">{platformCounts[mostActivePlatform]} submissions</p>
-            </div>
-
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="h-7 w-7 rounded-md bg-gray-100 flex items-center justify-center shrink-0">
-                  <Icon name="trophy" size={14} className="text-gray-700" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-xs text-gray-500">Top topic</p>
-                  <p className="text-sm font-semibold text-gray-900 truncate">{topTopic?.name ?? '—'}</p>
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 whitespace-nowrap">{topTopic?.progress ?? 0}%</p>
-            </div>
+        {/* Quick stats row */}
+        <div className="mt-4 grid grid-cols-3 gap-4">
+          <div>
+            <p className="text-xs text-dt-muted">Acceptance rate</p>
+            <p className="text-sm font-semibold text-dt-text">{acceptanceRate}%</p>
+            <p className="text-xs text-dt-muted">{accepted}/{total} accepted</p>
           </div>
-
-          <div className="mt-4">
-            <p className="text-xs text-gray-500">Last 7 days</p>
-            <div className="mt-3 flex items-end gap-2 h-24">
-              {trendData.map((d) => {
-                const h = Math.round((d.count / max) * 80);
-                return (
-                  <div key={d.day} className="flex flex-col items-center gap-2">
-                    <div
-                      className="w-6 bg-green-500 rounded transition-all duration-500 hover:scale-110 origin-bottom"
-                      style={{ height: `${Math.max(4, h)}px` }}
-                      title={`${d.count} submissions`}
-                    />
-                    <span className="text-xs text-gray-500">{d.day}</span>
-                  </div>
-                );
-              })}
+          <div>
+            <p className="text-xs text-dt-muted">Most active</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <PlatformLogo platform={mostActivePlatform} iconSize={12} className="" />
+              <p className="text-sm font-semibold text-dt-text">{platformLabel[mostActivePlatform]}</p>
             </div>
+            <p className="text-xs text-dt-muted">{platformCounts[mostActivePlatform]} submissions</p>
+          </div>
+          <div>
+            <p className="text-xs text-dt-muted">Top topic</p>
+            <p className="text-sm font-semibold text-dt-text">{topTopic?.name ?? '—'}</p>
+            <p className="text-xs text-dt-muted">{topTopic?.progress ?? 0}% mastery</p>
           </div>
         </div>
+
+        {/* 7-day mini bar chart */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-dt-muted">Last 7 days</p>
+            <p className="text-xs font-semibold text-dt-text">{weeklyDone}/{weeklyGoal} goal</p>
+          </div>
+          <div className="mt-3 flex items-end gap-2 h-16">
+            {trendData.map((d) => {
+              const h = Math.round((d.count / max) * 56);
+              return (
+                <div key={d.day} className="flex-1 flex flex-col items-center gap-1.5">
+                  <div
+                    className="w-full max-w-[28px] rounded-sm"
+                    style={{ height: `${Math.max(3, h)}px`, backgroundColor: '#9CA3AF' }}
+                    title={`${d.count} submissions`}
+                  />
+                  <span className="text-[10px] text-dt-muted">{d.day}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Difficulty distribution */}
+        <div className="mt-5">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-dt-muted">Difficulty distribution</p>
+          </div>
+          <div className="mt-2 h-2 w-full overflow-hidden rounded-sm bg-[#E5E7EB]">
+            {(() => {
+              const sum = Math.max(1, difficultyDist.easy + difficultyDist.medium + difficultyDist.hard);
+              const e = Math.round((difficultyDist.easy / sum) * 100);
+              const m = Math.round((difficultyDist.medium / sum) * 100);
+              const h = 100 - e - m;
+              return (
+                <div className="flex h-full w-full">
+                  <div className="h-full" style={{ width: `${e}%`, background: '#D1D5DB' }} title={`${difficultyDist.easy} easy`} />
+                  <div className="h-full" style={{ width: `${m}%`, background: '#9CA3AF' }} title={`${difficultyDist.medium} medium`} />
+                  <div className="h-full" style={{ width: `${h}%`, background: '#6B7280' }} title={`${difficultyDist.hard} hard`} />
+                </div>
+              );
+            })()}
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-dt-muted">
+            <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: '#D1D5DB' }} />Easy</div>
+            <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: '#9CA3AF' }} />Medium</div>
+            <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: '#6B7280' }} />Hard</div>
+          </div>
+        </div>
+
+        {/* Intelligent insights */}
+        <div className="mt-5">
+          <p className="text-xs font-semibold text-dt-muted">Intelligent insights</p>
+          <ul className="mt-2 space-y-2">
+            {insights.map((text, i) => (
+              <li key={`ins-${i}`} className="text-sm text-dt-text flex items-start gap-2">
+                <span className="mt-[5px] h-1.5 w-1.5 rounded-full bg-[#9CA3AF] shrink-0" aria-hidden="true" />
+                <span className="leading-relaxed">{text}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Recommendation */}
+        <div className="mt-5 rounded-md bg-[#F9FAFB] px-3 py-2.5">
+          <p className="text-xs font-semibold text-dt-muted">Focus area</p>
+          <p className="mt-1 text-sm text-dt-text leading-relaxed">
+            {weakestTopic ? (
+              <>
+                Focus next: <span className="font-semibold">{weakestTopic.name}</span>. Solve 3 problems and re-check mastery.
+              </>
+            ) : (
+              'Pick one weak topic and solve 3 problems.'
+            )}
+          </p>
+        </div>
+
+        {/* Rating */}
+        {rating ? (
+          <div className="mt-4 flex items-center justify-between text-sm">
+            <div>
+              <p className="text-xs text-dt-muted">Contest rating</p>
+              <p className="font-semibold text-dt-text">{rating}</p>
+            </div>
+          </div>
+        ) : null}
       </section>
     );
   }

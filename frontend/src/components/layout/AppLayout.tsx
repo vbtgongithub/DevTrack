@@ -49,23 +49,30 @@ export const AppLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full w-full overflow-hidden">
+    <div className="flex h-full w-full overflow-hidden bg-dt-bg text-dt-text">
       <Sidebar
         navItems={navItems}
         isCollapsed={false}
         onToggleCollapse={() => undefined}
         currentPath={location.pathname}
         onNavigate={(path) => navigate(path)}
+        profile={{
+          displayName: topbarData.displayName,
+          avatarUrl: topbarData.avatarUrl,
+          subtitle: 'Premium workspace',
+        }}
       />
-      <div className="flex-1 overflow-hidden bg-[#fff7f0]">
+      <div className="flex-1 overflow-hidden bg-dt-bg">
         <Topbar
           data={topbarData}
           onNotificationsClick={() => {}}
           onProfileClick={() => navigate('/settings')}
           onSearchClick={() => {}}
         />
-        <main className="h-[calc(100vh-64px)] overflow-y-auto bg-[#fff7f0] text-gray-900 px-6 py-6">
-          <Outlet />
+        <main className="h-[calc(100vh-64px)] overflow-y-auto bg-dt-bg px-6 py-6">
+          <div className="mx-auto w-full max-w-[1280px]">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

@@ -20,8 +20,8 @@ export const PageShell: React.FC<PageShellProps> = ({
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h2 className="text-2xl font-bold text-zinc-900">{title}</h2>
-          {subtitle ? <p className="text-sm text-zinc-500">{subtitle}</p> : null}
+          <h2 className="text-2xl font-bold tracking-tight text-dt-text">{title}</h2>
+          {subtitle ? <p className="text-sm text-dt-muted leading-relaxed">{subtitle}</p> : null}
         </div>
         {actions ? <div className="shrink-0 flex items-center gap-2">{actions}</div> : null}
       </div>
