@@ -10,6 +10,11 @@ import type { DashboardVM } from '../../types/vm.types';
 
 const DashboardPage: React.FC = () => {
   const { data } = useDashboardData();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const safeData: DashboardVM = data
     ? {
@@ -72,18 +77,23 @@ const DashboardPage: React.FC = () => {
       };
 
   return (
-    <div className="space-y-4">
+    <div
+      className={[
+        'flex flex-col gap-6 transition-opacity duration-300',
+        mounted ? 'opacity-100' : 'opacity-0',
+      ].join(' ')}
+    >
       <DashboardHeader data={safeData.header} />
 
       <StatsGrid />
 
       <AnnouncementSection />
 
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
         <div className="h-full">
           <InsightsCard />
         </div>
-        <div className="h-full bg-white border border-gray-300 rounded-2xl p-5 shadow-md hover:shadow-lg hover:-translate-y-[1px] transition-all duration-200 ease-in-out flex flex-col gap-3">
+        <div className="h-full bg-white border border-gray-200 rounded-xl p-5 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 ease-in-out flex flex-col gap-3">
           <ActionsPanel />
         </div>
         <div className="h-full">

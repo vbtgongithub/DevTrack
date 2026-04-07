@@ -49,6 +49,8 @@ import {
   Monitor,
   Clock,
   User,
+  ExternalLink,
+  Plus,
 } from 'lucide-react';
 
 interface IconProps {
@@ -101,6 +103,8 @@ const LUCIDE: Record<string, React.ComponentType<{ size?: number; color?: string
   'computer-desktop': Monitor,
   clock: Clock,
   user: User,
+  'external-link': ExternalLink,
+  plus: Plus,
 };
 
 const ICONS: Record<string, string> = {
