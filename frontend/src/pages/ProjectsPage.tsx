@@ -150,6 +150,7 @@ const ProjectsPage: React.FC = () => {
     return PROJECTS.filter((p) => isActiveProject(p.status));
   }, [filter]);
 
+  /* ─── Filter Toggle Group ─── */
   const filterGroup = (
     <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
       {FILTERS.map((key) => {
@@ -174,6 +175,7 @@ const ProjectsPage: React.FC = () => {
     </div>
   );
 
+  /* ─── Header Actions ─── */
   const headerActions = (
     <div className="flex items-center gap-3">
       {filterGroup}
@@ -202,7 +204,10 @@ const ProjectsPage: React.FC = () => {
         error={null}
         actions={headerActions}
       >
+        {/* ─── Content ─── */}
         <div className="flex flex-col">
+
+          {/* Empty State */}
           {filteredProjects.length === 0 ? (
             <div className="dt-card shadow-md rounded-xl p-10 text-center max-w-md mx-auto border border-gray-200">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
@@ -225,6 +230,7 @@ const ProjectsPage: React.FC = () => {
               </button>
             </div>
           ) : (
+            /* ─── Project Grid ─── */
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredProjects.map((p, index) => (
                 <div
@@ -243,7 +249,7 @@ const ProjectsPage: React.FC = () => {
                     animation: mounted ? `dtFadeIn 520ms ease-out ${index * 60}ms both` : 'none',
                   }}
                 >
-                  {/* Top Row */}
+                  {/* ── Top Row: Badge + GitHub ── */}
                   <div className="flex items-center justify-between mb-3">
                     <span
                       className={[
@@ -253,6 +259,7 @@ const ProjectsPage: React.FC = () => {
                     >
                       {p.status}
                     </span>
+
                     <button
                       type="button"
                       onClick={(e) => {
@@ -271,7 +278,7 @@ const ProjectsPage: React.FC = () => {
                     </button>
                   </div>
 
-                  {/* Title with Logo */}
+                  {/* ── Title with Logo ── */}
                   <div className="flex items-center gap-2">
                     <img src={githubLogo} alt="" className="w-5 h-5 object-contain shrink-0" />
                     <h3 className="text-base font-semibold text-gray-900 group-hover:text-black transition-colors duration-150 truncate">
@@ -279,7 +286,7 @@ const ProjectsPage: React.FC = () => {
                     </h3>
                   </div>
 
-                  {/* Description */}
+                  {/* ── Description ── */}
                   <p
                     className="mt-1.5 text-sm text-gray-500 overflow-hidden"
                     style={{
@@ -291,9 +298,10 @@ const ProjectsPage: React.FC = () => {
                     {p.description}
                   </p>
 
+                  {/* ── Divider ── */}
                   <div className="border-t border-gray-100 my-3" />
 
-                  {/* Tech Stack */}
+                  {/* ── Tech Stack ── */}
                   <div className="flex flex-wrap gap-1.5">
                     {p.techStack.map((tag) => (
                       <span
@@ -305,9 +313,10 @@ const ProjectsPage: React.FC = () => {
                     ))}
                   </div>
 
+                  {/* ── Divider ── */}
                   <div className="border-t border-gray-100 my-3" />
 
-                  {/* Progress Bar */}
+                  {/* ── Progress Bar ── */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-xs text-gray-500 font-medium">Progress</span>
@@ -325,9 +334,10 @@ const ProjectsPage: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* ── Divider ── */}
                   <div className="border-t border-gray-100 my-3" />
 
-                  {/* Meta Info */}
+                  {/* ── Meta Info Row ── */}
                   <div className="flex items-center justify-between text-xs text-gray-500">
                     <span className="flex items-center gap-2">
                       <Icon name="clock" size={13} className="text-gray-400" />
@@ -339,9 +349,10 @@ const ProjectsPage: React.FC = () => {
                     </span>
                   </div>
 
+                  {/* ── Divider ── */}
                   <div className="border-t border-gray-100 my-3" />
 
-                  {/* Footer */}
+                  {/* ── Footer ── */}
                   <div className="flex items-center justify-between">
                     <a
                       href={p.repoUrl}

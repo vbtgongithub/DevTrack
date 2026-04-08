@@ -10,14 +10,14 @@ const NAV_ITEMS: Omit<SidebarNavItemVM, 'isActive'>[] = [
   { id: 'dashboard', label: 'Dashboard', icon: 'home', path: '/', badge: null },
   { id: 'dsa', label: 'DSA', icon: 'code-bracket', path: '/dsa', badge: null },
   { id: 'projects', label: 'Projects', icon: 'folder', path: '/projects', badge: null },
-  { id: 'activity', label: 'Activity', icon: 'chart-bar', path: '/activity', badge: null },
+  { id: 'activity', label: 'History', icon: 'chart-bar', path: '/activity', badge: null },
   { id: 'profile', label: 'Profile', icon: 'user', path: '/profile', badge: null },
   { id: 'settings', label: 'Settings', icon: 'cog', path: '/settings', badge: null },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Dashboard',
-  '/activity': 'Activity',
+  '/activity': 'Smart History',
   '/dsa': 'DSA Tracker',
   '/projects': 'Projects',
   '/profile': 'Profile',
