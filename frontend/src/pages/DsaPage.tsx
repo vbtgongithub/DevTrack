@@ -11,6 +11,60 @@ import { Icon } from '../components/shared/Icon';
 import type { DsaData } from '../types/dsa';
 import { mockData } from '../mocks/dsaMockData';
 
+/* ─── Summary Bar ─── */
+const DsaSummaryBar: React.FC<{ heatmap: number[] }> = ({ heatmap }) => {
+  const totalSolved = React.useMemo(() => heatmap.reduce((a, b) => a + b, 0), [heatmap]);
+  const activeDays = React.useMemo(() => heatmap.filter((v) => v > 0).length, [heatmap]);
+
+  // Find most active month (mock)
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthTotals = React.useMemo(() => {
+    const totals = Array.from({ length: 12 }, () => 0);
+    const today = new Date();
+    heatmap.forEach((val, i) => {
+      const date = new Date(today);
+      date.setDate(date.getDate() - (364 - i));
+      totals[date.getMonth()] += val;
+    });
+    return totals;
+  }, [heatmap]);
+  const bestMonthIdx = monthTotals.indexOf(Math.max(...monthTotals));
+
+  const summaryItems = [
+    { emoji: '📊', text: `You solved ${totalSolved} problems this year`, type: 'blue' },
+    { emoji: '📅', text: `${activeDays} active days out of 365`, type: 'green' },
+    { emoji: '🏆', text: `Most active in ${monthNames[bestMonthIdx]}`, type: 'orange' },
+    { emoji: '🎯', text: 'Current rating: 1,684', type: 'purple' },
+  ];
+
+  const colorMap: Record<string, string> = {
+    blue: 'bg-blue-50 border-blue-200 text-blue-800',
+    green: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+    orange: 'bg-orange-50 border-orange-200 text-orange-800',
+    purple: 'bg-violet-50 border-violet-200 text-violet-800',
+  };
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {summaryItems.map((item, idx) => (
+        <div
+          key={idx}
+          className={[
+            'flex items-center gap-3 px-4 py-3 rounded-xl border',
+            'hover:shadow-md hover:-translate-y-0.5',
+            'transition-all duration-200 ease-out cursor-default',
+            colorMap[item.type],
+          ].join(' ')}
+          style={{ animation: `dtFadeIn 520ms ease-out ${idx * 80}ms both` }}
+        >
+          <span className="text-lg shrink-0">{item.emoji}</span>
+          <span className="text-sm font-medium leading-snug">{item.text}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const DsaPage: React.FC = () => {
   const { data, loading, error } = useDsaData();
   const [mounted, setMounted] = React.useState(false);
@@ -63,8 +117,9 @@ const DsaPage: React.FC = () => {
           <button
             type="button"
             className={[
-              'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white',
-              'bg-[#4F46E5] hover:bg-[#4338CA] transition-colors duration-200',
+              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white',
+              'bg-gray-900 hover:bg-black shadow-sm hover:shadow-md',
+              'transition-all duration-200 cursor-pointer',
             ].join(' ')}
           >
             <Icon name="folder-plus" size={16} className="text-white" />
@@ -73,7 +128,10 @@ const DsaPage: React.FC = () => {
         )}
       >
         {/* ─── Single-column vertical flow ─── */}
-        <div className="mx-auto w-full max-w-[1000px] flex flex-col gap-8">
+        <div className="mx-auto w-full max-w-[1000px] flex flex-col gap-6">
+
+          {/* 0. Summary Bar — NEW */}
+          <DsaSummaryBar heatmap={heatmap365} />
 
           {/* 1. Heatmap — primary visual */}
           <HeatmapCard title="Consistency" cells={heatmap365} />
@@ -81,7 +139,7 @@ const DsaPage: React.FC = () => {
           {/* 2. Recent Submissions */}
           <SubmissionsTable title="Recent Submissions" submissions={safeData.submissions} />
 
-          {/* 3. Topic Mastery */}
+          {/* 3. Topic Mastery — UPGRADED */}
           <TopicProgress title="Topic Mastery" topics={safeData.topics} />
 
           {/* 4. Platform Overview */}

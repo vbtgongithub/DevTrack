@@ -22,6 +22,10 @@ const SettingsPage = lazy(
   () => import('../pages/SettingsPage')
 );
 
+const ProfilePage = lazy(
+  () => import('../pages/ProfilePage')
+);
+
 
 const PageFallback: React.FC = () => (
   <div className="px-6 py-6 flex flex-col gap-4">
@@ -78,7 +82,7 @@ export const AppRouter: React.FC = () => {
         path="/profile"
         element={
           <Suspense fallback={<PageFallback />}>
-            <SettingsPage />
+            <ProfilePage />
           </Suspense>
         }
       />

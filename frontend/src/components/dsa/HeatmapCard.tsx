@@ -102,7 +102,7 @@ export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cell
   return (
     <section
       className={[
-        'dt-card p-4',
+        'bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-200',
         className,
       ]
         .filter(Boolean)

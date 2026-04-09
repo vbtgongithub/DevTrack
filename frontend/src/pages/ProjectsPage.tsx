@@ -237,13 +237,13 @@ const ProjectsPage: React.FC = () => {
                   key={p.id}
                   className={[
                     'group',
-                    'bg-white relative overflow-hidden rounded-xl p-5',
-                    'shadow-md border border-gray-200',
+                    'bg-white relative overflow-hidden rounded-2xl p-6',
+                    'shadow-sm border border-gray-200',
                     'border-l-4',
                     leftBorderColor(p.status),
                     'cursor-pointer',
-                    'hover:shadow-xl hover:-translate-y-1',
-                    'transition-all duration-200',
+                    'hover:shadow-lg hover:-translate-y-0.5',
+                    'transition-all duration-200 ease-out',
                   ].join(' ')}
                   style={{
                     animation: mounted ? `dtFadeIn 520ms ease-out ${index * 60}ms both` : 'none',
@@ -279,16 +279,16 @@ const ProjectsPage: React.FC = () => {
                   </div>
 
                   {/* ── Title with Logo ── */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5">
                     <img src={githubLogo} alt="" className="w-5 h-5 object-contain shrink-0" />
-                    <h3 className="text-base font-semibold text-gray-900 group-hover:text-black transition-colors duration-150 truncate">
+                    <h3 className="text-lg font-semibold text-gray-900 group-hover:text-black transition-colors duration-150 truncate">
                       {p.title}
                     </h3>
                   </div>
 
                   {/* ── Description ── */}
                   <p
-                    className="mt-1.5 text-sm text-gray-500 overflow-hidden"
+                    className="mt-1.5 text-sm text-gray-500 overflow-hidden leading-relaxed"
                     style={{
                       display: '-webkit-box',
                       WebkitLineClamp: 2,
@@ -322,11 +322,10 @@ const ProjectsPage: React.FC = () => {
                       <span className="text-xs text-gray-500 font-medium">Progress</span>
                       <span className="text-xs font-semibold text-gray-700 tabular-nums">{p.progress}%</span>
                     </div>
-                    <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
                       <div
                         className={[
-                          'h-full rounded-full transition-all duration-500 ease-out',
-                          'group-hover:opacity-90',
+                          'h-full rounded-full transition-all duration-700 ease-out',
                           progressBarColor(p.status),
                         ].join(' ')}
                         style={{ width: mounted ? `${p.progress}%` : '0%' }}
@@ -340,8 +339,17 @@ const ProjectsPage: React.FC = () => {
                   {/* ── Meta Info Row ── */}
                   <div className="flex items-center justify-between text-xs text-gray-500">
                     <span className="flex items-center gap-2">
-                      <Icon name="clock" size={13} className="text-gray-400" />
-                      {p.lastUpdated}
+                      {isActiveProject(p.status) ? (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-emerald-600 font-medium">Active {p.lastUpdated}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="clock" size={13} className="text-gray-400" />
+                          {p.lastUpdated}
+                        </>
+                      )}
                     </span>
                     <span className="flex items-center gap-2">
                       <Icon name="git-commit" size={13} className="text-gray-400" />

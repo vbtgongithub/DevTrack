@@ -26,10 +26,10 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, leading }) => 
     <div
       className={[
         'h-[120px]',
-        'rounded-xl',
+        'rounded-2xl',
         'bg-white',
-        'shadow-md',
-        'hover:shadow-xl',
+        'shadow-sm',
+        'hover:shadow-lg',
         'hover:scale-[1.01]',
         'hover:-translate-y-0.5',
         'transition-all',
@@ -45,15 +45,15 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, leading }) => 
         'cursor-default',
       ].join(' ')}
     >
-      <div className="shrink-0 w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+      <div className="shrink-0 w-11 h-11 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
         {leadingEl}
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="text-xl font-semibold text-gray-900 leading-none tabular-nums whitespace-nowrap truncate">
-          {value}
+        <div className="text-xl font-bold text-gray-900 leading-none tabular-nums whitespace-nowrap truncate">
+          {typeof value === 'number' ? value.toLocaleString() : value}
         </div>
-        <div className="mt-1 text-sm text-gray-500 whitespace-nowrap truncate">{label}</div>
+        <div className="mt-1.5 text-xs text-gray-500 font-medium whitespace-nowrap truncate">{label}</div>
       </div>
     </div>
   );
