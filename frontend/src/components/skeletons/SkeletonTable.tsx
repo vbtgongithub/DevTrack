@@ -11,15 +11,15 @@ export const SkeletonTable: React.FC<SkeletonTableProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`rounded-2xl border border-gray-300 bg-white shadow-md overflow-hidden ${className}`}>
-      <div className="flex gap-4 px-5 py-4 border-b border-gray-300">
+    <div className={`rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
+      <div className="flex gap-4 px-5 py-4 border-b border-gray-200">
         {Array.from({ length: columns }).map((_, i) => (
           <div
             key={`h-${i}`}
             className={
               i === 0
-                ? 'h-3 rounded-md bg-zinc-200/80 animate-pulse w-2/5'
-                : 'h-3 rounded-md bg-zinc-200/80 animate-pulse flex-1'
+                ? 'h-3 rounded-md bg-gray-200/80 animate-pulse w-2/5'
+                : 'h-3 rounded-md bg-gray-200/80 animate-pulse flex-1'
             }
           />
         ))}
@@ -31,7 +31,7 @@ export const SkeletonTable: React.FC<SkeletonTableProps> = ({
           className={
             rowIdx === rows - 1
               ? 'flex gap-4 px-5 py-4'
-              : 'flex gap-4 px-5 py-4 border-b border-gray-300'
+              : 'flex gap-4 px-5 py-4 border-b border-gray-100'
           }
         >
           {Array.from({ length: columns }).map((_, colIdx) => (
@@ -39,8 +39,8 @@ export const SkeletonTable: React.FC<SkeletonTableProps> = ({
               key={`c-${colIdx}`}
               className={
                 colIdx === 0
-                  ? 'h-3.5 rounded-md bg-zinc-200/80 animate-pulse w-2/5'
-                  : 'h-3.5 rounded-md bg-zinc-200/80 animate-pulse flex-1'
+                  ? 'h-3.5 rounded-md bg-gray-200/80 animate-pulse w-2/5'
+                  : 'h-3.5 rounded-md bg-gray-200/80 animate-pulse flex-1'
               }
             />
           ))}

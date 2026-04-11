@@ -5,7 +5,7 @@ import { Icon } from '../shared/Icon';
 const MissionCard: React.FC<MissionCardProps> = ({ data, onClick }) => {
   return (
     <div
-      className="bg-white border border-gray-300 rounded-2xl p-5 shadow-md hover:shadow-lg hover:-translate-y-[1px] transition-all duration-200 ease-in-out cursor-pointer space-y-3"
+      className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-pointer space-y-3"
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -25,7 +25,7 @@ const MissionCard: React.FC<MissionCardProps> = ({ data, onClick }) => {
       <h4 className="text-sm font-medium text-gray-900">{data.title}</h4>
       <p className="text-sm text-gray-700">{data.description}</p>
 
-      <div className="w-full h-2.5 bg-gray-300 rounded-full overflow-hidden">
+      <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
         <div
           className="h-full bg-black rounded-full transition-all duration-500"
           style={{ width: `${data.progress}%` }}
@@ -44,7 +44,7 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
   onMissionClick,
 }) => {
   return (
-    <div className="bg-white border border-gray-300 rounded-2xl p-5 shadow-md hover:shadow-lg hover:-translate-y-[1px] transition-all duration-200 ease-in-out space-y-6">
+    <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">{data.title}</h3>
@@ -55,7 +55,7 @@ export const MissionPanel: React.FC<MissionPanelProps> = ({
         <div className="text-lg font-semibold text-gray-900">{data.completionPercent}%</div>
       </div>
 
-      <div className="w-full h-2.5 bg-gray-300 rounded-full overflow-hidden">
+      <div className="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
         <div
           className="h-full bg-black rounded-full transition-all duration-500"
           style={{ width: `${data.completionPercent}%` }}

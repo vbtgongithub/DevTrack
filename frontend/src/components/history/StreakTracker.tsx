@@ -19,7 +19,7 @@ export const StreakTracker: React.FC<Props> = ({ streak }) => {
   }, []);
 
   return (
-    <div className="bg-gradient-to-br from-white via-orange-50/40 to-orange-100/30 shadow-sm rounded-xl p-6 hover:shadow-lg hover:-translate-y-[2px] transition-all duration-300 border border-gray-300">
+    <div className="bg-gradient-to-br from-white via-orange-50/40 to-orange-100/30 shadow-sm rounded-2xl p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out border border-gray-200">
       {/* Header */}
       <div className="flex items-center gap-3 mb-5">
         <div
@@ -27,7 +27,7 @@ export const StreakTracker: React.FC<Props> = ({ streak }) => {
         >
           <span className="text-white text-base">🔥</span>
         </div>
-        <h3 className="text-lg font-bold text-zinc-900 tracking-tight">Streak</h3>
+        <h3 className="text-lg font-semibold text-gray-900 tracking-tight">Streak</h3>
       </div>
 
       {/* Current + Best */}
@@ -45,8 +45,8 @@ export const StreakTracker: React.FC<Props> = ({ streak }) => {
       {/* Progress bar */}
       <div className="mb-5">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] text-zinc-500 font-medium">Progress to best</span>
-          <span className="text-[11px] font-bold text-zinc-700">{streak.percentOfBest}%</span>
+          <span className="text-[11px] text-gray-500 font-medium">Progress to best</span>
+          <span className="text-[11px] font-bold text-gray-700">{streak.percentOfBest}%</span>
         </div>
         <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
           <div
@@ -63,7 +63,7 @@ export const StreakTracker: React.FC<Props> = ({ streak }) => {
 
       {/* Mini heat strip */}
       <div>
-        <span className="text-[11px] text-zinc-500 font-medium mb-2.5 block">Last 7 days</span>
+        <span className="text-[11px] text-gray-500 font-medium mb-2.5 block">Last 7 days</span>
         <div className="flex items-center gap-2">
           {streak.activeDays.map((active, idx) => (
             <div key={idx} className="flex-1 flex flex-col items-center gap-1.5">
@@ -78,7 +78,7 @@ export const StreakTracker: React.FC<Props> = ({ streak }) => {
               />
               <span className={[
                 'text-[9px] font-bold tracking-wider',
-                active ? 'text-emerald-600' : 'text-zinc-300',
+                active ? 'text-emerald-600' : 'text-gray-300',
               ].join(' ')}>
                 {DAY_LABELS[idx]}
               </span>

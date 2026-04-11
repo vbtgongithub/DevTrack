@@ -209,7 +209,7 @@ const ProjectsPage: React.FC = () => {
 
           {/* Empty State */}
           {filteredProjects.length === 0 ? (
-            <div className="dt-card shadow-md rounded-xl p-10 text-center max-w-md mx-auto border border-gray-200">
+            <div className="dt-card shadow-sm rounded-2xl p-10 text-center max-w-md mx-auto border border-gray-200">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
                 <Icon name="folder" size={24} className="text-gray-400" />
               </div>
@@ -267,7 +267,7 @@ const ProjectsPage: React.FC = () => {
                         window.open(p.repoUrl, '_blank', 'noopener,noreferrer');
                       }}
                       className={[
-                        'inline-flex items-center justify-center rounded-lg border border-gray-300',
+                        'inline-flex items-center justify-center rounded-lg border border-gray-200',
                         'h-9 w-9 cursor-pointer',
                         'hover:bg-gray-100 hover:scale-110',
                         'transition-all duration-200',

@@ -33,7 +33,7 @@ export const MissionCard: React.FC = () => {
   };
 
   return (
-    <div className="h-full bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-in-out flex flex-col">
+    <div className="h-full bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out flex flex-col">
       <div className="flex justify-between items-center mb-1">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center">
@@ -71,7 +71,7 @@ export const MissionCard: React.FC = () => {
                 'transition-all duration-200',
                 m.completed
                   ? 'bg-violet-500 border-violet-500'
-                  : 'border-gray-300 hover:border-gray-400',
+                  : 'border-gray-200 hover:border-gray-400',
               ].join(' ')}
               onClick={(e) => {
                 e.preventDefault();

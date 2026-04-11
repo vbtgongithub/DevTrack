@@ -8,35 +8,35 @@ import './Dashboard.css';
 
 export const StreakBanner: React.FC<StreakBannerProps> = ({ data }) => {
   return (
-    <div className="bg-white border border-gray-300 shadow-md rounded-2xl p-5 hover:shadow-lg hover:-translate-y-[1px] transition-all duration-200 ease-in-out">
+    <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out">
       <div className="flex items-center justify-between gap-6">
         <div className="flex items-center gap-3 min-w-0">
           <span
             className={`h-2.5 w-2.5 rounded-full ${
-              data.isActiveToday ? 'bg-emerald-500' : 'bg-zinc-300'
+              data.isActiveToday ? 'bg-emerald-500' : 'bg-gray-300'
             }`}
             aria-hidden
           />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-zinc-900 truncate">
+              <span className="text-sm font-semibold text-gray-900 truncate">
                 {data.streakLabel}
               </span>
-              <span className="text-sm text-zinc-500">·</span>
-              <span className="text-sm text-zinc-500">{data.currentStreak} days</span>
+              <span className="text-sm text-gray-500">·</span>
+              <span className="text-sm text-gray-500">{data.currentStreak} days</span>
             </div>
-            <p className="text-sm text-zinc-500 truncate">{data.motivationText}</p>
+            <p className="text-sm text-gray-500 truncate">{data.motivationText}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-6 shrink-0">
           <div className="text-right">
-            <div className="text-xs text-zinc-500">Longest</div>
-            <div className="text-sm font-semibold text-zinc-900">{data.longestStreak} days</div>
+            <div className="text-xs text-gray-500">Longest</div>
+            <div className="text-sm font-semibold text-gray-900">{data.longestStreak} days</div>
           </div>
           <div className="hidden sm:block text-right">
-            <div className="text-xs text-zinc-500">Started</div>
-            <div className="text-sm font-semibold text-zinc-900">{data.streakStartFormatted}</div>
+            <div className="text-xs text-gray-500">Started</div>
+            <div className="text-sm font-semibold text-gray-900">{data.streakStartFormatted}</div>
           </div>
         </div>
       </div>

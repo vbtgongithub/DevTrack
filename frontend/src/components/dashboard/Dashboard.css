@@ -204,7 +204,7 @@
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+  gap: 20px;
 }
 
 .stat-card {
@@ -214,9 +214,8 @@
   padding: 20px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-primary);
-  border-radius: 14px;
-  transition: all 0.2s ease;
-  position: relative;
+  border-radius: 16px;
+  transition: all 0.2s ease-out;
 }
 
 .stat-card:hover {
@@ -254,16 +253,15 @@
 }
 
 .stat-card__trend {
-  position: absolute;
-  top: 12px;
-  right: 12px;
   display: flex;
   align-items: center;
   gap: 3px;
   font-size: 11px;
   font-weight: 600;
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: 9999px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .stat-card__trend--up {
@@ -281,7 +279,7 @@
 .platform-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
+  gap: 20px;
 }
 
 .platform-card {
@@ -291,8 +289,8 @@
   padding: 20px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-primary);
-  border-radius: 14px;
-  transition: all 0.2s ease;
+  border-radius: 16px;
+  transition: all 0.2s ease-out;
 }
 
 .platform-card:hover {
@@ -435,7 +433,7 @@
   padding: 24px;
   background: var(--bg-secondary);
   border: 1px dashed var(--border-primary);
-  border-radius: 14px;
+  border-radius: 16px;
   color: var(--text-muted);
   font-size: 14px;
 }

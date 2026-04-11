@@ -14,7 +14,7 @@ export const InsightsCard: React.FC = () => {
   }, []);
 
   return (
-    <div className="h-full bg-white border border-gray-200 rounded-xl p-5 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 ease-in-out flex flex-col">
+    <div className="h-full bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out flex flex-col">
       <div className="text-sm font-semibold text-gray-900 mb-4">Insights</div>
 
       <div className="flex flex-col gap-3 flex-1">

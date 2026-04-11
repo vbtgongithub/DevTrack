@@ -36,7 +36,7 @@ const ContestRow: React.FC<ContestRowProps> = ({ logo, name, when, index }) => {
 
 export const AnnouncementSection: React.FC = () => {
   return (
-    <section className="rounded-2xl bg-white shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-in-out border border-gray-200 p-5">
+    <section className="rounded-2xl bg-white shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out border border-gray-200 p-5">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">

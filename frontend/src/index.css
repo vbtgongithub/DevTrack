@@ -51,10 +51,18 @@
 }
 
 @layer utilities {
+	/* ─── DESIGN SYSTEM: Standardized card ─── */
 	.dt-card {
 		background-color: #FFFFFF;
-		border: 1px solid rgba(0, 0, 0, 0.04);
-		border-radius: 16px;
+		border: 1px solid #E5E7EB; /* gray-200 */
+		border-radius: 16px; /* rounded-2xl */
+		box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+		transition: all 200ms ease-out;
+	}
+
+	.dt-card:hover {
+		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+		transform: translateY(-2px);
 	}
 
 	.dt-fade-in {

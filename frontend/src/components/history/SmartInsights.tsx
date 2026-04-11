@@ -14,15 +14,15 @@ export const SmartInsights: React.FC<Props> = ({ insights }) => {
   React.useEffect(() => { setMounted(true); }, []);
 
   return (
-    <div className="bg-white shadow-sm rounded-xl p-6 hover:shadow-lg hover:-translate-y-[2px] transition-all duration-300 border border-gray-300">
+    <div className="bg-white shadow-sm rounded-2xl p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out border border-gray-200">
       {/* Header */}
       <div className="flex items-center gap-3 mb-5">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-md shadow-violet-200">
           <span className="text-white text-base">🧠</span>
         </div>
         <div>
-          <h3 className="text-lg font-bold text-zinc-900 tracking-tight">Insights</h3>
-          <p className="text-[11px] text-zinc-400 font-medium">Smart behavioral analysis</p>
+          <h3 className="text-lg font-semibold text-gray-900 tracking-tight">Insights</h3>
+          <p className="text-[11px] text-gray-400 font-medium">Smart behavioral analysis</p>
         </div>
       </div>
 
@@ -53,7 +53,7 @@ export const SmartInsights: React.FC<Props> = ({ insights }) => {
               >
                 {insight.label}
               </div>
-              <div className="text-[13px] text-zinc-700 leading-snug font-medium">
+              <div className="text-[13px] text-gray-700 leading-snug font-medium">
                 {insight.value}
               </div>
             </div>
@@ -68,7 +68,7 @@ export const SmartInsights: React.FC<Props> = ({ insights }) => {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-violet-500" />
           </div>
-          <span className="text-[11px] text-zinc-400 font-medium">Updated based on your recent activity</span>
+          <span className="text-[11px] text-gray-400 font-medium">Updated based on your recent activity</span>
         </div>
       </div>
     </div>

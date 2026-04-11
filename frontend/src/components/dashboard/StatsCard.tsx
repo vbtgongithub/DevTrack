@@ -30,10 +30,10 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   const a = ACCENT[accent];
 
   return (
-    <div className="bg-white border border-gray-300 shadow-md rounded-xl p-4">
+    <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-medium text-zinc-700">{label}</div>
-        <div className="text-zinc-400">→</div>
+        <div className="text-sm font-medium text-gray-700">{label}</div>
+        <div className="text-gray-400">→</div>
       </div>
 
       <div className="mt-4 flex items-center gap-4">
@@ -42,12 +42,12 @@ export const StatsCard: React.FC<StatsCardProps> = ({
         </div>
 
         <div className="min-w-0">
-          <div className="text-2xl font-semibold text-zinc-900 leading-none">{value}</div>
+          <div className="text-2xl font-semibold text-gray-900 leading-none">{value}</div>
           <div
             className={
               metaTone === 'positive'
                 ? 'mt-1 text-sm font-medium text-green-600'
-                : 'mt-1 text-sm text-zinc-500'
+                : 'mt-1 text-sm text-gray-500'
             }
           >
             {meta}

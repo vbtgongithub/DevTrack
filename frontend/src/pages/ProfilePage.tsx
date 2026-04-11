@@ -52,7 +52,7 @@ const INSIGHT_COLORS: Record<string, { bg: string; icon: string }> = {
 
 /* ─── Profile Hero ─── */
 const ProfileHero: React.FC = () => (
-  <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-200">
+  <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out">
     <div className="flex flex-col sm:flex-row items-start gap-6">
       {/* Avatar */}
       <div className="relative shrink-0">
@@ -138,7 +138,7 @@ const StatsGrid: React.FC = () => (
           className={[
             'bg-white border border-gray-200 rounded-2xl p-4',
             'shadow-sm hover:shadow-lg hover:-translate-y-0.5',
-            'transition-all duration-200 ease-in-out',
+            'transition-all duration-200 ease-out',
             'flex flex-col items-center text-center gap-2',
           ].join(' ')}
           style={{ animation: `dtFadeIn 520ms ease-out ${index * 60}ms both` }}
@@ -159,7 +159,7 @@ const StatsGrid: React.FC = () => (
 
 /* ─── Platform Connections ─── */
 const PlatformConnections: React.FC = () => (
-  <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-200 ease-out">
+  <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out">
     <div className="flex items-center gap-2 mb-5">
       <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
         <Icon name="globe" size={16} className="text-blue-600" />
@@ -167,51 +167,46 @@ const PlatformConnections: React.FC = () => (
       <h2 className="text-base font-semibold text-gray-900">Platform Connections</h2>
     </div>
 
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+    <div className="flex flex-col gap-4">
       {PROFILE_PLATFORMS.map((platform, index) => (
         <div
           key={platform.id}
-          className={[
-            'flex flex-col p-5 rounded-2xl border border-gray-200',
-            'shadow-sm hover:shadow-lg hover:-translate-y-1',
-            'transition-all duration-200 ease-out cursor-default',
-          ].join(' ')}
+          className="flex flex-col p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg hover:scale-[1.01] hover:-translate-y-0.5 transition-all duration-200 ease-out cursor-default overflow-hidden"
           style={{ animation: `dtFadeIn 520ms ease-out ${index * 60}ms both` }}
         >
           {/* 1. Header Row */}
           <div className="flex items-center justify-between mb-3">
-            {/* Left: Icon + Text */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gray-100 ring-1 ring-gray-200 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-gray-100 ring-1 ring-gray-200 flex items-center justify-center overflow-hidden shrink-0">
                 <img
                   src={PLATFORM_LOGOS[platform.name]}
                   alt={platform.name}
-                  className="w-6 h-6 object-contain"
+                  className="w-5 h-5 object-contain"
                 />
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col min-w-0">
                 <span className="text-sm font-semibold text-gray-900">{platform.name}</span>
-                <span className="text-sm text-gray-500">@{platform.username}</span>
+                <span className="text-xs text-gray-500">@{platform.username}</span>
               </div>
             </div>
-            {/* Right: Badge */}
-            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
+            <span className="shrink-0 flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium bg-green-50 text-green-600">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
               Connected
             </span>
           </div>
 
-          {/* 2. Main Stat */}
-          <div className="mt-3">
-            <div className="text-3xl font-bold tracking-tight text-gray-900 tabular-nums">{platform.problems}</div>
-            <div className="text-sm text-gray-500">problems solved</div>
+          {/* 2. Stats Row */}
+          <div className="flex flex-col mb-2">
+            <span className="text-2xl font-semibold tracking-tight text-gray-900 tabular-nums mb-1">{platform.problems}</span>
+            <span className="text-sm text-gray-500 mb-2">problems solved</span>
           </div>
 
           {/* 3. Status Row */}
-          <div className="flex items-center gap-2 text-sm text-gray-500 mt-3 whitespace-nowrap">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shrink-0" />
-            <span className="text-green-600 font-medium">Live Sync</span>
-            <span className="text-gray-300">•</span>
-            <span>Active {platform.lastSynced}</span>
+          <div className="flex items-center gap-2 text-sm text-gray-500 mt-auto whitespace-nowrap overflow-hidden">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+            <span className="shrink-0">Live Sync</span>
+            <span className="text-gray-300 shrink-0">•</span>
+            <span className="truncate">Active {platform.lastSynced}</span>
           </div>
         </div>
       ))}
@@ -231,9 +226,9 @@ const TopicMastery: React.FC = () => {
     <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-200">
       <div className="flex items-center gap-2 mb-5">
         <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center">
-          <Icon name="layers" size={16} className="text-violet-600" />
+          <Icon name="layers" size={20} className="text-violet-600" />
         </div>
-        <h2 className="text-base font-bold text-gray-900">Topic Mastery</h2>
+        <h2 className="text-base font-semibold text-gray-900">Topic Mastery</h2>
       </div>
 
       <div className="space-y-4">
@@ -282,9 +277,9 @@ const ActivitySnapshot: React.FC = () => {
     <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-200">
       <div className="flex items-center gap-2 mb-5">
         <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-          <Icon name="activity" size={16} className="text-emerald-600" />
+          <Icon name="activity" size={20} className="text-emerald-600" />
         </div>
-        <h2 className="text-base font-bold text-gray-900">This Week</h2>
+        <h2 className="text-base font-semibold text-gray-900">This Week</h2>
       </div>
 
       <div className="flex items-end gap-2 h-28">
@@ -320,9 +315,9 @@ const Achievements: React.FC = () => (
     <div className="flex items-center justify-between mb-5">
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-lg bg-yellow-50 flex items-center justify-center">
-          <Icon name="award" size={16} className="text-yellow-600" />
+          <Icon name="award" size={20} className="text-yellow-600" />
         </div>
-        <h2 className="text-base font-bold text-gray-900">Achievements</h2>
+        <h2 className="text-base font-semibold text-gray-900">Achievements</h2>
       </div>
       <span className="text-xs text-gray-500 font-medium tabular-nums">
         {PROFILE_ACHIEVEMENTS.filter((a) => a.unlocked).length}/{PROFILE_ACHIEVEMENTS.length}
@@ -335,10 +330,10 @@ const Achievements: React.FC = () => (
           key={badge.id}
           className={[
             'relative flex flex-col items-center gap-2 p-3.5 rounded-xl border',
-            'transition-all duration-200',
+            'transition-all duration-200 hover:scale-[1.02] hover:shadow-md cursor-default',
             badge.unlocked
-              ? 'bg-white border-gray-200 hover:shadow-md hover:-translate-y-0.5 cursor-default'
-              : 'bg-gray-50/80 border-gray-100 opacity-40 grayscale cursor-default',
+              ? 'bg-white border-gray-200 hover:-translate-y-0.5'
+              : 'bg-gray-50/80 border-gray-100 opacity-70 grayscale',
           ].join(' ')}
           style={{ animation: `dtFadeIn 520ms ease-out ${index * 50}ms both` }}
           title={badge.unlocked ? `${badge.title} — ${badge.date}` : `${badge.title} — Locked`}
@@ -365,9 +360,9 @@ const InsightsSection: React.FC = () => (
   <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-200">
     <div className="flex items-center gap-2 mb-5">
       <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center">
-        <Icon name="bolt" size={16} className="text-violet-600" />
+        <Icon name="bolt" size={20} className="text-violet-600" />
       </div>
-      <h2 className="text-base font-bold text-gray-900">Insights</h2>
+      <h2 className="text-base font-semibold text-gray-900">Insights</h2>
     </div>
 
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -384,9 +379,9 @@ const InsightsSection: React.FC = () => (
             style={{ animation: `dtFadeIn 520ms ease-out ${index * 60}ms both` }}
           >
             <div className="shrink-0 w-8 h-8 rounded-lg bg-white/90 flex items-center justify-center shadow-sm">
-              <Icon name={insight.icon} size={14} className={colors.icon} />
+              <Icon name={insight.icon} size={20} className={colors.icon} />
             </div>
-            <span className="text-sm text-gray-700 font-medium leading-snug">{insight.text}</span>
+            <span className="text-sm text-gray-700 font-medium leading-relaxed">{insight.text}</span>
           </div>
         );
       })}

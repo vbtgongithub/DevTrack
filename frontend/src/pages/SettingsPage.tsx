@@ -32,7 +32,7 @@ const SectionCard: React.FC<{
   children: React.ReactNode;
   action?: React.ReactNode;
 }> = ({ title, description, icon, iconBg = 'bg-gray-100', iconColor = 'text-gray-600', children, action }) => (
-  <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
+  <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out">
     <div className="flex items-start justify-between mb-5">
       <div className="flex items-center gap-3">
         <div className={['w-9 h-9 rounded-xl flex items-center justify-center', iconBg].join(' ')}>

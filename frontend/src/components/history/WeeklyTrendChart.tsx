@@ -21,25 +21,25 @@ export const WeeklyTrendChart: React.FC<Props> = ({ bars }) => {
   }, []);
 
   return (
-    <div className="bg-white shadow-sm rounded-xl p-6 hover:shadow-lg hover:-translate-y-[2px] transition-all duration-300 border border-gray-300">
+    <div className="bg-white shadow-sm rounded-2xl p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out border border-gray-200">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-zinc-900 flex items-center justify-center shadow-md">
+          <div className="w-10 h-10 rounded-xl bg-gray-900 flex items-center justify-center shadow-md">
             <span className="text-white text-base">📈</span>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-zinc-900 tracking-tight">Weekly Activity</h3>
-            <p className="text-[11px] text-zinc-400 font-medium">Problems solved per day</p>
+            <h3 className="text-lg font-semibold text-gray-900 tracking-tight">Weekly Activity</h3>
+            <p className="text-[11px] text-gray-400 font-medium">Problems solved per day</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 text-[11px] text-zinc-400">
+        <div className="flex items-center gap-3 text-[11px] text-gray-400">
           <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded bg-zinc-200" />
+            <div className="w-2.5 h-2.5 rounded bg-gray-200" />
             <span className="font-medium">Past</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded bg-zinc-900" />
+            <div className="w-2.5 h-2.5 rounded bg-gray-900" />
             <span className="font-medium">Today</span>
           </div>
         </div>
@@ -62,7 +62,7 @@ export const WeeklyTrendChart: React.FC<Props> = ({ bars }) => {
               <div
                 className={[
                   'text-xs font-bold transition-all duration-300',
-                  isHovered ? '-translate-y-1 text-zinc-900' : 'text-zinc-400',
+                  isHovered ? '-translate-y-1 text-gray-900' : 'text-gray-400',
                 ].join(' ')}
               >
                 {bar.count}
@@ -95,7 +95,7 @@ export const WeeklyTrendChart: React.FC<Props> = ({ bars }) => {
               <span
                 className={[
                   'text-[10px] font-semibold tracking-wide transition-colors duration-200',
-                  bar.isToday ? 'text-zinc-900' : isHovered ? 'text-zinc-600' : 'text-zinc-400',
+                  bar.isToday ? 'text-gray-900' : isHovered ? 'text-gray-600' : 'text-gray-400',
                 ].join(' ')}
               >
                 {bar.day}
@@ -108,18 +108,18 @@ export const WeeklyTrendChart: React.FC<Props> = ({ bars }) => {
       {/* Summary */}
       <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-zinc-400 font-medium">Total</span>
-          <span className="text-sm font-bold text-zinc-900">
+          <span className="text-[11px] text-gray-400 font-medium">Total</span>
+          <span className="text-sm font-bold text-gray-900">
             {displayBars.reduce((a, b) => a + b.count, 0)}
           </span>
-          <span className="text-[11px] text-zinc-400">problems</span>
+          <span className="text-[11px] text-gray-400">problems</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-zinc-400 font-medium">Avg</span>
-          <span className="text-sm font-bold text-zinc-900">
+          <span className="text-[11px] text-gray-400 font-medium">Avg</span>
+          <span className="text-sm font-bold text-gray-900">
             {(displayBars.reduce((a, b) => a + b.count, 0) / 7).toFixed(1)}
           </span>
-          <span className="text-[11px] text-zinc-400">/ day</span>
+          <span className="text-[11px] text-gray-400">/ day</span>
         </div>
       </div>
     </div>
