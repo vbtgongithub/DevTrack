@@ -3,11 +3,12 @@
 // ============================================================================
 
 import React from 'react';
-import type { LeetCodeStats, CodeforcesStats, CodeChefStats, PlatformState } from '../../types/profile.types';
+import type { LeetCodeStats, CodeforcesStats, CodeChefStats, HackerRankStats, PlatformState } from '../../types/profile.types';
 
 import leetcodeLogo from '@/assets/logos/LeetCode.png';
 import codeforcesLogo from '@/assets/logos/Codeforces.png';
 import codechefLogo from '@/assets/logos/CodeChef.png';
+import hackerrankLogo from '@/assets/logos/HackerRank.png';
 
 // ---------------------------------------------------------------------------
 // Helper: get Codeforces rank color
@@ -171,14 +172,18 @@ export const CodeforcesStatsCard: React.FC<{ state: PlatformState<CodeforcesStat
           <>
             <div className="platform-stats-card__stats-grid">
               <div className="platform-stat-item">
-                <div className="platform-stat-item__label">Current Rating</div>
+                <div className="platform-stat-item__label">Total Solved</div>
+                <div className="platform-stat-item__value">{state.data.totalSolved}</div>
+              </div>
+              <div className="platform-stat-item">
+                <div className="platform-stat-item__label">Contests</div>
+                <div className="platform-stat-item__value">{state.data.totalContests || '—'}</div>
+              </div>
+              <div className="platform-stat-item">
+                <div className="platform-stat-item__label">Rating</div>
                 <div className="platform-stat-item__value" style={{ color: rankColor }}>
                   {state.data.rating || 'Unrated'}
                 </div>
-              </div>
-              <div className="platform-stat-item">
-                <div className="platform-stat-item__label">Max Rating</div>
-                <div className="platform-stat-item__value">{state.data.maxRating || '—'}</div>
               </div>
               <div className="platform-stat-item">
                 <div className="platform-stat-item__label">Rank</div>
@@ -186,15 +191,19 @@ export const CodeforcesStatsCard: React.FC<{ state: PlatformState<CodeforcesStat
                   {state.data.rank.charAt(0).toUpperCase() + state.data.rank.slice(1)}
                 </div>
               </div>
+            </div>
+
+            <div className="platform-stats-card__stats-grid" style={{ marginTop: 12 }}>
+              <div className="platform-stat-item">
+                <div className="platform-stat-item__label">Max Rating</div>
+                <div className="platform-stat-item__value">{state.data.maxRating || '—'}</div>
+              </div>
               <div className="platform-stat-item">
                 <div className="platform-stat-item__label">Max Rank</div>
                 <div className="platform-stat-item__value" style={{ fontSize: 14 }}>
                   {state.data.maxRank.charAt(0).toUpperCase() + state.data.maxRank.slice(1)}
                 </div>
               </div>
-            </div>
-
-            <div className="platform-stats-card__stats-grid" style={{ marginTop: 12 }}>
               <div className="platform-stat-item">
                 <div className="platform-stat-item__label">Contribution</div>
                 <div className="platform-stat-item__value" style={{ color: state.data.contribution >= 0 ? '#10b981' : '#ef4444' }}>
@@ -272,3 +281,59 @@ export const CodeChefStatsCard: React.FC<{ state: PlatformState<CodeChefStats>; 
 );
 
 CodeChefStatsCard.displayName = 'CodeChefStatsCard';
+
+// ---------------------------------------------------------------------------
+// HackerRank Card
+// ---------------------------------------------------------------------------
+export const HackerRankStatsCard: React.FC<{ state: PlatformState<HackerRankStats>; username: string }> = React.memo(
+  ({ state, username }) => {
+    if (!state.data && !state.loading) return null;
+
+    return (
+      <div className="platform-stats-card platform-stats-card--hackerrank">
+        <div className="platform-stats-card__header">
+          <div className="platform-stats-card__header-left">
+            <img src={hackerrankLogo} alt="HackerRank" style={{ width: 24, height: 24 }} />
+            <div>
+              <div className="platform-stats-card__name">HackerRank</div>
+              <div className="platform-stats-card__username">@{username}</div>
+            </div>
+          </div>
+          {state.data && state.data.score > 0 && (
+            <span
+              className="platform-stats-card__rating-badge"
+              style={{ background: '#e6fef0', color: '#00c853' }}
+            >
+              {state.data.score} Score
+            </span>
+          )}
+        </div>
+
+        {state.loading ? (
+          <StatsSkeleton />
+        ) : state.data ? (
+          <div className="platform-stats-card__stats-grid">
+            <div className="platform-stat-item">
+              <div className="platform-stat-item__label">Total Solved</div>
+              <div className="platform-stat-item__value">{state.data.totalSolved}</div>
+            </div>
+            <div className="platform-stat-item">
+              <div className="platform-stat-item__label">Contests</div>
+              <div className="platform-stat-item__value">{state.data.totalContests || '—'}</div>
+            </div>
+            <div className="platform-stat-item">
+              <div className="platform-stat-item__label">Badges</div>
+              <div className="platform-stat-item__value">{state.data.badges || '—'}</div>
+            </div>
+            <div className="platform-stat-item">
+              <div className="platform-stat-item__label">Certificates</div>
+              <div className="platform-stat-item__value">{state.data.certificates || '—'}</div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+);
+
+HackerRankStatsCard.displayName = 'HackerRankStatsCard';

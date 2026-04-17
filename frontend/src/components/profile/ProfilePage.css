@@ -435,6 +435,7 @@
 .platform-stats-card--leetcode::before { background: linear-gradient(90deg, #f59e0b, #f97316); }
 .platform-stats-card--codeforces::before { background: linear-gradient(90deg, #3b82f6, #6366f1); }
 .platform-stats-card--codechef::before { background: linear-gradient(90deg, #795548, #a1887f); }
+.platform-stats-card--hackerrank::before { background: linear-gradient(90deg, #00c853, #00ea64); }
 
 .platform-stats-card__header {
   display: flex;
@@ -727,3 +728,4 @@
 .platform-stats-card:nth-child(1) { animation-delay: 250ms; }
 .platform-stats-card:nth-child(2) { animation-delay: 350ms; }
 .platform-stats-card:nth-child(3) { animation-delay: 450ms; }
+.platform-stats-card:nth-child(4) { animation-delay: 550ms; }

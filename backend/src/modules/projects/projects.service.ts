@@ -73,7 +73,7 @@ export async function createProject(userId: string, payload: ApiProjectCreatePay
     openIssues: 0,
   });
 
-  return mapProjectToApi(project.toObject());
+  return mapProjectToApi(project.toObject() as unknown as Record<string, unknown> & { _id: { toString(): string } });
 }
 
 export async function updateProject(

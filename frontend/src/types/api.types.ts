@@ -549,3 +549,29 @@ export interface ApiDeleteResponse {
   deletedId: string;
   timestamp: string;
 }
+
+// ---------------------------------------------------------------------------
+// 9. PROFILE PLATFORM STATS (from backend sync)
+// ---------------------------------------------------------------------------
+
+/** Individual platform stats item returned by GET /profile/platforms/stats */
+export interface ApiPlatformStatsItem {
+  platformName: string;
+  username: string;
+  totalSolved: number;
+  easySolved: number;
+  mediumSolved: number;
+  hardSolved: number;
+  rating: number | null;
+  rank: string | null;
+  totalContests: number;
+  fetchedAt: string; // ISO 8601
+}
+
+/** Full response from GET /profile/platforms/stats */
+export interface ApiPlatformStatsResponse {
+  platforms: ApiPlatformStatsItem[];
+  totals: {
+    totalSolvedAllPlatforms: number;
+  };
+}
