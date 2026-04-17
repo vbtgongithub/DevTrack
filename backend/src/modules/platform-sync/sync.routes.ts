@@ -14,7 +14,7 @@ router.post('/sync-all', authMiddleware, asyncHandler(async (req: AuthenticatedR
 }));
 
 router.post('/sync/:platformName', authMiddleware, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-  const { platformName } = req.params;
+  const platformName = req.params.platformName as string;
   const result = await syncService.syncPlatform(req.user!.id, platformName);
   successResponse(res, result, `Platform ${platformName} sync completed`);
 }));

@@ -11,7 +11,7 @@ import { ProfileHeader } from '../components/profile/ProfileHeader';
 import { PersonalInfoCard } from '../components/profile/PersonalInfoCard';
 import { CareerGoalsCard } from '../components/profile/CareerGoalsCard';
 import { CPProfilesCard } from '../components/profile/CPProfilesCard';
-import { LeetCodeStatsCard, CodeforcesStatsCard, CodeChefStatsCard } from '../components/profile/PlatformStatsCard';
+import { LeetCodeStatsCard, CodeforcesStatsCard, CodeChefStatsCard, HackerRankStatsCard } from '../components/profile/PlatformStatsCard';
 import { SocialProfilesCard } from '../components/profile/SocialProfilesCard';
 import { useProfileStore } from '../store/profileStore';
 import { Icon } from '../components/shared/Icon';
@@ -23,6 +23,7 @@ const ProfilePage: React.FC = () => {
     leetcode,
     codeforces,
     codechef,
+    hackerrank,
     isDirty,
     isSaving,
     loadFromStorage,
@@ -31,23 +32,27 @@ const ProfilePage: React.FC = () => {
     addTechStack,
     removeTechStack,
     fetchAllPlatforms,
+    fetchBackendStats,
   } = useProfileStore();
 
   const [mounted, setMounted] = React.useState(false);
 
-  // Load profile from localStorage on mount
+  // Load profile from localStorage on mount, then fetch backend stats
   React.useEffect(() => {
     loadFromStorage();
+    fetchBackendStats(); // Fetch server-synced platform stats
     setMounted(true);
-  }, [loadFromStorage]);
+  }, [loadFromStorage, fetchBackendStats]);
 
   // Compute aggregate stats from platform data
   const totalSolved = React.useMemo(() => {
     let total = 0;
     if (leetcode.data) total += leetcode.data.solvedProblem;
+    if (codeforces.data) total += codeforces.data.totalSolved;
     if (codechef.data) total += codechef.data.totalProblemsSolved;
+    if (hackerrank.data) total += hackerrank.data.totalSolved;
     return total;
-  }, [leetcode.data, codechef.data]);
+  }, [leetcode.data, codeforces.data, codechef.data, hackerrank.data]);
 
   const bestRating = React.useMemo(() => {
     const ratings: number[] = [];
@@ -61,7 +66,7 @@ const ProfilePage: React.FC = () => {
     loadFromStorage(); // Reset to saved state
   };
 
-  const hasAnyStats = leetcode.data || codeforces.data || codechef.data;
+  const hasAnyStats = leetcode.data || codeforces.data || codechef.data || hackerrank.data;
 
   return (
     <div className={['transition-opacity duration-300', mounted ? 'opacity-100' : 'opacity-0'].join(' ')}>
@@ -100,6 +105,7 @@ const ProfilePage: React.FC = () => {
               leetcode={leetcode}
               codeforces={codeforces}
               codechef={codechef}
+              hackerrank={hackerrank}
               onUpdate={updateField}
               onFetchAll={fetchAllPlatforms}
             />
@@ -107,7 +113,7 @@ const ProfilePage: React.FC = () => {
           </div>
 
           {/* ─── 4. Platform Stats ───────────────────────────────────── */}
-          {(hasAnyStats || leetcode.loading || codeforces.loading || codechef.loading) && (
+          {(hasAnyStats || leetcode.loading || codeforces.loading || codechef.loading || hackerrank.loading) && (
             <div>
               <h3 className="text-lg font-bold tracking-tight text-dt-text mb-4 flex items-center gap-2">
                 <Icon name="chart-bar" size={18} />
@@ -117,6 +123,7 @@ const ProfilePage: React.FC = () => {
                 <LeetCodeStatsCard state={leetcode} username={profile.leetcodeUsername} />
                 <CodeforcesStatsCard state={codeforces} username={profile.codeforcesUsername} />
                 <CodeChefStatsCard state={codechef} username={profile.codechefUsername} />
+                <HackerRankStatsCard state={hackerrank} username={profile.hackerrankUsername} />
               </div>
             </div>
           )}
