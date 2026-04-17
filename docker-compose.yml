@@ -1,0 +1,38 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: devtrack-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.runCommand({ ping: 1 })' >/dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: devtrack-backend
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      MONGODB_URI: mongodb://mongo:27017/devtrack
+      CORS_ORIGIN: http://localhost:5173
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
+    restart: unless-stopped
+
+volumes:
+  mongo-data:

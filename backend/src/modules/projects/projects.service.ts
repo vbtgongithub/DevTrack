@@ -1,0 +1,326 @@
+// src/modules/projects/projects.service.ts
+import { Types } from 'mongoose';
+import { Project, ProjectTask, ActivityEvent } from '../../db/models/index.js';
+import type {
+  ApiProjectListResponse,
+  ApiProject,
+  ApiProjectTask,
+  ApiProjectStats,
+  ApiProjectFilters,
+  ApiProjectCreatePayload,
+  ApiProjectUpdatePayload,
+  ApiPagination,
+  ApiProjectCommitDay,
+} from '../../types/api.types.js';
+import { parsePaginationParams, createPagination, getSkipCount, buildSortOptions } from '../../shared/pagination.js';
+
+const ALLOWED_SORT_FIELDS = ['name', 'createdAt', 'updatedAt', 'stars', 'lastCommitAt'];
+
+export async function getProjects(userId: string, filters: ApiProjectFilters): Promise<ApiProjectListResponse> {
+  const { page, pageSize } = parsePaginationParams({
+    page: filters.page?.toString(),
+    pageSize: filters.pageSize?.toString(),
+  });
+
+  const query: Record<string, unknown> = { userId: new Types.ObjectId(userId) };
+
+  if (filters.status) query.status = filters.status;
+  if (filters.visibility) query.visibility = filters.visibility;
+  if (filters.language) query.language = filters.language;
+  if (filters.search) {
+    query.$or = [
+      { name: { $regex: filters.search, $options: 'i' } },
+      { description: { $regex: filters.search, $options: 'i' } },
+    ];
+  }
+
+  const skip = getSkipCount({ page, pageSize });
+  const sort = buildSortOptions(filters.sortBy, filters.sortOrder, ALLOWED_SORT_FIELDS);
+
+  const [projects, totalCount] = await Promise.all([
+    Project.find(query).sort(sort).skip(skip).limit(pageSize).lean(),
+    Project.countDocuments(query),
+  ]);
+
+  const stats = await getProjectStats(userId);
+  const pagination: ApiPagination = createPagination(totalCount, { page, pageSize });
+
+  return {
+    projects: projects.map(mapProjectToApi),
+    pagination,
+    stats,
+  };
+}
+
+export async function getProjectById(userId: string, projectId: string): Promise<ApiProject | null> {
+  const project = await Project.findOne({
+    _id: new Types.ObjectId(projectId),
+    userId: new Types.ObjectId(userId),
+  }).lean();
+
+  return project ? mapProjectToApi(project) : null;
+}
+
+export async function createProject(userId: string, payload: ApiProjectCreatePayload): Promise<ApiProject> {
+  const project = await Project.create({
+    userId: new Types.ObjectId(userId),
+    ...payload,
+    stars: 0,
+    forks: 0,
+    totalCommits: 0,
+    totalPullRequests: 0,
+    totalIssues: 0,
+    openIssues: 0,
+  });
+
+  return mapProjectToApi(project.toObject());
+}
+
+export async function updateProject(
+  userId: string,
+  projectId: string,
+  payload: ApiProjectUpdatePayload
+): Promise<ApiProject | null> {
+  const project = await Project.findOneAndUpdate(
+    { _id: new Types.ObjectId(projectId), userId: new Types.ObjectId(userId) },
+    payload,
+    { new: true }
+  ).lean();
+
+  return project ? mapProjectToApi(project) : null;
+}
+
+export async function deleteProject(userId: string, projectId: string): Promise<boolean> {
+  // Delete associated tasks first
+  await ProjectTask.deleteMany({ projectId: new Types.ObjectId(projectId) });
+
+  const result = await Project.deleteOne({
+    _id: new Types.ObjectId(projectId),
+    userId: new Types.ObjectId(userId),
+  });
+
+  return result.deletedCount > 0;
+}
+
+export async function getProjectStats(userId: string): Promise<ApiProjectStats> {
+  const stats = await Project.aggregate([
+    { $match: { userId: new Types.ObjectId(userId) } },
+    {
+      $group: {
+        _id: null,
+        totalProjects: { $sum: 1 },
+        activeProjects: { $sum: { $cond: [{ $eq: ['$status', 'in_progress'] }, 1, 0] } },
+        completedProjects: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
+        totalCommits: { $sum: '$totalCommits' },
+        totalPullRequests: { $sum: '$totalPullRequests' },
+        totalIssues: { $sum: '$totalIssues' },
+        languages: { $push: '$language' },
+      },
+    },
+  ]);
+
+  const data = stats[0] || {
+    totalProjects: 0,
+    activeProjects: 0,
+    completedProjects: 0,
+    totalCommits: 0,
+    totalPullRequests: 0,
+    totalIssues: 0,
+    languages: [],
+  };
+
+  // Calculate language distribution
+  const languageDistribution: Record<string, number> = {};
+  data.languages?.forEach((lang: string) => {
+    if (lang) {
+      languageDistribution[lang] = (languageDistribution[lang] || 0) + 1;
+    }
+  });
+
+  // Get commit history for last 30 days
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const commitEvents = await ActivityEvent.aggregate([
+    {
+      $match: {
+        userId: new Types.ObjectId(userId),
+        type: 'commit',
+        occurredAt: { $gte: thirtyDaysAgo },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$occurredAt' } },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  const commitHistory: ApiProjectCommitDay[] = commitEvents.map((event) => ({
+    date: event._id,
+    count: event.count,
+  }));
+
+  return {
+    totalProjects: data.totalProjects,
+    activeProjects: data.activeProjects,
+    completedProjects: data.completedProjects,
+    totalCommits: data.totalCommits,
+    totalPullRequests: data.totalPullRequests,
+    totalIssues: data.totalIssues,
+    languageDistribution,
+    commitHistory,
+  };
+}
+
+export async function getProjectTasks(userId: string, projectId: string): Promise<ApiProjectTask[]> {
+  // Verify project exists and belongs to user
+  const project = await Project.findOne({
+    _id: new Types.ObjectId(projectId),
+    userId: new Types.ObjectId(userId),
+  });
+
+  if (!project) return [];
+
+  const tasks = await ProjectTask.find({ projectId: new Types.ObjectId(projectId) }).sort({ createdAt: -1 });
+
+  return tasks.map((task) => ({
+    id: task._id.toString(),
+    projectId: task.projectId.toString(),
+    milestoneId: task.milestoneId,
+    title: task.title,
+    description: task.description,
+    status: task.status,
+    priority: task.priority,
+    assigneeId: task.assigneeId,
+    labels: task.labels,
+    dueDate: task.dueDate?.toISOString() || null,
+    completedAt: task.completedAt?.toISOString() || null,
+    createdAt: task.createdAt.toISOString(),
+    updatedAt: task.updatedAt.toISOString(),
+  }));
+}
+
+export async function createProjectTask(
+  userId: string,
+  projectId: string,
+  payload: Omit<ApiProjectTask, 'id' | 'projectId' | 'createdAt' | 'updatedAt' | 'completedAt'>
+): Promise<ApiProjectTask | null> {
+  // Verify project exists and belongs to user
+  const project = await Project.findOne({
+    _id: new Types.ObjectId(projectId),
+    userId: new Types.ObjectId(userId),
+  });
+
+  if (!project) return null;
+
+  const task = await ProjectTask.create({
+    projectId: new Types.ObjectId(projectId),
+    ...payload,
+  });
+
+  return {
+    id: task._id.toString(),
+    projectId: task.projectId.toString(),
+    milestoneId: task.milestoneId,
+    title: task.title,
+    description: task.description,
+    status: task.status,
+    priority: task.priority,
+    assigneeId: task.assigneeId,
+    labels: task.labels,
+    dueDate: task.dueDate?.toISOString() || null,
+    completedAt: task.completedAt?.toISOString() || null,
+    createdAt: task.createdAt.toISOString(),
+    updatedAt: task.updatedAt.toISOString(),
+  };
+}
+
+export async function updateProjectTask(
+  userId: string,
+  projectId: string,
+  taskId: string,
+  payload: Partial<Pick<ApiProjectTask, 'status' | 'title' | 'description' | 'priority' | 'labels' | 'dueDate'>>
+): Promise<ApiProjectTask | null> {
+  // Verify project exists and belongs to user
+  const project = await Project.findOne({
+    _id: new Types.ObjectId(projectId),
+    userId: new Types.ObjectId(userId),
+  });
+
+  if (!project) return null;
+
+  const update: Record<string, unknown> = { ...payload };
+  if (payload.status === 'done') {
+    update.completedAt = new Date();
+  }
+
+  const task = await ProjectTask.findOneAndUpdate(
+    { _id: new Types.ObjectId(taskId), projectId: new Types.ObjectId(projectId) },
+    update,
+    { new: true }
+  );
+
+  if (!task) return null;
+
+  return {
+    id: task._id.toString(),
+    projectId: task.projectId.toString(),
+    milestoneId: task.milestoneId,
+    title: task.title,
+    description: task.description,
+    status: task.status,
+    priority: task.priority,
+    assigneeId: task.assigneeId,
+    labels: task.labels,
+    dueDate: task.dueDate?.toISOString() || null,
+    completedAt: task.completedAt?.toISOString() || null,
+    createdAt: task.createdAt.toISOString(),
+    updatedAt: task.updatedAt.toISOString(),
+  };
+}
+
+export async function syncProject(userId: string, projectId: string): Promise<boolean> {
+  // Verify project exists and belongs to user
+  const project = await Project.findOne({
+    _id: new Types.ObjectId(projectId),
+    userId: new Types.ObjectId(userId),
+  });
+
+  if (!project) return false;
+
+  // TODO: Implement actual sync with GitHub
+  project.updatedAt = new Date();
+  await project.save();
+
+  return true;
+}
+
+function mapProjectToApi(project: Record<string, unknown> & { _id: { toString(): string } }): ApiProject {
+  return {
+    id: (project._id as Types.ObjectId).toString(),
+    name: project.name as string,
+    description: project.description as string,
+    repoUrl: (project.repoUrl as string) || null,
+    liveUrl: (project.liveUrl as string) || null,
+    techStack: (project.techStack as string[]) || [],
+    status: project.status as ApiProject['status'],
+    visibility: project.visibility as ApiProject['visibility'],
+    thumbnailUrl: (project.thumbnailUrl as string) || null,
+    stars: (project.stars as number) || 0,
+    forks: (project.forks as number) || 0,
+    language: (project.language as string) || '',
+    totalCommits: (project.totalCommits as number) || 0,
+    totalPullRequests: (project.totalPullRequests as number) || 0,
+    totalIssues: (project.totalIssues as number) || 0,
+    openIssues: (project.openIssues as number) || 0,
+    lastCommitAt: project.lastCommitAt ? (project.lastCommitAt as Date).toISOString() : null,
+    lastCommitMessage: (project.lastCommitMessage as string) || null,
+    contributors: (project.contributors as ApiProject['contributors']) || [],
+    milestones: (project.milestones as ApiProject['milestones']) || [],
+    createdAt: (project.createdAt as Date).toISOString(),
+    updatedAt: (project.updatedAt as Date).toISOString(),
+  };
+}

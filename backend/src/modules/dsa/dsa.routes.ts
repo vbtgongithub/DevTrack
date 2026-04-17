@@ -1,0 +1,41 @@
+// src/modules/dsa/dsa.routes.ts
+import { Router } from 'express';
+import { asyncHandler, authMiddleware, validateBody } from '../../middleware/index.js';
+import * as controller from './dsa.controller.js';
+import { z } from 'zod';
+
+const router = Router();
+
+const problemCreateSchema = z.object({
+  title: z.string().min(1),
+  platform: z.enum(['leetcode', 'codeforces', 'hackerrank', 'codechef', 'other']),
+  difficulty: z.enum(['easy', 'medium', 'hard']),
+  url: z.string().url(),
+  tags: z.array(z.string()),
+  category: z.string().min(1),
+  notes: z.string().optional(),
+});
+
+const problemUpdateSchema = z.object({
+  status: z.enum(['unsolved', 'attempted', 'solved', 'revisit']).optional(),
+  notes: z.string().optional(),
+  timeTaken: z.number().optional(),
+  isFavorite: z.boolean().optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+const bulkUpdateSchema = z.object({
+  problemIds: z.array(z.string()),
+  status: z.enum(['unsolved', 'attempted', 'solved', 'revisit']),
+});
+
+router.get('/problems', authMiddleware, asyncHandler(controller.getProblems));
+router.get('/problems/:id', authMiddleware, asyncHandler(controller.getProblemById));
+router.post('/problems', authMiddleware, validateBody(problemCreateSchema), asyncHandler(controller.createProblem));
+router.patch('/problems/:id', authMiddleware, validateBody(problemUpdateSchema), asyncHandler(controller.updateProblem));
+router.delete('/problems/:id', authMiddleware, asyncHandler(controller.deleteProblem));
+router.post('/problems/:id/favorite', authMiddleware, asyncHandler(controller.toggleFavorite));
+router.patch('/problems/bulk-status', authMiddleware, validateBody(bulkUpdateSchema), asyncHandler(controller.bulkUpdateStatus));
+router.get('/stats', authMiddleware, asyncHandler(controller.getStats));
+
+export default router;
