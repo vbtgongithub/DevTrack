@@ -2,6 +2,7 @@
 // profileStore.ts — Profile Zustand Store
 // ============================================================================
 // Manages profile data, CP platform stats, persistence to localStorage.
+// Supports both backend-synced data and direct external API fetches.
 // ============================================================================
 
 import { create } from 'zustand';
@@ -10,6 +11,7 @@ import type {
   LeetCodeStats,
   CodeforcesStats,
   CodeChefStats,
+  HackerRankStats,
   PlatformState,
 } from '../types/profile.types';
 import { DEFAULT_PROFILE, EMPTY_PLATFORM_STATE } from '../types/profile.types';
@@ -20,6 +22,7 @@ import {
   fetchLeetCodeCalendar,
   fetchLeetCodeSubmissions,
   fetchCodeforcesSubmissions,
+  fetchHackerRankStats,
   getCachedStats,
   setCachedStats,
   isCacheValid,
@@ -29,6 +32,8 @@ import type {
   LeetCodeSubmission,
   CodeforcesSubmission,
 } from '../services/platformApiService';
+import { fetchBackendPlatformStats } from '../services/profileService';
+import type { ApiPlatformStatsItem } from '../types/api.types';
 
 // ---------------------------------------------------------------------------
 // STORAGE KEY
@@ -48,6 +53,7 @@ interface ProfileStore {
   leetcode: PlatformState<LeetCodeStats>;
   codeforces: PlatformState<CodeforcesStats>;
   codechef: PlatformState<CodeChefStats>;
+  hackerrank: PlatformState<HackerRankStats>;
 
   // Extended data (heatmap + submissions)
   leetcodeCalendar: PlatformState<LeetCodeCalendar>;
@@ -69,12 +75,14 @@ interface ProfileStore {
   fetchLeetCode: () => Promise<void>;
   fetchCodeforces: () => Promise<void>;
   fetchCodeChef: () => Promise<void>;
+  fetchHackerRank: () => Promise<void>;
   fetchAllPlatforms: () => Promise<void>;
 
   // Actions: Extended data
   fetchLeetCodeCalendarData: () => Promise<void>;
   fetchLeetCodeSubmissionsData: () => Promise<void>;
   fetchCodeforcesSubmissionsData: () => Promise<void>;
+  fetchBackendStats: () => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -87,6 +95,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   leetcode: EMPTY_PLATFORM_STATE<LeetCodeStats>(),
   codeforces: EMPTY_PLATFORM_STATE<CodeforcesStats>(),
   codechef: EMPTY_PLATFORM_STATE<CodeChefStats>(),
+  hackerrank: EMPTY_PLATFORM_STATE<HackerRankStats>(),
 
   leetcodeCalendar: EMPTY_PLATFORM_STATE<LeetCodeCalendar>(),
   leetcodeSubmissions: EMPTY_PLATFORM_STATE<LeetCodeSubmission[]>(),
@@ -137,6 +146,16 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
               loading: false,
               error: null,
               lastFetchedAt: cached.codechef.fetchedAt,
+            },
+          });
+        }
+        if (cached.hackerrank && isCacheValid(cached.hackerrank.fetchedAt)) {
+          set({
+            hackerrank: {
+              data: cached.hackerrank.data,
+              loading: false,
+              error: null,
+              lastFetchedAt: cached.hackerrank.fetchedAt,
             },
           });
         }
@@ -291,14 +310,48 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     }
   },
 
-  // ─── Fetch All ──────────────────────────────────────────────────────
+  // ─── Fetch HackerRank ──────────────────────────────────────────────
+  fetchHackerRank: async () => {
+    const { profile } = get();
+    if (!profile.hackerrankUsername.trim()) {
+      set({
+        hackerrank: { data: null, loading: false, error: 'Please enter a HackerRank username', lastFetchedAt: null },
+      });
+      return;
+    }
+
+    set({
+      hackerrank: { ...get().hackerrank, loading: true, error: null },
+    });
+
+    try {
+      const data = await fetchHackerRankStats(profile.hackerrankUsername);
+      const now = Date.now();
+      set({
+        hackerrank: { data, loading: false, error: null, lastFetchedAt: now },
+      });
+      setCachedStats({ hackerrank: { data, fetchedAt: now } });
+    } catch (err) {
+      set({
+        hackerrank: {
+          data: null,
+          loading: false,
+          error: err instanceof Error ? err.message : 'Failed to fetch HackerRank stats',
+          lastFetchedAt: null,
+        },
+      });
+    }
+  },
+
+  // ─── Fetch All (direct external API calls) ──────────────────────────
   fetchAllPlatforms: async () => {
-    const { profile, fetchLeetCode, fetchCodeforces, fetchCodeChef } = get();
+    const { profile, fetchLeetCode, fetchCodeforces, fetchCodeChef, fetchHackerRank } = get();
     const promises: Promise<void>[] = [];
 
     if (profile.leetcodeUsername.trim()) promises.push(fetchLeetCode());
     if (profile.codeforcesUsername.trim()) promises.push(fetchCodeforces());
     if (profile.codechefUsername.trim()) promises.push(fetchCodeChef());
+    if (profile.hackerrankUsername.trim()) promises.push(fetchHackerRank());
 
     await Promise.allSettled(promises);
   },
@@ -371,4 +424,117 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       });
     }
   },
+
+  // ─── Fetch from Backend API ─────────────────────────────────────────
+  fetchBackendStats: async () => {
+    // Only attempt backend fetch if user is authenticated
+    const token = localStorage.getItem('devtrack_access_token');
+    if (!token) return;
+
+    try {
+      const response = await fetchBackendPlatformStats();
+      if (!response.success || !response.data?.platforms) return;
+
+      const { platforms } = response.data;
+      const now = Date.now();
+
+      for (const item of platforms) {
+        const name = item.platformName.toLowerCase();
+
+        if (name === 'leetcode') {
+          const lcData = mapToLeetCodeStats(item);
+          set({
+            leetcode: { data: lcData, loading: false, error: null, lastFetchedAt: now },
+          });
+          setCachedStats({ leetcode: { data: lcData, fetchedAt: now } });
+        } else if (name === 'codeforces') {
+          const cfData = mapToCodeforcesStats(item);
+          set({
+            codeforces: { data: cfData, loading: false, error: null, lastFetchedAt: now },
+          });
+          setCachedStats({ codeforces: { data: cfData, fetchedAt: now } });
+        } else if (name === 'codechef') {
+          const ccData = mapToCodeChefStats(item);
+          set({
+            codechef: { data: ccData, loading: false, error: null, lastFetchedAt: now },
+          });
+          setCachedStats({ codechef: { data: ccData, fetchedAt: now } });
+        } else if (name === 'hackerrank') {
+          const hrData = mapToHackerRankStats(item);
+          set({
+            hackerrank: { data: hrData, loading: false, error: null, lastFetchedAt: now },
+          });
+          setCachedStats({ hackerrank: { data: hrData, fetchedAt: now } });
+        }
+      }
+    } catch {
+      // Backend not available — fall back to cached / direct API data silently
+    }
+  },
 }));
+
+// ---------------------------------------------------------------------------
+// MAPPING HELPERS: Backend generic → Platform-specific types
+// ---------------------------------------------------------------------------
+
+function mapToLeetCodeStats(item: ApiPlatformStatsItem): LeetCodeStats {
+  return {
+    solvedProblem: item.totalSolved,
+    easySolved: item.easySolved,
+    mediumSolved: item.mediumSolved,
+    hardSolved: item.hardSolved,
+    totalEasy: 850,      // approximate totals
+    totalMedium: 1800,
+    totalHard: 800,
+    acceptanceRate: 0,
+    ranking: 0,
+    contributionPoints: 0,
+    reputation: 0,
+    contestRating: typeof item.rating === 'number' ? item.rating : 0,
+    contestGlobalRanking: 0,
+    totalContests: item.totalContests,
+    contestTopPercentage: 0,
+  };
+}
+
+function mapToCodeforcesStats(item: ApiPlatformStatsItem): CodeforcesStats {
+  return {
+    handle: item.username,
+    rating: typeof item.rating === 'number' ? item.rating : 0,
+    maxRating: typeof item.rating === 'number' ? item.rating : 0,
+    rank: item.rank ?? 'unrated',
+    maxRank: item.rank ?? 'unrated',
+    avatar: '',
+    contribution: 0,
+    friendOfCount: 0,
+    organization: '',
+    registrationTimeSeconds: 0,
+    totalSolved: item.totalSolved,
+    totalContests: item.totalContests,
+  };
+}
+
+function mapToCodeChefStats(item: ApiPlatformStatsItem): CodeChefStats {
+  return {
+    name: item.username,
+    currentRating: typeof item.rating === 'number' ? item.rating : 0,
+    highestRating: typeof item.rating === 'number' ? item.rating : 0,
+    stars: '0★',
+    globalRank: 0,
+    countryRank: 0,
+    countryName: '',
+    totalProblemsSolved: item.totalSolved,
+  };
+}
+
+function mapToHackerRankStats(item: ApiPlatformStatsItem): HackerRankStats {
+  return {
+    username: item.username,
+    totalSolved: item.totalSolved,
+    totalContests: item.totalContests,
+    badges: 0,
+    certificates: 0,
+    level: item.rank ?? '—',
+    score: typeof item.rating === 'number' ? item.rating : 0,
+  };
+}

@@ -9,6 +9,7 @@ import type {
   LeetCodeStats,
   CodeforcesStats,
   CodeChefStats,
+  HackerRankStats,
 } from '../types/profile.types';
 
 // ---------------------------------------------------------------------------
@@ -109,22 +110,50 @@ export async function fetchLeetCodeStats(username: string): Promise<LeetCodeStat
 export async function fetchCodeforcesStats(username: string): Promise<CodeforcesStats> {
   if (!username.trim()) throw new Error('Codeforces handle is required');
 
-  const res = await fetchWithTimeout(
-    `${CODEFORCES_API}/user.info?handles=${encodeURIComponent(username)}`
-  );
+  // Fetch user info and contest history in parallel
+  const [infoRes, ratingRes] = await Promise.allSettled([
+    fetchWithTimeout(
+      `${CODEFORCES_API}/user.info?handles=${encodeURIComponent(username)}`
+    ),
+    fetchWithTimeout(
+      `${CODEFORCES_API}/user.rating?handle=${encodeURIComponent(username)}`
+    ),
+  ]);
 
-  if (!res.ok) {
-    if (res.status === 400) throw new Error('Codeforces user not found');
-    throw new Error(`Codeforces API error: ${res.status}`);
+  // Parse user info
+  if (infoRes.status !== 'fulfilled' || !infoRes.value.ok) {
+    const status = infoRes.status === 'fulfilled' ? infoRes.value.status : 0;
+    if (status === 400) throw new Error('Codeforces user not found');
+    throw new Error(`Codeforces API error: ${status}`);
   }
 
-  const json = await res.json();
-
+  const json = await infoRes.value.json();
   if (json.status !== 'OK' || !json.result?.[0]) {
     throw new Error('Invalid Codeforces response');
   }
 
   const user = json.result[0];
+
+  // Parse contest count from rating history
+  let totalContests = 0;
+  if (ratingRes.status === 'fulfilled' && ratingRes.value.ok) {
+    try {
+      const ratingData = await ratingRes.value.json();
+      if (ratingData.status === 'OK' && ratingData.result) {
+        totalContests = ratingData.result.length;
+      }
+    } catch {
+      // Contest data is optional
+    }
+  }
+
+  // Fetch unique solved problems count from user.status
+  let totalSolved = 0;
+  try {
+    totalSolved = await fetchCfSolvedCount(username);
+  } catch {
+    // Solved count is optional — don't fail the entire fetch
+  }
 
   return {
     handle: user.handle ?? username,
@@ -137,7 +166,42 @@ export async function fetchCodeforcesStats(username: string): Promise<Codeforces
     friendOfCount: user.friendOfCount ?? 0,
     organization: user.organization ?? '',
     registrationTimeSeconds: user.registrationTimeSeconds ?? 0,
+    totalSolved,
+    totalContests,
   };
+}
+
+/**
+ * Count unique solved problems from Codeforces user.status API.
+ * Pages through submissions in chunks of 10000.
+ */
+async function fetchCfSolvedCount(handle: string): Promise<number> {
+  const solved = new Set<string>();
+  let from = 1;
+  const count = 10000;
+
+  while (true) {
+    const res = await fetchWithTimeout(
+      `${CODEFORCES_API}/user.status?handle=${encodeURIComponent(handle)}&from=${from}&count=${count}`
+    );
+
+    if (!res.ok) break;
+
+    const data = await res.json();
+    if (data.status !== 'OK' || !data.result || data.result.length === 0) break;
+
+    for (const sub of data.result) {
+      if (sub.verdict === 'OK' && sub.problem) {
+        const key = `${sub.problem.contestId ?? 'na'}-${sub.problem.index ?? sub.problem.name ?? 'na'}`;
+        solved.add(key);
+      }
+    }
+
+    if (data.result.length < count) break;
+    from += count;
+  }
+
+  return solved.size;
 }
 
 // ---------------------------------------------------------------------------
@@ -317,6 +381,52 @@ export async function fetchCodeforcesSubmissions(
 }
 
 // ---------------------------------------------------------------------------
+// HACKERRANK
+// ---------------------------------------------------------------------------
+
+export async function fetchHackerRankStats(username: string): Promise<HackerRankStats> {
+  if (!username.trim()) throw new Error('HackerRank username is required');
+
+  // HackerRank doesn't have a public API, so we use a community scraper
+  try {
+    const res = await fetchWithTimeout(
+      `https://hackerrank-api.vercel.app/api/${encodeURIComponent(username)}`
+    );
+
+    if (!res.ok) {
+      if (res.status === 404) throw new Error('HackerRank user not found');
+      throw new Error(`HackerRank API error: ${res.status}`);
+    }
+
+    const json = await res.json();
+
+    return {
+      username: json.username ?? username,
+      totalSolved: json.totalSolved ?? json.solved ?? 0,
+      totalContests: json.totalContests ?? json.contests ?? 0,
+      badges: json.badges ?? json.badges_count ?? 0,
+      certificates: json.certificates ?? json.certificates_count ?? 0,
+      level: json.level ?? '—',
+      score: json.score ?? json.total_score ?? 0,
+    };
+  } catch (error) {
+    if (error instanceof Error && (error.message.includes('not found') || error.message.includes('API error'))) {
+      throw error;
+    }
+    // Network/timeout errors - return empty stats so user knows it's connected
+    return {
+      username,
+      totalSolved: 0,
+      totalContests: 0,
+      badges: 0,
+      certificates: 0,
+      level: '—',
+      score: 0,
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // CACHE HELPERS
 // ---------------------------------------------------------------------------
 
@@ -327,6 +437,7 @@ interface CachedStats {
   leetcode: { data: LeetCodeStats; fetchedAt: number } | null;
   codeforces: { data: CodeforcesStats; fetchedAt: number } | null;
   codechef: { data: CodeChefStats; fetchedAt: number } | null;
+  hackerrank: { data: HackerRankStats; fetchedAt: number } | null;
 }
 
 export function getCachedStats(): CachedStats | null {
@@ -341,7 +452,7 @@ export function getCachedStats(): CachedStats | null {
 
 export function setCachedStats(stats: Partial<CachedStats>): void {
   try {
-    const existing = getCachedStats() ?? { leetcode: null, codeforces: null, codechef: null };
+    const existing = getCachedStats() ?? { leetcode: null, codeforces: null, codechef: null, hackerrank: null };
     const merged = { ...existing, ...stats };
     localStorage.setItem(CACHE_KEY, JSON.stringify(merged));
   } catch {

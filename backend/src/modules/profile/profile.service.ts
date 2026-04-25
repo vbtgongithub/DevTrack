@@ -1,7 +1,7 @@
 // src/modules/profile/profile.service.ts
 import { Types } from 'mongoose';
 import { User, UserProfile, ConnectedPlatform, PlatformStats } from '../../db/models/index.js';
-import type { ApiUserProfile, ApiConnectedPlatform, ApiSocialLinks, ApiProfileUpdatePayload } from '../../types/api.types.js';
+import type { ApiUserProfile, ApiConnectedPlatform, ApiSocialLinks, ApiProfileUpdatePayload, ApiPlatformStatsResponse } from '../../types/api.types.js';
 
 export async function getProfile(userId: string): Promise<ApiUserProfile | null> {
   const user = await User.findById(userId);
@@ -69,12 +69,12 @@ export async function getConnectedPlatforms(userId: string): Promise<ApiConnecte
   }));
 }
 
-export async function getPlatformStats(userId: string): Promise<Record<string, unknown>[]> {
+export async function getPlatformStats(userId: string): Promise<ApiPlatformStatsResponse> {
   const stats = await PlatformStats.find({
     userId: new Types.ObjectId(userId),
   });
 
-  return stats.map((s) => ({
+  const platforms = stats.map((s) => ({
     platformName: s.platformName,
     username: s.username,
     totalSolved: s.totalSolved,
@@ -86,6 +86,16 @@ export async function getPlatformStats(userId: string): Promise<Record<string, u
     totalContests: s.totalContests,
     fetchedAt: s.fetchedAt.toISOString(),
   }));
+
+  // Calculate aggregate total solved across all platforms
+  const totalSolvedAllPlatforms = platforms.reduce((sum, p) => sum + (p.totalSolved || 0), 0);
+
+  return {
+    platforms,
+    totals: {
+      totalSolvedAllPlatforms,
+    },
+  };
 }
 
 export async function addTechStack(userId: string, tag: string): Promise<string[]> {

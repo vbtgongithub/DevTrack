@@ -51,7 +51,7 @@ export async function deleteProblem(req: AuthenticatedRequest, res: Response): P
     commonErrors.notFound(res, 'Problem');
     return;
   }
-  deleteResponse(res, req.params.id, 'Problem deleted successfully');
+  deleteResponse(res, req.params.id as string, 'Problem deleted successfully');
 }
 
 export async function toggleFavorite(req: AuthenticatedRequest, res: Response): Promise<void> {

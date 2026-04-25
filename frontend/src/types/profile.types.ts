@@ -28,6 +28,7 @@ export interface ProfileData {
   leetcodeUsername: string;
   codeforcesUsername: string;
   codechefUsername: string;
+  hackerrankUsername: string;
 }
 
 export const DEFAULT_PROFILE: ProfileData = {
@@ -44,6 +45,7 @@ export const DEFAULT_PROFILE: ProfileData = {
   leetcodeUsername: '',
   codeforcesUsername: '',
   codechefUsername: '',
+  hackerrankUsername: '',
 };
 
 // ---------------------------------------------------------------------------
@@ -103,6 +105,8 @@ export interface CodeforcesStats {
   friendOfCount: number;
   organization: string;
   registrationTimeSeconds: number;
+  totalSolved: number;
+  totalContests: number;
 }
 
 export const EMPTY_CODEFORCES_STATS: CodeforcesStats = {
@@ -116,6 +120,8 @@ export const EMPTY_CODEFORCES_STATS: CodeforcesStats = {
   friendOfCount: 0,
   organization: '',
   registrationTimeSeconds: 0,
+  totalSolved: 0,
+  totalContests: 0,
 };
 
 // ---------------------------------------------------------------------------
@@ -145,10 +151,34 @@ export const EMPTY_CODECHEF_STATS: CodeChefStats = {
 };
 
 // ---------------------------------------------------------------------------
-// 5. PLATFORM STATE (per-platform loading / error)
+// 5. HACKERRANK STATS
 // ---------------------------------------------------------------------------
 
-export type PlatformName = 'leetcode' | 'codeforces' | 'codechef';
+export interface HackerRankStats {
+  username: string;
+  totalSolved: number;
+  totalContests: number;
+  badges: number;
+  certificates: number;
+  level: string;
+  score: number;
+}
+
+export const EMPTY_HACKERRANK_STATS: HackerRankStats = {
+  username: '',
+  totalSolved: 0,
+  totalContests: 0,
+  badges: 0,
+  certificates: 0,
+  level: '—',
+  score: 0,
+};
+
+// ---------------------------------------------------------------------------
+// 6. PLATFORM STATE (per-platform loading / error)
+// ---------------------------------------------------------------------------
+
+export type PlatformName = 'leetcode' | 'codeforces' | 'codechef' | 'hackerrank';
 
 export interface PlatformState<T> {
   data: T | null;
@@ -161,6 +191,7 @@ export interface AllPlatformStats {
   leetcode: PlatformState<LeetCodeStats>;
   codeforces: PlatformState<CodeforcesStats>;
   codechef: PlatformState<CodeChefStats>;
+  hackerrank: PlatformState<HackerRankStats>;
 }
 
 export const EMPTY_PLATFORM_STATE = <T>(): PlatformState<T> => ({

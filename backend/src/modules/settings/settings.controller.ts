@@ -51,7 +51,7 @@ export async function connectPlatform(req: AuthenticatedRequest, res: Response):
 }
 
 export async function disconnectPlatform(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const success = await service.disconnectPlatform(req.user!.id, req.params.platformId);
+  const success = await service.disconnectPlatform(req.user!.id, req.params.platformId as string);
   if (!success) {
     commonErrors.notFound(res, 'Platform');
     return;

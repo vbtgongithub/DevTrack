@@ -548,3 +548,23 @@ export interface ApiPlatformConnectPayload {
   username: string;
   accessToken?: string;
 }
+
+export interface ApiPlatformStatsItem {
+  platformName: string;
+  username: string;
+  totalSolved: number;
+  easySolved: number;
+  mediumSolved: number;
+  hardSolved: number;
+  rating: number | null;
+  rank: string | null;
+  totalContests: number;
+  fetchedAt: string;
+}
+
+export interface ApiPlatformStatsResponse {
+  platforms: ApiPlatformStatsItem[];
+  totals: {
+    totalSolvedAllPlatforms: number;
+  };
+}

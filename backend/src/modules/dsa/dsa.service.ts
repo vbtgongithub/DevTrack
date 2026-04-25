@@ -192,7 +192,7 @@ export async function createProblem(userId: string, payload: ApiDsaProblemCreate
   // Update topic progress
   await updateTopicProgress(userId, payload.category, payload.difficulty);
 
-  return mapProblemToApi(problem.toObject());
+  return mapProblemToApi(problem.toObject() as unknown as Record<string, unknown> & { _id: { toString(): string } });
 }
 
 export async function updateProblem(
@@ -240,7 +240,7 @@ export async function toggleFavorite(userId: string, problemId: string): Promise
   problem.isFavorite = !problem.isFavorite;
   await problem.save();
 
-  return mapProblemToApi(problem.toObject());
+  return mapProblemToApi(problem.toObject() as unknown as Record<string, unknown> & { _id: { toString(): string } });
 }
 
 export async function bulkUpdateStatus(
