@@ -15,9 +15,18 @@ import type {
   ApiDsaProblemUpdatePayload,
   ApiMutationResponse,
   ApiDeleteResponse,
+  ApiDsaDashboardResponse,
 } from '../types/api.types';
 
 const DSA_BASE = '/dsa';
+
+/**
+ * Fetch complete DSA dashboard data (heatmap, submissions, topics, platform stats).
+ */
+export async function fetchDsaDashboard(): Promise<ApiResponse<ApiDsaDashboardResponse>> {
+  const { data } = await axiosClient.get<ApiResponse<ApiDsaDashboardResponse>>(`${DSA_BASE}/dashboard`);
+  return data;
+}
 
 /**
  * Fetch paginated DSA problem list with filters and stats.

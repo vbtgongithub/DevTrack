@@ -178,6 +178,145 @@ export async function fetchCodeChefStats(username: string): Promise<CodeChefStat
 }
 
 // ---------------------------------------------------------------------------
+// LEETCODE — CALENDAR (heatmap data)
+// ---------------------------------------------------------------------------
+
+export interface LeetCodeCalendar {
+  /** Map of unix-timestamp (seconds, as string key) → submission count */
+  submissionCalendar: Record<string, number>;
+  totalActiveDays: number;
+}
+
+export async function fetchLeetCodeCalendar(username: string): Promise<LeetCodeCalendar> {
+  if (!username.trim()) throw new Error('LeetCode username is required');
+
+  const res = await fetchWithTimeout(
+    `${LEETCODE_API}/${encodeURIComponent(username)}/calendar`
+  );
+
+  if (!res.ok) {
+    throw new Error(`LeetCode calendar API error: ${res.status}`);
+  }
+
+  const json = await res.json();
+
+  // The API returns { submissionCalendar: string (JSON), totalActiveDays: number }
+  // submissionCalendar is a JSON-encoded object of { "timestamp": count }
+  let calendar: Record<string, number> = {};
+  if (typeof json.submissionCalendar === 'string') {
+    try {
+      calendar = JSON.parse(json.submissionCalendar);
+    } catch {
+      calendar = {};
+    }
+  } else if (typeof json.submissionCalendar === 'object' && json.submissionCalendar) {
+    calendar = json.submissionCalendar;
+  }
+
+  return {
+    submissionCalendar: calendar,
+    totalActiveDays: json.totalActiveDays ?? 0,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// LEETCODE — RECENT SUBMISSIONS
+// ---------------------------------------------------------------------------
+
+export interface LeetCodeSubmission {
+  id: string;
+  title: string;
+  titleSlug: string;
+  timestamp: string; // unix seconds as string
+  statusDisplay: string;
+  lang: string;
+}
+
+export async function fetchLeetCodeSubmissions(
+  username: string,
+  limit = 20
+): Promise<LeetCodeSubmission[]> {
+  if (!username.trim()) throw new Error('LeetCode username is required');
+
+  const res = await fetchWithTimeout(
+    `${LEETCODE_API}/${encodeURIComponent(username)}/acSubmission?limit=${limit}`
+  );
+
+  if (!res.ok) {
+    throw new Error(`LeetCode submissions API error: ${res.status}`);
+  }
+
+  const json = await res.json();
+
+  // Response: { submission: [...] } or { count: N, submission: [...] }
+  const submissions = json.submission ?? json.submissions ?? json ?? [];
+  if (!Array.isArray(submissions)) return [];
+
+  return submissions.map((s: any) => ({
+    id: String(s.id ?? s.timestamp ?? Math.random()),
+    title: s.title ?? s.titleSlug ?? 'Unknown',
+    titleSlug: s.titleSlug ?? '',
+    timestamp: String(s.timestamp ?? '0'),
+    statusDisplay: s.statusDisplay ?? 'Accepted',
+    lang: s.lang ?? s.language ?? 'Unknown',
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// CODEFORCES — RECENT SUBMISSIONS
+// ---------------------------------------------------------------------------
+
+export interface CodeforcesSubmission {
+  id: number;
+  contestId: number;
+  problem: {
+    name: string;
+    index: string;
+    rating?: number;
+    tags: string[];
+  };
+  verdict: string;
+  programmingLanguage: string;
+  creationTimeSeconds: number;
+}
+
+export async function fetchCodeforcesSubmissions(
+  username: string,
+  count = 20
+): Promise<CodeforcesSubmission[]> {
+  if (!username.trim()) throw new Error('Codeforces handle is required');
+
+  const res = await fetchWithTimeout(
+    `${CODEFORCES_API}/user.status?handle=${encodeURIComponent(username)}&from=1&count=${count}`
+  );
+
+  if (!res.ok) {
+    if (res.status === 400) throw new Error('Codeforces user not found');
+    throw new Error(`Codeforces submissions API error: ${res.status}`);
+  }
+
+  const json = await res.json();
+
+  if (json.status !== 'OK' || !Array.isArray(json.result)) {
+    throw new Error('Invalid Codeforces submissions response');
+  }
+
+  return json.result.map((s: any) => ({
+    id: s.id ?? 0,
+    contestId: s.contestId ?? 0,
+    problem: {
+      name: s.problem?.name ?? 'Unknown',
+      index: s.problem?.index ?? '',
+      rating: s.problem?.rating,
+      tags: s.problem?.tags ?? [],
+    },
+    verdict: s.verdict ?? 'UNKNOWN',
+    programmingLanguage: s.programmingLanguage ?? 'Unknown',
+    creationTimeSeconds: s.creationTimeSeconds ?? 0,
+  }));
+}
+
+// ---------------------------------------------------------------------------
 // CACHE HELPERS
 // ---------------------------------------------------------------------------
 

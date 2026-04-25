@@ -7,7 +7,7 @@ import { useUserStore } from './store/userStore';
 import type { SidebarNavItemVM, TopbarVM } from './types/vm.types';
 
 const NAV_ITEMS: Omit<SidebarNavItemVM, 'isActive'>[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'home', path: '/', badge: null },
+  { id: 'dashboard', label: 'Dashboard', icon: 'home', path: '/dashboard', badge: null },
   { id: 'dsa', label: 'DSA', icon: 'code-bracket', path: '/dsa', badge: null },
   { id: 'projects', label: 'Projects', icon: 'folder', path: '/projects', badge: null },
   { id: 'activity', label: 'History', icon: 'chart-bar', path: '/activity', badge: null },
@@ -16,7 +16,7 @@ const NAV_ITEMS: Omit<SidebarNavItemVM, 'isActive'>[] = [
 ];
 
 const PAGE_TITLES: Record<string, string> = {
-  '/': 'Dashboard',
+  '/dashboard': 'Dashboard',
   '/activity': 'Smart History',
   '/dsa': 'DSA Tracker',
   '/projects': 'Projects',

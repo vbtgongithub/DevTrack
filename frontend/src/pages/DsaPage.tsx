@@ -12,29 +12,34 @@ import type { DsaData } from '../types/dsa';
 import { mockData } from '../mocks/dsaMockData';
 
 /* ─── Summary Bar ─── */
-const DsaSummaryBar: React.FC<{ heatmap: number[] }> = ({ heatmap }) => {
-  const totalSolved = React.useMemo(() => heatmap.reduce((a, b) => a + b, 0), [heatmap]);
+const DsaSummaryBar: React.FC<{ heatmap: number[]; stats: DsaData['stats'] }> = ({ heatmap, stats }) => {
   const activeDays = React.useMemo(() => heatmap.filter((v) => v > 0).length, [heatmap]);
 
-  // Find most active month (mock)
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const monthTotals = React.useMemo(() => {
-    const totals = Array.from({ length: 12 }, () => 0);
-    const today = new Date();
-    heatmap.forEach((val, i) => {
-      const date = new Date(today);
-      date.setDate(date.getDate() - (364 - i));
-      totals[date.getMonth()] += val;
-    });
-    return totals;
-  }, [heatmap]);
-  const bestMonthIdx = monthTotals.indexOf(Math.max(...monthTotals));
+  const totalSolvedStat = stats.find((s) => s.label === 'Problems Solved');
+  const totalSolved = totalSolvedStat?.value ?? '0';
+
+  const lcRatingStat = stats.find((s) => s.label === 'LeetCode Rating');
+  const ratingDisplay = lcRatingStat?.value && lcRatingStat.value !== '—'
+    ? `LeetCode rating: ${lcRatingStat.value}`
+    : (() => {
+        const cfStat = stats.find((s) => s.label === 'CF Rating');
+        return cfStat?.value && cfStat.value !== '—'
+          ? `Codeforces rating: ${cfStat.value}`
+          : 'No rating data yet';
+      })();
 
   const summaryItems = [
-    { emoji: '📊', text: `You solved ${totalSolved} problems this year`, type: 'blue' },
-    { emoji: '📅', text: `${activeDays} active days out of 365`, type: 'green' },
-    { emoji: '🏆', text: `Most active in ${monthNames[bestMonthIdx]}`, type: 'orange' },
-    { emoji: '🎯', text: 'Current rating: 1,684', type: 'purple' },
+    { emoji: '📊', text: `Total solved: ${totalSolved}`, type: 'blue' },
+    { emoji: '📅', text: `${activeDays} active days recorded`, type: 'green' },
+    { emoji: '🎯', text: ratingDisplay, type: 'orange' },
+    {
+      emoji: '🏆',
+      text: (() => {
+        const cc = stats.find((s) => s.label === 'CodeChef Rating');
+        return cc?.value && cc.value !== '—' ? `CodeChef rating: ${cc.value}` : 'Add profiles in Profile page';
+      })(),
+      type: 'purple',
+    },
   ];
 
   const colorMap: Record<string, string> = {
@@ -130,8 +135,8 @@ const DsaPage: React.FC = () => {
         {/* ─── Single-column vertical flow ─── */}
         <div className="mx-auto w-full max-w-[1000px] flex flex-col gap-6">
 
-          {/* 0. Summary Bar — NEW */}
-          <DsaSummaryBar heatmap={heatmap365} />
+          {/* 0. Summary Bar */}
+          <DsaSummaryBar heatmap={heatmap365} stats={safeData.stats} />
 
           {/* 1. Heatmap — primary visual */}
           <HeatmapCard title="Consistency" cells={heatmap365} />

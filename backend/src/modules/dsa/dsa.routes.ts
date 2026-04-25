@@ -37,5 +37,6 @@ router.delete('/problems/:id', authMiddleware, asyncHandler(controller.deletePro
 router.post('/problems/:id/favorite', authMiddleware, asyncHandler(controller.toggleFavorite));
 router.patch('/problems/bulk-status', authMiddleware, validateBody(bulkUpdateSchema), asyncHandler(controller.bulkUpdateStatus));
 router.get('/stats', authMiddleware, asyncHandler(controller.getStats));
+router.get('/dashboard', authMiddleware, asyncHandler(controller.getDashboard));
 
 export default router;

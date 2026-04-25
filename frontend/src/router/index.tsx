@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { SkeletonCard } from '../components/skeletons/SkeletonCard';
 
 const DashboardPage = lazy(
@@ -38,8 +38,9 @@ const PageFallback: React.FC = () => (
 export const AppRouter: React.FC = () => {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/dsa" replace />} />
       <Route
-        path="/"
+        path="/dashboard"
         element={
           <Suspense fallback={<PageFallback />}>
             <DashboardPage />
@@ -86,6 +87,7 @@ export const AppRouter: React.FC = () => {
           </Suspense>
         }
       />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

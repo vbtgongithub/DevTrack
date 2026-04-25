@@ -285,6 +285,24 @@ export interface ApiDsaListResponse {
   stats: ApiDsaStats;
 }
 
+export interface ApiDsaDashboardResponse {
+  stats: Array<{ label: string; value: string; icon: string }>;
+  heatmap: number[];
+  submissions: Array<{
+    id: string;
+    status: 'accepted' | 'wrong';
+    problem: string;
+    topic: string;
+    platform: string;
+    language: string;
+    date: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+  }>;
+  contests: Array<{ name: string; platform: string; time: string }>;
+  topics: Array<{ name: string; progress: number }>;
+  platformOverview: Array<{ platform: string; stat: string }>;
+}
+
 export interface ApiDsaFilters {
   difficulty?: 'easy' | 'medium' | 'hard';
   status?: 'unsolved' | 'attempted' | 'solved' | 'revisit';

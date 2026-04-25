@@ -1,6 +1,6 @@
 // src/modules/dsa/dsa.service.ts
 import { Types } from 'mongoose';
-import { DsaProblem, DsaTopicProgress, DsaSubmission, DailyActivity } from '../../db/models/index.js';
+import { DsaProblem, DsaTopicProgress, DsaSubmission, DailyActivity, PlatformStats } from '../../db/models/index.js';
 import type {
   ApiDsaListResponse,
   ApiDsaProblem,
@@ -10,10 +10,124 @@ import type {
   ApiDsaProblemUpdatePayload,
   ApiPagination,
   ApiDsaWeeklyProgress,
+  ApiDsaDashboardResponse,
+  ApiDsaSummaryItem,
+  ApiDsaDashboardSubmission,
+  ApiDsaTopic,
+  ApiDsaPlatformOverviewItem,
 } from '../../types/api.types.js';
 import { parsePaginationParams, createPagination, getSkipCount, buildSortOptions } from '../../shared/pagination.js';
 
 const ALLOWED_SORT_FIELDS = ['title', 'difficulty', 'lastSubmittedAt', 'solvedAt', 'timeTaken'];
+
+export async function getDashboard(userId: string): Promise<ApiDsaDashboardResponse> {
+  const userObjId = new Types.ObjectId(userId);
+  const now = new Date();
+  const yearAgo = new Date(now);
+  yearAgo.setDate(yearAgo.getDate() - 364);
+  yearAgo.setHours(0, 0, 0, 0);
+
+  const [problemStats, topicProgress, recentSubmissions, dailyActivities, platformStatsArr] = await Promise.all([
+    DsaProblem.aggregate([
+      { $match: { userId: userObjId } },
+      {
+        $group: {
+          _id: null,
+          totalSolved: { $sum: { $cond: [{ $eq: ['$status', 'solved'] }, 1, 0] } },
+        },
+      },
+    ]),
+    DsaTopicProgress.find({ userId: userObjId }).lean(),
+    DsaSubmission.find({ userId: userObjId })
+      .sort({ submittedAt: -1 })
+      .limit(20)
+      .populate('problemId', 'title category difficulty')
+      .lean(),
+    DailyActivity.find({ userId: userObjId, date: { $gte: yearAgo, $lte: now } }).lean(),
+    PlatformStats.find({ userId: userObjId }).lean(),
+  ]);
+
+  // Build 365-day heatmap (index 0 = 364 days ago, index 364 = today)
+  const activityMap = new Map<string, number>();
+  for (const act of dailyActivities) {
+    const key = new Date(act.date).toISOString().split('T')[0];
+    activityMap.set(key, act.count);
+  }
+
+  const heatmap: number[] = [];
+  for (let i = 364; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    heatmap.push(activityMap.get(key) ?? 0);
+  }
+
+  // Current streak (consecutive days with activity ending today)
+  let currentStreak = 0;
+  for (let i = heatmap.length - 1; i >= 0; i--) {
+    if (heatmap[i] > 0) currentStreak++;
+    else break;
+  }
+
+  // Max streak over the year
+  let maxStreak = 0;
+  let tempStreak = 0;
+  for (const count of heatmap) {
+    if (count > 0) {
+      maxStreak = Math.max(maxStreak, ++tempStreak);
+    } else {
+      tempStreak = 0;
+    }
+  }
+
+  const localSolved = (problemStats[0]?.totalSolved as number) ?? 0;
+  // Use sum of platform solved counts when user hasn't manually tracked problems
+  const platformTotalSolved = platformStatsArr.reduce((sum, p) => sum + (p.totalSolved ?? 0), 0);
+  const totalSolved = localSolved > 0 ? localSolved : platformTotalSolved;
+
+  const bestRating = platformStatsArr.reduce((max, p) => Math.max(max, p.rating ?? 0), 0);
+
+  const stats: ApiDsaSummaryItem[] = [
+    { label: 'Problems Solved', value: String(totalSolved), icon: 'check-circle' },
+    { label: 'Current Rating', value: bestRating > 0 ? String(bestRating) : '—', icon: 'chart-bar' },
+    { label: 'Current Streak', value: `${currentStreak} days`, icon: 'fire' },
+    { label: 'Max Streak', value: `${maxStreak} days`, icon: 'trophy' },
+  ];
+
+  const topics: ApiDsaTopic[] = topicProgress.map((t) => ({
+    name: t.topicName,
+    progress: t.totalProblems > 0 ? Math.round((t.solvedCount / t.totalProblems) * 100) : 0,
+  }));
+
+  const platformOverview: ApiDsaPlatformOverviewItem[] = platformStatsArr
+    .filter((p) => p.platformName !== 'github')
+    .map((p) => ({
+      platform: p.platformName,
+      stat: p.rating ? `Rating ${p.rating}` : `Solved ${p.totalSolved}`,
+    }));
+
+  type PopulatedProblem = { title?: string; category?: string; difficulty?: string } | null;
+
+  const submissions: ApiDsaDashboardSubmission[] = recentSubmissions.map((s) => {
+    const problem = s.problemId as unknown as PopulatedProblem;
+    return {
+      id: (s._id as Types.ObjectId).toString(),
+      status: s.status === 'accepted' ? 'accepted' : 'wrong',
+      problem: problem?.title ?? 'Unknown Problem',
+      topic: problem?.category ?? 'General',
+      platform: s.platform,
+      language: s.language,
+      date: new Date(s.submittedAt).toLocaleDateString('en-US', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric',
+      }),
+      difficulty: (problem?.difficulty ?? 'medium') as 'easy' | 'medium' | 'hard',
+    };
+  });
+
+  return { stats, heatmap, submissions, contests: [], topics, platformOverview };
+}
 
 export async function getProblems(userId: string, filters: ApiDsaFilters): Promise<ApiDsaListResponse> {
   const { page, pageSize } = parsePaginationParams({

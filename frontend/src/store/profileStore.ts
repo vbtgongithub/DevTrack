@@ -17,9 +17,17 @@ import {
   fetchLeetCodeStats,
   fetchCodeforcesStats,
   fetchCodeChefStats,
+  fetchLeetCodeCalendar,
+  fetchLeetCodeSubmissions,
+  fetchCodeforcesSubmissions,
   getCachedStats,
   setCachedStats,
   isCacheValid,
+} from '../services/platformApiService';
+import type {
+  LeetCodeCalendar,
+  LeetCodeSubmission,
+  CodeforcesSubmission,
 } from '../services/platformApiService';
 
 // ---------------------------------------------------------------------------
@@ -41,6 +49,11 @@ interface ProfileStore {
   codeforces: PlatformState<CodeforcesStats>;
   codechef: PlatformState<CodeChefStats>;
 
+  // Extended data (heatmap + submissions)
+  leetcodeCalendar: PlatformState<LeetCodeCalendar>;
+  leetcodeSubmissions: PlatformState<LeetCodeSubmission[]>;
+  codeforcesSubmissions: PlatformState<CodeforcesSubmission[]>;
+
   // Dirty tracking
   isDirty: boolean;
   isSaving: boolean;
@@ -57,6 +70,11 @@ interface ProfileStore {
   fetchCodeforces: () => Promise<void>;
   fetchCodeChef: () => Promise<void>;
   fetchAllPlatforms: () => Promise<void>;
+
+  // Actions: Extended data
+  fetchLeetCodeCalendarData: () => Promise<void>;
+  fetchLeetCodeSubmissionsData: () => Promise<void>;
+  fetchCodeforcesSubmissionsData: () => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,6 +87,10 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   leetcode: EMPTY_PLATFORM_STATE<LeetCodeStats>(),
   codeforces: EMPTY_PLATFORM_STATE<CodeforcesStats>(),
   codechef: EMPTY_PLATFORM_STATE<CodeChefStats>(),
+
+  leetcodeCalendar: EMPTY_PLATFORM_STATE<LeetCodeCalendar>(),
+  leetcodeSubmissions: EMPTY_PLATFORM_STATE<LeetCodeSubmission[]>(),
+  codeforcesSubmissions: EMPTY_PLATFORM_STATE<CodeforcesSubmission[]>(),
 
   isDirty: false,
   isSaving: false,
@@ -279,5 +301,74 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     if (profile.codechefUsername.trim()) promises.push(fetchCodeChef());
 
     await Promise.allSettled(promises);
+  },
+
+  // ─── Fetch LeetCode Calendar (heatmap) ─────────────────────────────
+  fetchLeetCodeCalendarData: async () => {
+    const { profile } = get();
+    if (!profile.leetcodeUsername.trim()) return;
+
+    set({ leetcodeCalendar: { ...get().leetcodeCalendar, loading: true, error: null } });
+
+    try {
+      const data = await fetchLeetCodeCalendar(profile.leetcodeUsername);
+      set({
+        leetcodeCalendar: { data, loading: false, error: null, lastFetchedAt: Date.now() },
+      });
+    } catch (err) {
+      set({
+        leetcodeCalendar: {
+          data: null, loading: false,
+          error: err instanceof Error ? err.message : 'Failed to fetch calendar',
+          lastFetchedAt: null,
+        },
+      });
+    }
+  },
+
+  // ─── Fetch LeetCode Submissions ────────────────────────────────────
+  fetchLeetCodeSubmissionsData: async () => {
+    const { profile } = get();
+    if (!profile.leetcodeUsername.trim()) return;
+
+    set({ leetcodeSubmissions: { ...get().leetcodeSubmissions, loading: true, error: null } });
+
+    try {
+      const data = await fetchLeetCodeSubmissions(profile.leetcodeUsername, 20);
+      set({
+        leetcodeSubmissions: { data, loading: false, error: null, lastFetchedAt: Date.now() },
+      });
+    } catch (err) {
+      set({
+        leetcodeSubmissions: {
+          data: null, loading: false,
+          error: err instanceof Error ? err.message : 'Failed to fetch submissions',
+          lastFetchedAt: null,
+        },
+      });
+    }
+  },
+
+  // ─── Fetch Codeforces Submissions ──────────────────────────────────
+  fetchCodeforcesSubmissionsData: async () => {
+    const { profile } = get();
+    if (!profile.codeforcesUsername.trim()) return;
+
+    set({ codeforcesSubmissions: { ...get().codeforcesSubmissions, loading: true, error: null } });
+
+    try {
+      const data = await fetchCodeforcesSubmissions(profile.codeforcesUsername, 30);
+      set({
+        codeforcesSubmissions: { data, loading: false, error: null, lastFetchedAt: Date.now() },
+      });
+    } catch (err) {
+      set({
+        codeforcesSubmissions: {
+          data: null, loading: false,
+          error: err instanceof Error ? err.message : 'Failed to fetch CF submissions',
+          lastFetchedAt: null,
+        },
+      });
+    }
   },
 }));

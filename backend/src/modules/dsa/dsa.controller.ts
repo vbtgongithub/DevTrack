@@ -73,3 +73,8 @@ export async function getStats(req: AuthenticatedRequest, res: Response): Promis
   const stats = await service.getStats(req.user!.id);
   successResponse(res, stats, 'Stats retrieved successfully');
 }
+
+export async function getDashboard(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const data = await service.getDashboard(req.user!.id);
+  successResponse(res, data, 'Dashboard data retrieved successfully');
+}

@@ -2,6 +2,8 @@
 import { Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { User, UserSettings, UserProfile, ConnectedPlatform, hashPassword } from '../../db/models/index.js';
+import { syncPlatform } from '../platform-sync/sync.service.js';
+import { logger } from '../../shared/logger.js';
 import type {
   ApiSettingsResponse,
   ApiNotificationPreferences,
@@ -122,6 +124,11 @@ export async function connectPlatform(
       syncError: null,
     },
     { upsert: true, new: true }
+  );
+
+  // Fire-and-forget sync so the caller doesn't wait for external API
+  syncPlatform(userId, platformName).catch((err) =>
+    logger.error(`Auto-sync failed for ${platformName}`, err)
   );
 
   return {

@@ -274,6 +274,48 @@ export interface ApiDsaListResponse {
   stats: ApiDsaStats;
 }
 
+export interface ApiDsaSummaryItem {
+  label: string;
+  value: string;
+  icon: string;
+}
+
+export interface ApiDsaDashboardSubmission {
+  id: string;
+  status: 'accepted' | 'wrong';
+  problem: string;
+  topic: string;
+  platform: string;
+  language: string;
+  date: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+}
+
+export interface ApiDsaContest {
+  name: string;
+  platform: string;
+  time: string;
+}
+
+export interface ApiDsaTopic {
+  name: string;
+  progress: number;
+}
+
+export interface ApiDsaPlatformOverviewItem {
+  platform: string;
+  stat: string;
+}
+
+export interface ApiDsaDashboardResponse {
+  stats: ApiDsaSummaryItem[];
+  heatmap: number[];
+  submissions: ApiDsaDashboardSubmission[];
+  contests: ApiDsaContest[];
+  topics: ApiDsaTopic[];
+  platformOverview: ApiDsaPlatformOverviewItem[];
+}
+
 export interface ApiDsaFilters {
   difficulty?: 'easy' | 'medium' | 'hard';
   status?: 'unsolved' | 'attempted' | 'solved' | 'revisit';
