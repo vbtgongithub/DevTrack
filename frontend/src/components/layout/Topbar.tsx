@@ -7,6 +7,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   onNotificationsClick,
   onProfileClick,
   onSearchClick,
+  onLogout,
 }) => {
   return (
     <header className="h-16 bg-dt-surface/80 backdrop-blur border-b border-black/5 flex items-center justify-between px-6">
@@ -45,6 +46,18 @@ export const Topbar: React.FC<TopbarProps> = ({
           </div>
           <div className="text-[13px] font-medium text-dt-text">{data.displayName}</div>
         </button>
+
+        {onLogout && (
+          <button
+            type="button"
+            onClick={onLogout}
+            className="w-11 h-11 rounded-lg flex items-center justify-center text-dt-muted dt-pop hover:bg-red-50 hover:text-red-500 transition-colors"
+            aria-label="Logout"
+            title="Sign out"
+          >
+            <Icon name="log-out" size={18} className="w-5 h-5 object-contain" />
+          </button>
+        )}
       </div>
 
       <span className="hidden" aria-hidden="true">

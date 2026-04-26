@@ -28,6 +28,7 @@ router.get('/', authMiddleware, asyncHandler(controller.getProfile));
 router.patch('/', authMiddleware, validateBody(profileUpdateSchema), asyncHandler(controller.updateProfile));
 router.get('/platforms', authMiddleware, asyncHandler(controller.getConnectedPlatforms));
 router.get('/platforms/stats', authMiddleware, asyncHandler(controller.getPlatformStats));
+router.post('/platforms/connect', authMiddleware, asyncHandler(controller.connectPlatform));
 router.post('/tech-stack', authMiddleware, validateBody(techStackSchema), asyncHandler(controller.addTechStack));
 router.delete('/tech-stack/:tag', authMiddleware, asyncHandler(controller.removeTechStack));
 

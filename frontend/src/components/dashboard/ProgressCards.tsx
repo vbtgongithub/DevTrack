@@ -1,6 +1,10 @@
 import React from 'react';
 import { Icon } from '../shared/Icon';
-import { PROGRESS_DATA } from '../../mocks/dashboardMockData';
+import type { DashboardData } from '../../hooks/useDashboardData';
+
+interface ProgressCardsProps {
+  data: DashboardData | null;
+}
 
 type ProgressCardProps = {
   title: string;
@@ -49,11 +53,46 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ title, progress, insight, i
   );
 };
 
-export const ProgressCards: React.FC = () => {
+export const ProgressCards: React.FC<ProgressCardsProps> = ({ data }) => {
+  const totalSolved = data?.totalSolved ?? 0;
+  const streak = data?.streak ?? 0;
+
+  // Calculate progress based on backend data
+  const progressData = [
+    {
+      id: '1',
+      title: 'Problem Solving',
+      progress: Math.min(Math.round((totalSolved / 500) * 100), 100),
+      insight: `${totalSolved}/500 problems solved`,
+      icon: 'code-bracket',
+    },
+    {
+      id: '2',
+      title: 'Consistency',
+      progress: Math.min(Math.round((streak / 30) * 100), 100),
+      insight: `${streak} day current streak`,
+      icon: 'calendar',
+    },
+    {
+      id: '3',
+      title: 'Difficulty Balance',
+      progress: data?.medium && data?.hard ? Math.round(((data.medium + data.hard) / Math.max(totalSolved, 1)) * 100) : 33,
+      insight: 'Focus on medium & hard problems',
+      icon: 'chart-pie',
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {PROGRESS_DATA.map((item, index) => (
-        <ProgressCard key={item.id} title={item.title} progress={item.progress} insight={item.insight} icon={item.icon} index={index} />
+      {progressData.map((item, index) => (
+        <ProgressCard
+          key={item.id}
+          title={item.title}
+          progress={item.progress}
+          insight={item.insight}
+          icon={item.icon}
+          index={index}
+        />
       ))}
     </div>
   );

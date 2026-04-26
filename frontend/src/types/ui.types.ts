@@ -68,6 +68,7 @@ export interface TopbarProps {
   onNotificationsClick: () => void;
   onProfileClick: () => void;
   onSearchClick: () => void;
+  onLogout?: () => void;
 }
 
 export interface PageShellProps {

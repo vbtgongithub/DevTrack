@@ -19,7 +19,7 @@ import type {
 } from '../../types/api.types.js';
 import { getStartOfDay, formatISODate, getLast365Days, isSameDay } from '../../shared/date.js';
 
-const userId = new Types.ObjectId('000000000000000000000001'); // Demo user
+
 
 export async function getDashboard(userId: string): Promise<ApiDashboardResponse> {
   const [stats, streak, platformStats, missions, recentActivity] = await Promise.all([

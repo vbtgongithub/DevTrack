@@ -43,3 +43,13 @@ export async function removeTechStack(req: AuthenticatedRequest, res: Response):
   const techStack = await service.removeTechStack(req.user!.id, tag);
   successResponse(res, { techStack }, 'Tech stack removed successfully');
 }
+
+export async function connectPlatform(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const { platformName, username } = req.body as { platformName: string; username: string };
+  if (!platformName || !username) {
+    commonErrors.badRequest(res, 'platformName and username are required');
+    return;
+  }
+  const platform = await service.connectPlatform(req.user!.id, platformName, username);
+  successResponse(res, platform, `Platform ${platformName} connected successfully`, 201);
+}

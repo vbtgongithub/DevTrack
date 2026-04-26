@@ -117,3 +117,42 @@ export async function removeTechStack(userId: string, tag: string): Promise<stri
 
   return profile?.techStack || [];
 }
+
+const PROFILE_URL_MAP: Record<string, (u: string) => string> = {
+  leetcode: (u) => `https://leetcode.com/u/${u}`,
+  codeforces: (u) => `https://codeforces.com/profile/${u}`,
+  codechef: (u) => `https://codechef.com/users/${u}`,
+  github: (u) => `https://github.com/${u}`,
+  hackerrank: (u) => `https://hackerrank.com/${u}`,
+};
+
+export async function connectPlatform(
+  userId: string,
+  platformName: string,
+  username: string,
+): Promise<ApiConnectedPlatform> {
+  const profileUrl = PROFILE_URL_MAP[platformName]?.(username) ?? `https://${platformName}.com/${username}`;
+
+  const platform = await ConnectedPlatform.findOneAndUpdate(
+    { userId: new Types.ObjectId(userId), platformName },
+    {
+      username,
+      profileUrl,
+      isConnected: true,
+      syncStatus: 'idle',
+      syncError: null,
+    },
+    { upsert: true, new: true }
+  );
+
+  return {
+    id: platform._id.toString(),
+    platformName: platform.platformName,
+    username: platform.username,
+    profileUrl: platform.profileUrl,
+    isConnected: platform.isConnected,
+    lastSyncedAt: platform.lastSyncedAt?.toISOString() || null,
+    syncStatus: platform.syncStatus,
+    syncError: platform.syncError,
+  };
+}

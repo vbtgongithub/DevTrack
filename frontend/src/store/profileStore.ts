@@ -32,7 +32,7 @@ import type {
   LeetCodeSubmission,
   CodeforcesSubmission,
 } from '../services/platformApiService';
-import { fetchBackendPlatformStats } from '../services/profileService';
+import { fetchBackendPlatformStats, connectPlatform, syncAllPlatforms } from '../services/profileService';
 import type { ApiPlatformStatsItem } from '../types/api.types';
 
 // ---------------------------------------------------------------------------
@@ -343,17 +343,43 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     }
   },
 
-  // ─── Fetch All (direct external API calls) ──────────────────────────
+  // ─── Fetch All (direct external API calls + backend connect & sync) ──
   fetchAllPlatforms: async () => {
     const { profile, fetchLeetCode, fetchCodeforces, fetchCodeChef, fetchHackerRank } = get();
     const promises: Promise<void>[] = [];
 
+    // 1. Fetch from external APIs (for immediate UI update on Profile page)
     if (profile.leetcodeUsername.trim()) promises.push(fetchLeetCode());
     if (profile.codeforcesUsername.trim()) promises.push(fetchCodeforces());
     if (profile.codechefUsername.trim()) promises.push(fetchCodeChef());
     if (profile.hackerrankUsername.trim()) promises.push(fetchHackerRank());
 
     await Promise.allSettled(promises);
+
+    // 2. Connect platforms in the backend (creates ConnectedPlatform records)
+    const platformMap: [string, string][] = [
+      ['leetcode', profile.leetcodeUsername],
+      ['codeforces', profile.codeforcesUsername],
+      ['codechef', profile.codechefUsername],
+      ['hackerrank', profile.hackerrankUsername],
+    ];
+
+    const connectPromises = platformMap
+      .filter(([, username]) => username.trim().length > 0)
+      .map(([name, username]) => connectPlatform(name, username).catch(() => {}));
+
+    await Promise.allSettled(connectPromises);
+
+    // 3. Trigger backend sync (populates PlatformStats for the dashboard)
+    try {
+      await syncAllPlatforms();
+    } catch {
+      // Sync is best-effort
+    }
+
+    // 4. Invalidate dashboard store so it re-fetches with updated platform data
+    const { useDashboardStore } = await import('./dashboardStore');
+    useDashboardStore.getState().invalidate();
   },
 
   // ─── Fetch LeetCode Calendar (heatmap) ─────────────────────────────

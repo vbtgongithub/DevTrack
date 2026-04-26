@@ -3,7 +3,11 @@
 // ============================================================================
 import React from 'react';
 import { Icon } from '../shared/Icon';
-import { INSIGHTS_DATA } from '../../mocks/dashboardMockData';
+import type { DashboardData } from '../../hooks/useDashboardData';
+
+interface EnhancedInsightsCardProps {
+  data: DashboardData | null;
+}
 
 const COLOR_MAP: Record<string, { bg: string; border: string; icon: string; badge: string; gradient: string }> = {
   green: {
@@ -36,8 +40,49 @@ const COLOR_MAP: Record<string, { bg: string; border: string; icon: string; badg
   },
 };
 
-export const EnhancedInsightsCard: React.FC = () => {
-  const [featured, ...rest] = INSIGHTS_DATA;
+export const EnhancedInsightsCard: React.FC<EnhancedInsightsCardProps> = ({ data }) => {
+  const totalSolved = data?.totalSolved ?? 0;
+  const streak = data?.streak ?? 0;
+  const easy = data?.easy ?? 0;
+  const medium = data?.medium ?? 0;
+  const hard = data?.hard ?? 0;
+
+  const insights = [
+    {
+      id: '1',
+      title: 'Great progress!',
+      description: `You've solved ${totalSolved} problems. Keep up the momentum!`,
+      metric: `${totalSolved} solved`,
+      icon: 'chart-bar',
+      color: 'green' as const,
+    },
+    {
+      id: '2',
+      title: 'Streak alert',
+      description: `${streak} day streak! Solve one more problem today to maintain it.`,
+      metric: `${streak} days`,
+      icon: 'fire',
+      color: 'orange' as const,
+    },
+    {
+      id: '3',
+      title: 'Focus area',
+      description: `You've solved ${medium} medium and ${hard} hard problems. Push into hard for faster growth.`,
+      metric: `${medium} medium`,
+      icon: 'brain',
+      color: 'blue' as const,
+    },
+    {
+      id: '4',
+      title: 'Easy warmup',
+      description: `${easy} easy problems completed. Ready for a challenge?`,
+      metric: `${easy} easy`,
+      icon: 'check-circle',
+      color: 'green' as const,
+    },
+  ];
+
+  const [featured, ...rest] = insights;
   const featuredColors = COLOR_MAP[featured.color] || COLOR_MAP.blue;
 
   return (

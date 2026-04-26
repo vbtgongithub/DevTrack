@@ -9,63 +9,63 @@ import { GamificationPanel } from './GamificationPanel';
 import { AnnouncementSection } from './AnnouncementSection';
 import { ActionsPanel } from './ActionsPanel';
 import { MissionCard } from './MissionCard';
-import type { DashboardVM } from '../../types/vm.types';
 
 const DashboardPage: React.FC = () => {
-  const { data } = useDashboardData();
-  const [mounted, setMounted] = React.useState(false);
+  const { data, loading, error } = useDashboardData();
 
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const safeData: DashboardVM = data
-    ? {
-        header: data.header ?? { greeting: 'Hello, User', displayName: 'User', avatarUrl: null, todayDate: '', quickStats: [] },
-        streak: data.streak ?? { currentStreak: 0, longestStreak: 0, streakLabel: '0 Day Streak', isActiveToday: false, motivationText: '', percentOfLongest: 0, streakStartFormatted: '', heatmapDays: [] },
-        stats: data.stats ?? { cards: [] },
-        platforms: Array.isArray(data.platforms) ? data.platforms : [],
-        missions: data.missions ?? { title: 'Missions', activeMissions: [], completedToday: 0, totalToday: 0, completionPercent: 0 },
-        recentActivity: Array.isArray(data.recentActivity) ? data.recentActivity : [],
-      }
-    : {
-        header: { greeting: 'Hello, User', displayName: 'User', avatarUrl: null, todayDate: '', quickStats: [] },
-        streak: { currentStreak: 0, longestStreak: 0, streakLabel: '0 Day Streak', isActiveToday: false, motivationText: '', percentOfLongest: 0, streakStartFormatted: '', heatmapDays: [] },
-        stats: { cards: [] },
-        platforms: [],
-        missions: { title: 'Missions', activeMissions: [], completedToday: 0, totalToday: 0, completionPercent: 0 },
-        recentActivity: [],
-      };
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="text-red-600 text-4xl mb-4">!</div>
+          <p className="text-gray-800 font-semibold mb-2">Failed to load dashboard</p>
+          <p className="text-gray-500 text-sm mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className={[
-        'flex flex-col gap-6 transition-opacity duration-300',
-        mounted ? 'opacity-100' : 'opacity-0',
-      ].join(' ')}
-    >
+    <div className="flex flex-col gap-6">
       {/* 1. Header */}
-      <DashboardHeader data={safeData.header} />
+      <DashboardHeader />
 
       {/* 2. Merged Insight Strip */}
-      <TodaySummaryBar />
+      <TodaySummaryBar data={data} />
 
       {/* 3. PRIMARY ZONE — Streak (large) + Daily Goal + Achievements */}
-      <GamificationPanel />
+      <GamificationPanel data={data} />
 
       {/* 4. Stats Grid */}
-      <StatsGrid />
+      <StatsGrid data={data} />
 
       {/* 5. AI INSIGHTS — Visually Dominant */}
-      <EnhancedInsightsCard />
+      <EnhancedInsightsCard data={data} />
 
       {/* 6. Progress Cards */}
-      <ProgressCards />
+      <ProgressCards data={data} />
 
       {/* 7. Mission + Contests + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         <div className="h-full">
-          <MissionCard />
+          <MissionCard missions={data?.missions} />
         </div>
         <div className="h-full">
           <AnnouncementSection />

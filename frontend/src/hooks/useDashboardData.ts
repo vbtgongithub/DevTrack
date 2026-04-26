@@ -1,190 +1,126 @@
 // ============================================================================
 // useDashboardData.ts — Dashboard Data Hook
 // ============================================================================
+// Fetches dashboard data from backend only. No mocks, no localStorage.
+// Single source of truth: Backend API → axiosClient → DB
+// Re-fetches on every mount AND whenever the authenticated user changes.
+// ============================================================================
 
-import { useEffect, useCallback, useRef } from 'react';
-import { useDashboardStore } from '../store/dashboardStore';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import axiosClient from '../utils/axiosClient';
 import { useUserStore } from '../store/userStore';
-import { fetchDashboard } from '../services/dashboardService';
-import { transformDashboard } from '../viewmodels/dashboardVM';
-import { isStale, TTL } from '../utils/stale';
-import type { DashboardVM, HookReturn } from '../types/vm.types';
-import type { ApiDashboardResponse, ApiError, ApiUser } from '../types/api.types';
+import type {
+  ApiResponse,
+  ApiDashboardResponse,
+  ApiPlatformStats,
+  ApiDashboardStats,
+  ApiStreakData,
+  ApiMission,
+  ApiDashboardRecentActivity,
+} from '../types/api.types';
 
-const DEV_MODE = true;
-const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 1500;
+export interface DashboardData {
+  // Aggregated problem counts (across all platforms)
+  totalSolved: number;
+  easy: number;
+  medium: number;
+  hard: number;
+  // Streak
+  streak: number;
+  // Full backend payload sections (for components that need more)
+  stats: ApiDashboardStats;
+  streakData: ApiStreakData;
+  platformStats: ApiPlatformStats[];
+  missions: ApiMission[];
+  recentActivity: ApiDashboardRecentActivity[];
+}
 
-export function useDashboardData(): HookReturn<DashboardVM> {
-  const {
-    data,
-    status,
-    error,
-    lastFetchedAt,
-    setData,
-    setStatus,
-    setError,
-  } = useDashboardStore();
+interface UseDashboardDataReturn {
+  data: DashboardData | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
 
-  const user = useUserStore((s) => s.user);
-
-  const retriesRef = useRef(0);
+export function useDashboardData(): UseDashboardDataReturn {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const fetchDataRef = useRef<(bypassCache?: boolean) => Promise<void>>(async () => {});
 
-  const fetchData = useCallback(
-    async (bypassCache: boolean = false) => {
-      // Skip if cache is still fresh
-      if (!bypassCache && !isStale(lastFetchedAt, TTL.DEFAULT)) {
-        return;
-      }
+  // Subscribe to the current user's ID — when it changes, we re-fetch
+  const userId = useUserStore((s) => s.user?.id ?? null);
 
-      setStatus('loading');
+  const fetchDashboard = useCallback(() => {
+    // Don't fetch if no user is authenticated
+    if (!userId) {
+      setData(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
 
-      // 🔥 DEV MODE (NO AUTH, NO BACKEND)
-      if (!user && DEV_MODE) {
-        try {
-          const mockUser: ApiUser = {
-            id: 'dev-user',
-            email: 'dev@example.com',
-            username: 'Varshith',
-            displayName: 'Varshith',
-            avatarUrl: null,
-            bio: null,
-            timezone: 'UTC',
-            joinedAt: new Date().toISOString(),
-            lastActiveAt: new Date().toISOString(),
-            isEmailVerified: true,
-            role: 'user',
-          };
+    // Cancel any in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-          const mockResponse: ApiDashboardResponse = {
-            stats: {
-              totalProblems: 320,
-              totalSubmissions: 500,
-              totalActiveDays: 120,
-              currentStreak: 5,
-              longestStreak: 12,
-              totalProjects: 6,
-              totalCommits: 250,
-              totalPullRequests: 30,
-              totalContributions: 400,
-            },
-            streak: {
-              currentStreak: 5,
-              longestStreak: 12,
-              lastActiveDate: new Date().toISOString(),
-              streakStartDate: new Date().toISOString(),
-              isActiveToday: true,
-              streakHistory: [],
-            },
-            platformStats: [],
-            missions: [],
-            recentActivity: [],
-          };
+    setLoading(true);
+    setError(null);
 
-          const now = Date.now();
+    axiosClient
+      .get<ApiResponse<ApiDashboardResponse>>('/dashboard', {
+        signal: controller.signal,
+      })
+      .then((response) => {
+        if (controller.signal.aborted) return;
 
-          const vm = transformDashboard(
-            mockResponse,
-            mockUser,
-            now
-          );
+        const b = response.data.data;
 
-          if (!vm) {
-            throw new Error('VM transformation failed');
-          }
+        // Aggregate solved counts from platform stats
+        const platforms = b.platformStats || [];
+        const totalSolved = platforms.reduce((s, p) => s + (p.totalSolved || 0), 0);
+        const easy = platforms.reduce((s, p) => s + (p.easySolved || 0), 0);
+        const medium = platforms.reduce((s, p) => s + (p.mediumSolved || 0), 0);
+        const hard = platforms.reduce((s, p) => s + (p.hardSolved || 0), 0);
 
-          console.log('FINAL VM:', vm);
-
-          setData(vm);
-          setStatus('success');
-          retriesRef.current = 0;
-
-          return;
-        } catch (err) {
-          console.error('❌ DEV MODE ERROR:', err);
-          setError('Failed to load mock dashboard');
-          setStatus('error');
-          return;
-        }
-      }
-
-      // ❌ No user & not in DEV mode
-      if (!user) {
-        setError('User not authenticated');
-        setStatus('error');
-        return;
-      }
-
-      // Cancel previous request
-      abortRef.current?.abort();
-      abortRef.current = new AbortController();
-
-      try {
-        const response = await fetchDashboard();
-
-        const now = Date.now();
-
-        const vm = transformDashboard(
-          response.data,
-          user,
-          now
-        );
-
-        if (!vm) {
-          throw new Error('VM transformation failed');
-        }
-
-        console.log('FINAL VM:', vm);
-
-        setData(vm);
-        setStatus('success');
-        retriesRef.current = 0;
-      } catch (err) {
-        const apiError = err as ApiError;
-        const message = apiError?.message || 'Failed to load dashboard';
-
-        // Retry only for server errors
-        if (
-          retriesRef.current < MAX_RETRIES &&
-          (apiError?.statusCode >= 500 || apiError?.code === 'UNKNOWN_ERROR')
-        ) {
-          retriesRef.current++;
-
-          setTimeout(() => {
-            void fetchDataRef.current(true);
-          }, RETRY_DELAY_MS * retriesRef.current);
-
-          return;
-        }
-
+        setData({
+          totalSolved,
+          easy,
+          medium,
+          hard,
+          streak: b.streak?.currentStreak || 0,
+          stats: b.stats,
+          streakData: b.streak,
+          platformStats: platforms,
+          missions: b.missions || [],
+          recentActivity: b.recentActivity || [],
+        });
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        const message =
+          err && typeof err === 'object' && 'message' in err
+            ? String((err as { message: string }).message)
+            : 'Failed to load dashboard data';
         setError(message);
-        setStatus('error');
-        retriesRef.current = 0;
-      }
-    },
-    [lastFetchedAt, user, setData, setStatus, setError]
-  );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      });
+  }, [userId]);
 
+  // Re-fetch whenever userId changes (login, logout, user switch) AND on every mount
   useEffect(() => {
-    fetchDataRef.current = fetchData;
-  }, [fetchData]);
-
-  fetchDataRef.current = fetchData;
-
-  useEffect(() => {
-    fetchData();
-
+    // Clear stale data immediately when user changes
+    setData(null);
+    fetchDashboard();
     return () => {
       abortRef.current?.abort();
     };
-  }, [fetchData]);
+  }, [fetchDashboard]);
 
-  const refresh = useCallback(() => {
-    retriesRef.current = 0;
-    fetchData(true);
-  }, [fetchData]);
-
-  return { data, status, error, refresh };
+  return { data, loading, error, refetch: fetchDashboard };
 }

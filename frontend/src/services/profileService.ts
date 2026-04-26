@@ -23,3 +23,19 @@ export async function fetchBackendPlatformStats(): Promise<ApiResponse<ApiPlatfo
   );
   return data;
 }
+
+/**
+ * Connect a platform username for the authenticated user.
+ * POST /profile/platforms/connect
+ */
+export async function connectPlatform(platformName: string, username: string): Promise<void> {
+  await axiosClient.post(`${PROFILE_BASE}/platforms/connect`, { platformName, username });
+}
+
+/**
+ * Trigger a server-side sync for all connected platforms.
+ * POST /platforms/sync-all
+ */
+export async function syncAllPlatforms(): Promise<void> {
+  await axiosClient.post('/platforms/sync-all');
+}
