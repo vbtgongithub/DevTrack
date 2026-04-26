@@ -66,9 +66,9 @@ This section is based on what exists in *this repo right now*.
 
 ### Backend
 - **Expected components:** auth, domain modules, sync jobs, validation, error handling, caching
-- **Current maturity:** 🟡 Partial (good structure, but build is failing)
+- **Current maturity:** 🟡 Partial (good structure; builds are currently green)
 - **Missing pieces:**
-    - Build-green baseline (must compile)
+    - Keep a build-green baseline (must stay compiling)
     - Hardening for external calls (timeouts/retries/rate limiting)
 
 ### Database (MongoDB)
@@ -204,7 +204,7 @@ This section is based on what exists in *this repo right now*.
 **Status:** ❌ You are not on track
 
 ### Why (non-negotiable)
-- Backend build failing blocks reliable progress.
+- Backend build regressions would block reliable progress.
 - Core data is inconsistent (mock + browser fetch + backend).
 - No test/CI safety net.
 

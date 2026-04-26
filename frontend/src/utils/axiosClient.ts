@@ -11,10 +11,15 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios';
 import type { ApiError } from '../types/api.types';
-import { useUserStore } from '../store/userStore';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 const TIMEOUT = 15_000; // 15 seconds
+
+let onAuthInvalid: (() => void) | null = null;
+
+export function setOnAuthInvalid(handler: (() => void) | null) {
+  onAuthInvalid = handler;
+}
 
 // ---------------------------------------------------------------------------
 // Create Axios Instance
@@ -114,9 +119,17 @@ axiosClient.interceptors.response.use(
         // Refresh failed — clear tokens + zustand store
         localStorage.removeItem('devtrack_access_token');
         localStorage.removeItem('devtrack_refresh_token');
-        useUserStore.getState().clearUser();
+        onAuthInvalid?.();
         // Don't hard-redirect — the React auth gate will handle it
-        return Promise.reject(error);
+        const normalized: ApiError = {
+          success: false,
+          message: 'Session expired. Please sign in again.',
+          code: 'AUTH_REFRESH_FAILED',
+          statusCode: 401,
+          timestamp: new Date().toISOString(),
+        };
+
+        return Promise.reject(normalized);
       } finally {
         isRefreshing = false;
       }

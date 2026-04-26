@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import type { ApiUser } from '../types/api.types';
 import * as authService from '../services/authService';
+import { setOnAuthInvalid } from '../utils/axiosClient';
 
 type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -162,3 +163,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     }
   },
 }));
+
+setOnAuthInvalid(() => {
+  useUserStore.getState().clearUser();
+});
