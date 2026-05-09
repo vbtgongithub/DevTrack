@@ -19,7 +19,18 @@ import type {
 } from '../../types/api.types.js';
 import { getStartOfDay, formatISODate, getLast365Days, isSameDay } from '../../shared/date.js';
 
-const userId = new Types.ObjectId('000000000000000000000001'); // Demo user
+// GitHub-specific dashboard stats (separate from DSA metrics)
+export interface GithubDashboardStatsData {
+  repos: number;
+  followers: number;
+  following: number;
+  avatarUrl: string | null;
+  name: string | null;
+  bio: string | null;
+  lastSyncedAt: string;
+}
+
+
 
 export async function getDashboard(userId: string): Promise<ApiDashboardResponse> {
   const [stats, streak, platformStats, missions, recentActivity] = await Promise.all([
@@ -211,17 +222,20 @@ export async function getPlatformStats(userId: string): Promise<ApiPlatformStats
       platformName: platform.platformName,
     });
 
+    // TASK 3: GitHub repos are NOT "solved problems" — zero out DSA metrics for GitHub
+    const isGithub = platform.platformName === 'github';
+
     return {
       platformId: platform.platformName,
       platformName: platform.platformName,
       username: platform.username,
-      totalSolved: stats?.totalSolved || 0,
-      easySolved: stats?.easySolved || 0,
-      mediumSolved: stats?.mediumSolved || 0,
-      hardSolved: stats?.hardSolved || 0,
-      rating: stats?.rating ?? null,
-      rank: stats?.rank ?? null,
-      totalContests: stats?.totalContests || 0,
+      totalSolved: isGithub ? 0 : (stats?.totalSolved || 0),
+      easySolved: isGithub ? 0 : (stats?.easySolved || 0),
+      mediumSolved: isGithub ? 0 : (stats?.mediumSolved || 0),
+      hardSolved: isGithub ? 0 : (stats?.hardSolved || 0),
+      rating: isGithub ? null : (stats?.rating ?? null),
+      rank: isGithub ? null : (stats?.rank ?? null),
+      totalContests: isGithub ? 0 : (stats?.totalContests || 0),
       lastSyncedAt: platform.lastSyncedAt?.toISOString() || new Date().toISOString(),
       profileUrl: platform.profileUrl,
       isConnected: platform.isConnected,
@@ -229,6 +243,37 @@ export async function getPlatformStats(userId: string): Promise<ApiPlatformStats
   });
 
   return Promise.all(statsPromises);
+}
+
+/**
+ * TASK 1: GitHub-specific dashboard stats — separate from DSA metrics.
+ * Returns repos, followers, etc. from PlatformStats.rawData for GitHub.
+ */
+export async function getGithubDashboardStats(userId: string): Promise<GithubDashboardStatsData | null> {
+  const platform = await ConnectedPlatform.findOne({
+    userId: new Types.ObjectId(userId),
+    platformName: 'github',
+    isConnected: true,
+  });
+
+  if (!platform) return null;
+
+  const stats = await PlatformStats.findOne({
+    userId: new Types.ObjectId(userId),
+    platformName: 'github',
+  });
+
+  const raw = stats?.rawData || {};
+
+  return {
+    repos: (raw.public_repos as number) ?? 0,
+    followers: (raw.followers as number) ?? 0,
+    following: (raw.following as number) ?? 0,
+    avatarUrl: (raw.avatar_url as string) ?? null,
+    name: (raw.name as string) ?? null,
+    bio: (raw.bio as string) ?? null,
+    lastSyncedAt: platform.lastSyncedAt?.toISOString() || new Date().toISOString(),
+  };
 }
 
 export async function getMissions(userId: string): Promise<ApiMission[]> {

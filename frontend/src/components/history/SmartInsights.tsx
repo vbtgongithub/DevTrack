@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React from 'react';
-import type { SmartInsight } from '../../mocks/historyMockData';
+import type { SmartInsight } from '../../types/activity';
 
 type Props = {
   insights: SmartInsight[];

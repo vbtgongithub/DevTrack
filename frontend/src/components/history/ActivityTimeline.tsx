@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React from 'react';
-import type { DayActivity } from '../../mocks/historyMockData';
+import type { DayActivity } from '../../types/activity';
 import { PlatformLogo } from '../dsa/PlatformLogo';
 import { Icon } from '../shared/Icon';
 
@@ -57,7 +57,62 @@ export const ActivityTimeline: React.FC<Props> = ({ days }) => {
 
                 <div className="space-y-4">
                   {day.submissions.map((s) => {
+                    const isGithubSync = s.activityType === 'settings_updated' && s.platform === 'github';
                     const isAC = s.status === 'accepted';
+
+                    if (isGithubSync) {
+                      const repos = typeof s.metadata?.public_repos === 'number' ? s.metadata.public_repos : 0;
+                      const followers = typeof s.metadata?.followers === 'number' ? s.metadata.followers : 0;
+                      return (
+                        <div
+                          key={s.id}
+                          className={[
+                            'relative flex gap-3 items-start py-3 px-3 rounded-xl border border-transparent',
+                            'hover:border-gray-200 hover:bg-gray-50/60 hover:shadow-sm transition-all duration-200 cursor-default group',
+                          ].join(' ')}
+                        >
+                          {/* Glowing dot — purple for sync */}
+                          <div
+                            className={[
+                              'absolute -left-[42px] top-[18px] w-3 h-3 rounded-full ring-[3px] ring-white z-10',
+                              'transition-all duration-200 group-hover:scale-150',
+                              'bg-violet-500 shadow-md shadow-violet-200 group-hover:shadow-lg group-hover:shadow-violet-300',
+                            ].join(' ')}
+                          />
+
+                          {/* GitHub icon */}
+                          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-violet-50 text-violet-600 border border-violet-100">
+                            <PlatformLogo platform="github" iconSize={15} />
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="text-[13px] text-gray-800">
+                                  <span className="font-semibold text-gray-900">{s.problem}</span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-1.5">
+                                  <span className="text-[11px] text-gray-500 font-medium">
+                                    {repos} repos
+                                  </span>
+                                  <span className="text-gray-200">·</span>
+                                  <span className="text-[11px] text-gray-500 font-medium">
+                                    {followers} followers
+                                  </span>
+                                  <span className="text-gray-200">·</span>
+                                  <span className="text-[11px] text-gray-300">{s.time}</span>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full shrink-0 mt-0.5 tracking-wider bg-violet-50 text-violet-600 border border-violet-100">
+                                SYNC
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     return (
                       <div
                         key={s.id}

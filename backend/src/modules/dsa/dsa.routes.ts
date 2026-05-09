@@ -38,5 +38,8 @@ router.post('/problems/:id/favorite', authMiddleware, asyncHandler(controller.to
 router.patch('/problems/bulk-status', authMiddleware, validateBody(bulkUpdateSchema), asyncHandler(controller.bulkUpdateStatus));
 router.get('/stats', authMiddleware, asyncHandler(controller.getStats));
 router.get('/dashboard', authMiddleware, asyncHandler(controller.getDashboard));
+router.get('/submissions', authMiddleware, asyncHandler(controller.getSubmissions));
+router.get('/contests', authMiddleware, asyncHandler(controller.getContests));
+router.get('/topics', authMiddleware, asyncHandler(controller.getTopicAnalytics));
 
 export default router;

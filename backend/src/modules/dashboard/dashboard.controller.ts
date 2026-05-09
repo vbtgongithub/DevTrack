@@ -34,3 +34,8 @@ export async function getRecentActivity(req: AuthenticatedRequest, res: Response
   const data = await service.getRecentActivity(req.user!.id, limit);
   successResponse(res, data, 'Recent activity retrieved successfully');
 }
+
+export async function getGithubDashboardStats(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const data = await service.getGithubDashboardStats(req.user!.id);
+  successResponse(res, data, 'GitHub dashboard stats retrieved successfully');
+}

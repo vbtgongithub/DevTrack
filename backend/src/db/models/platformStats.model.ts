@@ -74,11 +74,14 @@ const platformStatsSchema = new Schema<IPlatformStats>(
   {
     timestamps: { createdAt: true, updatedAt: false },
     toJSON: {
-      transform: (_doc, ret) => {
+      transform: (doc, ret) => {
         ret.id = ret._id.toString();
         delete (ret as { _id?: unknown })._id;
         delete (ret as { __v?: unknown }).__v;
-        delete (ret as { rawData?: unknown }).rawData;
+        // Only remove rawData for non-GitHub platforms to preserve GitHub stats
+        if (ret.platformName !== 'github') {
+          delete (ret as { rawData?: unknown }).rawData;
+        }
         return ret;
       },
     },

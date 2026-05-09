@@ -138,7 +138,7 @@ export interface ApiMission {
 
 export interface ApiDashboardRecentActivity {
   id: string;
-  type: 'problem_solved' | 'commit_pushed' | 'pr_merged' | 'project_created' | 'contest_participated' | 'streak_milestone';
+  type: 'problem_solved' | 'commit_pushed' | 'pr_merged' | 'project_created' | 'project_updated' | 'project_deleted' | 'contest_participated' | 'streak_milestone';
   title: string;
   description: string;
   platform: string;
@@ -165,7 +165,7 @@ export interface ApiActivityDay {
 
 export interface ApiActivityEntry {
   id: string;
-  type: 'problem_solved' | 'commit_pushed' | 'pr_merged' | 'project_created' | 'contest_participated' | 'streak_milestone' | 'note_added';
+  type: 'problem_solved' | 'commit_pushed' | 'pr_merged' | 'project_created' | 'project_updated' | 'project_deleted' | 'contest_participated' | 'contest_joined' | 'streak_milestone' | 'note_added' | 'settings_updated' | 'github_sync_completed';
   title: string;
   description: string;
   platform: string;
@@ -292,14 +292,68 @@ export interface ApiDsaDashboardSubmission {
 }
 
 export interface ApiDsaContest {
-  name: string;
+  id: string;
   platform: string;
-  time: string;
+  contestName: string;
+  rank: number | null;
+  totalParticipants: number | null;
+  problemsSolved: number;
+  ratingBefore: number | null;
+  ratingAfter: number | null;
+  ratingChange: number | null;
+  participatedAt: string;
 }
 
 export interface ApiDsaTopic {
   name: string;
   progress: number;
+}
+
+// Detailed topic analytics (for /api/dsa/topics endpoint)
+export interface ApiDsaTopicAnalytics {
+  topicName: string;
+  totalProblems: number;
+  solvedCount: number;
+  easyCount: number;
+  easySolved: number;
+  mediumCount: number;
+  mediumSolved: number;
+  hardCount: number;
+  hardSolved: number;
+  solveRate: number; // 0-100
+}
+
+// Submissions list response (for /api/dsa/submissions endpoint)
+export interface ApiDsaSubmissionEntry {
+  id: string;
+  platform: string;
+  problemName: string;
+  problemDifficulty: string | null;
+  problemCategory: string | null;
+  status: string;
+  language: string;
+  executionTime: number | null;
+  memoryUsed: number | null;
+  submittedAt: string;
+}
+
+export interface ApiDsaSubmissionsListResponse {
+  submissions: ApiDsaSubmissionEntry[];
+  pagination: ApiPagination;
+}
+
+export interface ApiDsaContestsListResponse {
+  contests: ApiDsaContest[];
+  pagination: ApiPagination;
+}
+
+export interface ApiDsaTopicsListResponse {
+  topics: ApiDsaTopicAnalytics[];
+  summary: {
+    totalTopics: number;
+    totalSolved: number;
+    totalProblems: number;
+  };
 }
 
 export interface ApiDsaPlatformOverviewItem {

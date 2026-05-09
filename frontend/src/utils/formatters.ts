@@ -292,9 +292,14 @@ export const ACTIVITY_TYPE_COLORS: Record<string, string> = {
   commit_pushed: '#238636',
   pr_merged: '#8B5CF6',
   project_created: '#3B82F6',
+  project_updated: '#3B82F6',
+  project_deleted: '#EF4444',
   contest_participated: '#F59E0B',
+  contest_joined: '#F59E0B',
   streak_milestone: '#EF4444',
   note_added: '#6B7280',
+  settings_updated: '#8B5CF6',
+  github_sync_completed: '#8B5CF6',
 };
 
 /** Color map for programming languages */
@@ -330,9 +335,14 @@ export const ACTIVITY_TYPE_ICONS: Record<string, string> = {
   commit_pushed: 'git-commit',
   pr_merged: 'git-merge',
   project_created: 'folder-plus',
+  project_updated: 'pencil',
+  project_deleted: 'trash',
   contest_participated: 'trophy',
+  contest_joined: 'trophy',
   streak_milestone: 'fire',
   note_added: 'document-text',
+  settings_updated: 'cog',
+  github_sync_completed: 'refresh',
 };
 
 /** Icon identifiers for mission categories */

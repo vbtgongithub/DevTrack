@@ -3,7 +3,7 @@ import { Schema, model, type Document } from 'mongoose';
 
 export interface IActivityEvent extends Document {
   userId: Schema.Types.ObjectId;
-  type: 'problem_solved' | 'commit_pushed' | 'pr_merged' | 'project_created' | 'contest_participated' | 'streak_milestone' | 'note_added';
+  type: 'problem_solved' | 'commit_pushed' | 'pr_merged' | 'project_created' | 'project_updated' | 'project_deleted' | 'contest_participated' | 'streak_milestone' | 'note_added' | 'settings_updated';
   title: string;
   description: string;
   platform: string;
@@ -24,7 +24,7 @@ const activityEventSchema = new Schema<IActivityEvent>(
     },
     type: {
       type: String,
-      enum: ['problem_solved', 'commit_pushed', 'pr_merged', 'project_created', 'contest_participated', 'streak_milestone', 'note_added'],
+      enum: ['problem_solved', 'commit_pushed', 'pr_merged', 'project_created', 'project_updated', 'project_deleted', 'contest_participated', 'streak_milestone', 'note_added', 'settings_updated', 'github_sync_completed'],
       required: true,
       index: true,
     },

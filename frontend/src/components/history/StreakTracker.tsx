@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React from 'react';
-import type { StreakData } from '../../mocks/historyMockData';
+import type { StreakData } from '../../types/activity';
 
 type Props = {
   streak: StreakData;

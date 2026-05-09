@@ -90,9 +90,9 @@ export const mockData: DsaData = {
     { name: 'Trees', progress: 73 },
   ],
   contests: [
-    { name: 'LeetCode Weekly 447', platform: 'LeetCode', time: 'In 2 hrs' },
-    { name: 'Codeforces Round 1013', platform: 'Codeforces', time: 'Tomorrow' },
-    { name: 'CodeChef Starters 181', platform: 'CodeChef', time: 'In 4 days' },
+    { id: 'c1', contestName: 'LeetCode Weekly 447', platform: 'leetcode', rank: 312, totalParticipants: 18500, problemsSolved: 3, ratingChange: 42, participatedAt: '2026-04-05T10:00:00Z' },
+    { id: 'c2', contestName: 'Codeforces Round 1013', platform: 'codeforces', rank: 1200, totalParticipants: 25000, problemsSolved: 2, ratingChange: -15, participatedAt: '2026-04-03T18:00:00Z' },
+    { id: 'c3', contestName: 'CodeChef Starters 181', platform: 'codechef', rank: 450, totalParticipants: 8000, problemsSolved: 4, ratingChange: 28, participatedAt: '2026-03-30T14:00:00Z' },
   ],
   platformOverview: [
     { platform: 'leetcode', stat: 'Solved 182' },

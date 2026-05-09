@@ -31,19 +31,33 @@ function getEnvVarNumber(key: string, defaultValue: number): number {
   return num;
 }
 
+const NODE_ENV = getEnvVar('NODE_ENV', 'development');
+const IS_PROD = NODE_ENV === 'production';
+
+// ---------------------------------------------------------------------------
+// In production, critical secrets MUST be explicitly provided.
+// Dev defaults are only used in development/test environments.
+// ---------------------------------------------------------------------------
+function requireInProd(key: string, devDefault: string): string {
+  if (IS_PROD) {
+    return getEnvVar(key); // no default → throws if missing
+  }
+  return getEnvVar(key, devDefault);
+}
+
 export const env = {
   // Server
   PORT: getEnvVarNumber('PORT', 3001),
-  NODE_ENV: getEnvVar('NODE_ENV', 'development'),
-  IS_PROD: getEnvVar('NODE_ENV', 'development') === 'production',
-  IS_DEV: getEnvVar('NODE_ENV', 'development') === 'development',
+  NODE_ENV,
+  IS_PROD,
+  IS_DEV: NODE_ENV === 'development',
 
-  // Database
-  MONGODB_URI: getEnvVar('MONGODB_URI', 'mongodb://localhost:27017/devtrack'),
+  // Database — required in production
+  MONGODB_URI: requireInProd('MONGODB_URI', 'mongodb://localhost:27017/devtrack'),
 
-  // JWT
-  JWT_ACCESS_SECRET: getEnvVar('JWT_ACCESS_SECRET', 'dev-access-secret'),
-  JWT_REFRESH_SECRET: getEnvVar('JWT_REFRESH_SECRET', 'dev-refresh-secret'),
+  // JWT — required in production (insecure defaults only in dev)
+  JWT_ACCESS_SECRET: requireInProd('JWT_ACCESS_SECRET', 'dev-access-secret'),
+  JWT_REFRESH_SECRET: requireInProd('JWT_REFRESH_SECRET', 'dev-refresh-secret'),
   JWT_ACCESS_EXPIRY: getEnvVar('JWT_ACCESS_EXPIRY', '15m'),
   JWT_REFRESH_EXPIRY: getEnvVar('JWT_REFRESH_EXPIRY', '7d'),
 
@@ -58,4 +72,4 @@ export const env = {
   RATE_LIMIT_MAX_REQUESTS: getEnvVarNumber('RATE_LIMIT_MAX_REQUESTS', 100),
 };
 
-export default env;
+export default env;

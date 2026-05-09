@@ -15,6 +15,7 @@ const platformLabel: Record<Platform, string> = {
   codeforces: 'Codeforces',
   codechef: 'CodeChef',
   hackerrank: 'HackerRank',
+  github: 'GitHub',
 };
 
 const isSameDay = (a: Date, b: Date) =>
@@ -36,12 +37,12 @@ export const InsightsCard: React.FC<InsightsCardProps> = React.memo(
         acc[s.platform] = (acc[s.platform] ?? 0) + 1;
         return acc;
       },
-      { leetcode: 0, codeforces: 0, codechef: 0, hackerrank: 0 }
+      { leetcode: 0, codeforces: 0, codechef: 0, hackerrank: 0, github: 0 }
     );
 
     const mostActivePlatform = (Object.keys(platformCounts) as Platform[]).reduce((best, p) =>
       platformCounts[p] > platformCounts[best] ? p : best
-    , 'leetcode');
+      , 'leetcode');
 
     const topTopic = topics.reduce<Topic | null>((best, t) => {
       if (!best) return t;

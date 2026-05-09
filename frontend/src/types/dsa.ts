@@ -1,5 +1,5 @@
 export type SubmissionStatus = 'accepted' | 'wrong';
-export type Platform = 'leetcode' | 'codeforces' | 'codechef' | 'hackerrank';
+export type Platform = 'leetcode' | 'codeforces' | 'codechef' | 'hackerrank' | 'github';
 
 export type Submission = {
   id: string;
@@ -18,20 +18,31 @@ export type Topic = {
 };
 
 export type Contest = {
-  name: string;
+  id: string;
+  contestName: string;
   platform: string;
-  time: string;
+  rank: number | null;
+  totalParticipants: number | null;
+  problemsSolved: number;
+  ratingChange: number | null;
+  participatedAt: string;
 };
 
 export type DsaStat = {
   label: string;
   value: string;
-  icon: string;
+  icon?: string;
 };
 
 export type PlatformOverviewItem = {
   platform: Platform;
   stat: string;
+  totalSolved?: number;
+  easy?: number;
+  medium?: number;
+  hard?: number;
+  rating?: number | null;
+  rank?: string | null;
 };
 
 export type DsaData = {

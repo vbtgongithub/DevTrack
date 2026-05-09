@@ -16,6 +16,9 @@ import type {
   ApiMutationResponse,
   ApiDeleteResponse,
   ApiDsaDashboardResponse,
+  ApiDsaSubmissionsListResponse,
+  ApiDsaContestsListResponse,
+  ApiDsaTopicsListResponse,
 } from '../types/api.types';
 
 const DSA_BASE = '/dsa';
@@ -124,6 +127,42 @@ export async function bulkUpdateDsaStatus(
   const { data } = await axiosClient.patch<ApiMutationResponse>(
     `${DSA_BASE}/problems/bulk-status`,
     { problemIds, status }
+  );
+  return data;
+}
+
+/**
+ * Fetch paginated submission history.
+ */
+export async function fetchDsaSubmissions(
+  filters: { platform?: string; status?: string; page?: number; pageSize?: number } = {}
+): Promise<ApiResponse<ApiDsaSubmissionsListResponse>> {
+  const { data } = await axiosClient.get<ApiResponse<ApiDsaSubmissionsListResponse>>(
+    `${DSA_BASE}/submissions`,
+    { params: filters }
+  );
+  return data;
+}
+
+/**
+ * Fetch paginated contest history.
+ */
+export async function fetchDsaContests(
+  filters: { platform?: string; page?: number; pageSize?: number } = {}
+): Promise<ApiResponse<ApiDsaContestsListResponse>> {
+  const { data } = await axiosClient.get<ApiResponse<ApiDsaContestsListResponse>>(
+    `${DSA_BASE}/contests`,
+    { params: filters }
+  );
+  return data;
+}
+
+/**
+ * Fetch topic analytics with per-difficulty breakdowns.
+ */
+export async function fetchDsaTopics(): Promise<ApiResponse<ApiDsaTopicsListResponse>> {
+  const { data } = await axiosClient.get<ApiResponse<ApiDsaTopicsListResponse>>(
+    `${DSA_BASE}/topics`
   );
   return data;
 }

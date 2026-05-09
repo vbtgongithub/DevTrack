@@ -1,21 +1,29 @@
 // ============================================================================
 // dashboardStore.ts — Dashboard Cache Store
 // ============================================================================
-// Stores ViewModel data ONLY. Never raw API responses.
-// Includes lastFetchedAt for cache invalidation via isStale().
+// Central cache for GET /api/dashboard data. Shared by:
+//   - Dashboard page (useDashboardData)
+//   - DSA page (useDsaData → useDashboardData)
+//   - Profile page (useDashboardData → populateFromDashboard)
+//
+// Cache invalidation: call invalidate() after sync to trigger a re-fetch.
 // ============================================================================
 
 import { create } from 'zustand';
-import type { DashboardVM, DataStatus } from '../types/vm.types';
+import type { DataStatus } from '../types/vm.types';
+
+// Re-export-safe: the data shape is defined in useDashboardData.ts
+// but the store holds it as `unknown` to avoid circular imports.
+// Consumers cast it via the hook.
 
 interface DashboardState {
-  data: DashboardVM | null;
+  data: unknown | null;
   status: DataStatus;
   error: string | null;
   lastFetchedAt: number | null;
 
   // Actions
-  setData: (data: DashboardVM) => void;
+  setData: (data: unknown) => void;
   setStatus: (status: DataStatus) => void;
   setError: (error: string | null) => void;
   invalidate: () => void;
@@ -48,6 +56,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
       status: 'error',
     }),
 
+  // Setting lastFetchedAt to null signals useDashboardData to re-fetch
   invalidate: () =>
     set({ lastFetchedAt: null }),
 

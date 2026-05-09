@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React from 'react';
-import type { WeeklyBar } from '../../mocks/historyMockData';
+import type { WeeklyBar } from '../../types/activity';
 
 type Props = {
   bars: WeeklyBar[];

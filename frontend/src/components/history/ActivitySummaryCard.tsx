@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React from 'react';
-import type { ActivitySummary } from '../../mocks/historyMockData';
+import type { ActivitySummary } from '../../types/activity';
 
 type Props = {
   summary: ActivitySummary;

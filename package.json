@@ -1,0 +1,30 @@
+{
+  "name": "devtrack-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DevTrack: All-in-one developer productivity + tracking platform",
+  "scripts": {
+    "dev": "concurrently -k -n FRONTEND,BACKEND -c blue,green \"npm run dev --prefix frontend\" \"npm run dev --prefix backend\"",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:backend": "npm run build --prefix backend",
+    "lint": "npm run lint --prefix frontend",
+    "test": "npm test --prefix backend",
+    "install-all": "npm install && npm run install:frontend && npm run install:backend",
+    "install:frontend": "npm install --prefix frontend",
+    "install:backend": "npm install --prefix backend",
+    "frontend": "npm run dev --prefix frontend",
+    "backend": "npm run dev --prefix backend",
+    "start": "npm run build && npm run backend",
+    "clean": "node -e \"require('fs').rmSync('node_modules',{recursive:true,force:true});require('fs').rmSync('frontend/node_modules',{recursive:true,force:true});require('fs').rmSync('backend/node_modules',{recursive:true,force:true});\"",
+    "docker:up": "docker-compose up --build",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

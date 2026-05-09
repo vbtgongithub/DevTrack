@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { SkeletonCard } from '../components/skeletons/SkeletonCard';
+import { ErrorBoundary } from '../components/shared/ErrorBoundary';
 
 const DashboardPage = lazy(
   () => import('../components/dashboard/DashboardPage')
@@ -38,53 +39,64 @@ const PageFallback: React.FC = () => (
 export const AppRouter: React.FC = () => {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dsa" replace />} />
       <Route
         path="/dashboard"
         element={
-          <Suspense fallback={<PageFallback />}>
-            <DashboardPage />
-          </Suspense>
+          <ErrorBoundary pageName="Dashboard">
+            <Suspense fallback={<PageFallback />}>
+              <DashboardPage />
+            </Suspense>
+          </ErrorBoundary>
         }
       />
       <Route
         path="/activity"
         element={
-          <Suspense fallback={<PageFallback />}>
-            <ActivityPage />
-          </Suspense>
+          <ErrorBoundary pageName="Activity">
+            <Suspense fallback={<PageFallback />}>
+              <ActivityPage />
+            </Suspense>
+          </ErrorBoundary>
         }
       />
       <Route
         path="/dsa"
         element={
-          <Suspense fallback={<PageFallback />}>
-            <DsaPage />
-          </Suspense>
+          <ErrorBoundary pageName="DSA Tracker">
+            <Suspense fallback={<PageFallback />}>
+              <DsaPage />
+            </Suspense>
+          </ErrorBoundary>
         }
       />
       <Route
         path="/projects"
         element={
-          <Suspense fallback={<PageFallback />}>
-            <ProjectsPage />
-          </Suspense>
+          <ErrorBoundary pageName="Projects">
+            <Suspense fallback={<PageFallback />}>
+              <ProjectsPage />
+            </Suspense>
+          </ErrorBoundary>
         }
       />
       <Route
         path="/settings"
         element={
-          <Suspense fallback={<PageFallback />}>
-            <SettingsPage />
-          </Suspense>
+          <ErrorBoundary pageName="Settings">
+            <Suspense fallback={<PageFallback />}>
+              <SettingsPage />
+            </Suspense>
+          </ErrorBoundary>
         }
       />
       <Route
         path="/profile"
         element={
-          <Suspense fallback={<PageFallback />}>
-            <ProfilePage />
-          </Suspense>
+          <ErrorBoundary pageName="Profile">
+            <Suspense fallback={<PageFallback />}>
+              <ProfilePage />
+            </Suspense>
+          </ErrorBoundary>
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />

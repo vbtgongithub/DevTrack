@@ -78,3 +78,29 @@ export async function getDashboard(req: AuthenticatedRequest, res: Response): Pr
   const data = await service.getDashboard(req.user!.id);
   successResponse(res, data, 'Dashboard data retrieved successfully');
 }
+
+export async function getSubmissions(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const filters = {
+    platform: req.query.platform as string | undefined,
+    status: req.query.status as string | undefined,
+    page: req.query.page ? parseInt(req.query.page as string) : undefined,
+    pageSize: req.query.pageSize ? parseInt(req.query.pageSize as string) : undefined,
+  };
+  const data = await service.getSubmissions(req.user!.id, filters);
+  successResponse(res, data, 'Submissions retrieved successfully');
+}
+
+export async function getContests(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const filters = {
+    platform: req.query.platform as string | undefined,
+    page: req.query.page ? parseInt(req.query.page as string) : undefined,
+    pageSize: req.query.pageSize ? parseInt(req.query.pageSize as string) : undefined,
+  };
+  const data = await service.getContests(req.user!.id, filters);
+  successResponse(res, data, 'Contests retrieved successfully');
+}
+
+export async function getTopicAnalytics(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const data = await service.getTopicAnalytics(req.user!.id);
+  successResponse(res, data, 'Topic analytics retrieved successfully');
+}

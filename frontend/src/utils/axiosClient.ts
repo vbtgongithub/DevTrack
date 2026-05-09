@@ -11,8 +11,9 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios';
 import type { ApiError } from '../types/api.types';
+import { envConfig } from './envCheck';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const BASE_URL = envConfig.VITE_API_BASE_URL;
 const TIMEOUT = 15_000; // 15 seconds
 
 // ---------------------------------------------------------------------------

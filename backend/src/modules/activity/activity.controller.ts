@@ -4,6 +4,31 @@ import type { AuthenticatedRequest } from '../../middleware/auth.js';
 import * as service from './activity.service.js';
 import { successResponse, commonErrors, deleteResponse, mutationResponse } from '../../shared/response.js';
 
+/**
+ * GET /api/activity — Unified endpoint returning events + heatmap.
+ */
+export async function getAll(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const year = parseInt(req.query.year as string) || new Date().getFullYear();
+  const [feedData, heatmapData] = await Promise.all([
+    service.getFeed(req.user!.id, { pageSize: 50 }),
+    service.getHeatmap(req.user!.id, year),
+  ]);
+
+  // Build date→count heatmap map
+  const heatmap: Record<string, number> = {};
+  for (const day of heatmapData.days) {
+    if (day.count > 0) {
+      heatmap[day.date] = day.count;
+    }
+  }
+
+  successResponse(res, {
+    events: feedData.activities,
+    heatmap,
+    summary: heatmapData.summary,
+  }, 'Activity retrieved successfully');
+}
+
 export async function getHeatmap(req: AuthenticatedRequest, res: Response): Promise<void> {
   const year = parseInt(req.query.year as string) || new Date().getFullYear();
   const data = await service.getHeatmap(req.user!.id, year);

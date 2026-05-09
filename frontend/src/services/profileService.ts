@@ -1,25 +1,28 @@
 // ============================================================================
 // profileService.ts — Profile API Service
 // ============================================================================
-// Fetches profile and platform stats from the backend API.
-// Uses axiosClient for authenticated requests.
+// Handles sync-related API calls. Stats are no longer fetched from a
+// dedicated endpoint — they come from GET /api/dashboard (single source).
 // ============================================================================
 
 import axiosClient from '../utils/axiosClient';
-import type {
-  ApiResponse,
-  ApiPlatformStatsResponse,
-} from '../types/api.types';
+import type { AxiosResponse } from 'axios';
 
 const PROFILE_BASE = '/profile';
 
 /**
- * Fetch platform stats from the backend (server-synced data).
- * GET /profile/platforms/stats
+ * Connect a platform username for the authenticated user.
+ * POST /profile/platforms/connect
  */
-export async function fetchBackendPlatformStats(): Promise<ApiResponse<ApiPlatformStatsResponse>> {
-  const { data } = await axiosClient.get<ApiResponse<ApiPlatformStatsResponse>>(
-    `${PROFILE_BASE}/platforms/stats`
-  );
-  return data;
+export async function connectPlatform(platformName: string, username: string): Promise<void> {
+  await axiosClient.post(`${PROFILE_BASE}/platforms/connect`, { platformName, username });
+}
+
+/**
+ * Trigger a server-side sync for all connected platforms.
+ * POST /platforms/sync-all
+ * Returns the full Axios response so callers can read per-platform results.
+ */
+export async function syncAllPlatforms(): Promise<AxiosResponse> {
+  return axiosClient.post('/platforms/sync-all');
 }

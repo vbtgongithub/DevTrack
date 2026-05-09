@@ -42,3 +42,11 @@ export function clearTokens(): void {
   localStorage.removeItem('devtrack_access_token');
   localStorage.removeItem('devtrack_refresh_token');
 }
+
+export function getAccessToken(): string | null {
+  return localStorage.getItem('devtrack_access_token');
+}
+
+export function getRefreshToken(): string | null {
+  return localStorage.getItem('devtrack_refresh_token');
+}

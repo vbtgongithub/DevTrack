@@ -15,6 +15,16 @@ import type {
   ApiDashboardRecentActivity,
 } from '../types/api.types';
 
+export interface GithubDashboardStats {
+  repos: number;
+  followers: number;
+  following: number;
+  avatarUrl: string | null;
+  name: string | null;
+  bio: string | null;
+  lastSyncedAt: string;
+}
+
 const DASHBOARD_BASE = '/dashboard';
 
 /**
@@ -76,6 +86,16 @@ export async function fetchRecentActivity(
   const { data } = await axiosClient.get<ApiResponse<ApiDashboardRecentActivity[]>>(
     `${DASHBOARD_BASE}/recent-activity`,
     { params: { limit } }
+  );
+  return data;
+}
+
+/**
+ * Fetch GitHub-specific dashboard stats.
+ */
+export async function fetchGithubDashboardStats(): Promise<ApiResponse<GithubDashboardStats>> {
+  const { data } = await axiosClient.get<ApiResponse<GithubDashboardStats>>(
+    `${DASHBOARD_BASE}/github`
   );
   return data;
 }

@@ -191,8 +191,13 @@ export function buildFilterOptions(): ActivityFilterOptionsVM {
       { value: 'commit_pushed', label: 'Commit Pushed' },
       { value: 'pr_merged', label: 'PR Merged' },
       { value: 'project_created', label: 'Project Created' },
+      { value: 'project_updated', label: 'Project Updated' },
+      { value: 'project_deleted', label: 'Project Deleted' },
       { value: 'contest_participated', label: 'Contest Participated' },
+      { value: 'contest_joined', label: 'Contest Joined' },
       { value: 'streak_milestone', label: 'Streak Milestone' },
+      { value: 'github_sync_completed', label: 'GitHub Sync' },
+      { value: 'settings_updated', label: 'Settings Updated' },
     ],
     dateRanges: [
       { value: '', label: 'All Time' },

@@ -1,6 +1,9 @@
 // ============================================================================
 // CPProfilesCard.tsx — Competitive Programming Platform Usernames
 // ============================================================================
+// Shows platform username inputs, a "Sync Now" button that calls the backend,
+// and displays sync lifecycle state (loading/success/error + last synced time).
+// ============================================================================
 
 import React from 'react';
 import type { ProfileData, PlatformState, LeetCodeStats, CodeforcesStats, CodeChefStats, HackerRankStats } from '../../types/profile.types';
@@ -19,6 +22,10 @@ interface CPProfilesCardProps {
   hackerrank: PlatformState<HackerRankStats>;
   onUpdate: <K extends keyof ProfileData>(field: K, value: ProfileData[K]) => void;
   onFetchAll: () => void;
+  // Sync lifecycle props
+  syncState: 'idle' | 'syncing' | 'success' | 'error';
+  syncMessage: string | null;
+  lastSyncedAt: string | null;
 }
 
 type PlatformConfig = {
@@ -30,8 +37,26 @@ type PlatformConfig = {
   status: 'connected' | 'loading' | 'error' | 'idle';
 };
 
+/** Format ISO date to a human-readable "last synced" string */
+function formatLastSynced(iso: string | null): string {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'Just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHrs = Math.floor(diffMin / 60);
+    if (diffHrs < 24) return `${diffHrs}h ago`;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+
 export const CPProfilesCard: React.FC<CPProfilesCardProps> = React.memo(
-  ({ profile, leetcode, codeforces, codechef, hackerrank, onUpdate, onFetchAll }) => {
+  ({ profile, leetcode, codeforces, codechef, hackerrank, onUpdate, onFetchAll, syncState, syncMessage, lastSyncedAt }) => {
     const platforms: PlatformConfig[] = [
       {
         key: 'leetcodeUsername',
@@ -67,7 +92,7 @@ export const CPProfilesCard: React.FC<CPProfilesCardProps> = React.memo(
       },
     ];
 
-    const isAnyLoading = leetcode.loading || codeforces.loading || codechef.loading || hackerrank.loading;
+    const isSyncing = syncState === 'syncing';
     const hasAnyUsername =
       profile.leetcodeUsername.trim() ||
       profile.codeforcesUsername.trim() ||
@@ -95,13 +120,14 @@ export const CPProfilesCard: React.FC<CPProfilesCardProps> = React.memo(
                 value={profile[p.key]}
                 onChange={(e) => onUpdate(p.key, e.target.value)}
                 aria-label={`${p.label} username`}
+                disabled={isSyncing}
               />
             </div>
             <div className={`cp-status-dot cp-status-dot--${p.status}`} title={p.status} />
           </div>
         ))}
 
-        {/* Error messages */}
+        {/* Per-platform error messages */}
         {leetcode.error && (
           <div className="platform-error">
             <Icon name="exclamation-triangle" size={14} />
@@ -127,21 +153,48 @@ export const CPProfilesCard: React.FC<CPProfilesCardProps> = React.memo(
           </div>
         )}
 
+        {/* Sync result feedback */}
+        {syncMessage && (
+          <div
+            className="platform-error"
+            style={{
+              color: syncState === 'success' ? '#16a34a' : '#dc2626',
+              background: syncState === 'success' ? '#f0fdf4' : '#fef2f2',
+              borderColor: syncState === 'success' ? '#bbf7d0' : '#fecaca',
+            }}
+          >
+            <Icon
+              name={syncState === 'success' ? 'check-circle' : 'exclamation-triangle'}
+              size={14}
+            />
+            <span>{syncMessage}</span>
+          </div>
+        )}
+
+        {/* Last synced time */}
+        {lastSyncedAt && (
+          <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Icon name="clock" size={12} />
+            Last synced: {formatLastSynced(lastSyncedAt)}
+          </div>
+        )}
+
+        {/* Sync Now button */}
         <button
           type="button"
           className="cp-fetch-btn"
           onClick={onFetchAll}
-          disabled={isAnyLoading || !hasAnyUsername}
+          disabled={isSyncing || !hasAnyUsername}
         >
-          {isAnyLoading ? (
+          {isSyncing ? (
             <>
-              <Icon name="arrow-path" size={16} className="text-white" />
-              Fetching Stats...
+              <Icon name="arrow-path" size={16} className="text-white animate-spin" />
+              Syncing Platforms...
             </>
           ) : (
             <>
               <Icon name="arrow-path" size={16} className="text-white" />
-              Fetch Platform Stats
+              Sync Now
             </>
           )}
         </button>

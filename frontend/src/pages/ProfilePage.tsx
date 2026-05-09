@@ -1,8 +1,9 @@
 // ============================================================================
 // ProfilePage.tsx — Profile Page
 // ============================================================================
-// Assembles all profile components. Loads data from localStorage on mount,
-// fetches live platform stats, and provides save/cancel functionality.
+// Assembles all profile components. Loads profile editing data from
+// localStorage, derives platform stats from GET /api/dashboard (single
+// source of truth shared with Dashboard and DSA pages).
 // ============================================================================
 
 import React from 'react';
@@ -11,9 +12,10 @@ import { ProfileHeader } from '../components/profile/ProfileHeader';
 import { PersonalInfoCard } from '../components/profile/PersonalInfoCard';
 import { CareerGoalsCard } from '../components/profile/CareerGoalsCard';
 import { CPProfilesCard } from '../components/profile/CPProfilesCard';
-import { LeetCodeStatsCard, CodeforcesStatsCard, CodeChefStatsCard, HackerRankStatsCard } from '../components/profile/PlatformStatsCard';
+import { LeetCodeStatsCard, CodeforcesStatsCard, CodeChefStatsCard, HackerRankStatsCard, GithubStatsCard } from '../components/profile/PlatformStatsCard';
 import { SocialProfilesCard } from '../components/profile/SocialProfilesCard';
 import { useProfileStore } from '../store/profileStore';
+import { useDashboardData } from '../hooks/useDashboardData';
 import { Icon } from '../components/shared/Icon';
 import '../components/profile/ProfilePage.css';
 
@@ -24,6 +26,10 @@ const ProfilePage: React.FC = () => {
     codeforces,
     codechef,
     hackerrank,
+    github,
+    syncState,
+    syncMessage,
+    lastSyncedAt,
     isDirty,
     isSaving,
     loadFromStorage,
@@ -32,17 +38,26 @@ const ProfilePage: React.FC = () => {
     addTechStack,
     removeTechStack,
     fetchAllPlatforms,
-    fetchBackendStats,
+    populateFromDashboard,
   } = useProfileStore();
+
+  // Single source of truth: GET /api/dashboard
+  const { data: dashboard, loading: dashLoading } = useDashboardData();
 
   const [mounted, setMounted] = React.useState(false);
 
-  // Load profile from localStorage on mount, then fetch backend stats
+  // Load profile editing data from localStorage on mount
   React.useEffect(() => {
     loadFromStorage();
-    fetchBackendStats(); // Fetch server-synced platform stats
     setMounted(true);
-  }, [loadFromStorage, fetchBackendStats]);
+  }, [loadFromStorage]);
+
+  // Populate profile platform stats from dashboard data (single source)
+  React.useEffect(() => {
+    if (dashboard?.platformStats) {
+      populateFromDashboard(dashboard.platformStats);
+    }
+  }, [dashboard?.platformStats, populateFromDashboard]);
 
   // Compute aggregate stats from platform data
   const totalSolved = React.useMemo(() => {
@@ -66,7 +81,8 @@ const ProfilePage: React.FC = () => {
     loadFromStorage(); // Reset to saved state
   };
 
-  const hasAnyStats = leetcode.data || codeforces.data || codechef.data || hackerrank.data;
+  const hasAnyStats = leetcode.data || codeforces.data || codechef.data || hackerrank.data || github.data;
+  const isLoading = dashLoading || leetcode.loading || codeforces.loading || codechef.loading || hackerrank.loading || github.loading;
 
   return (
     <div className={['transition-opacity duration-300', mounted ? 'opacity-100' : 'opacity-0'].join(' ')}>
@@ -83,7 +99,7 @@ const ProfilePage: React.FC = () => {
             fullName={profile.fullName}
             bio={profile.bio}
             totalSolved={totalSolved}
-            currentStreak={0}
+            currentStreak={dashboard?.streak ?? 0}
             bestRating={bestRating}
           />
 
@@ -108,12 +124,15 @@ const ProfilePage: React.FC = () => {
               hackerrank={hackerrank}
               onUpdate={updateField}
               onFetchAll={fetchAllPlatforms}
+              syncState={syncState}
+              syncMessage={syncMessage}
+              lastSyncedAt={lastSyncedAt}
             />
             <SocialProfilesCard profile={profile} onUpdate={updateField} />
           </div>
 
           {/* ─── 4. Platform Stats ───────────────────────────────────── */}
-          {(hasAnyStats || leetcode.loading || codeforces.loading || codechef.loading || hackerrank.loading) && (
+          {(hasAnyStats || isLoading) && (
             <div>
               <h3 className="text-lg font-bold tracking-tight text-dt-text mb-4 flex items-center gap-2">
                 <Icon name="chart-bar" size={18} />
@@ -124,11 +143,20 @@ const ProfilePage: React.FC = () => {
                 <CodeforcesStatsCard state={codeforces} username={profile.codeforcesUsername} />
                 <CodeChefStatsCard state={codechef} username={profile.codechefUsername} />
                 <HackerRankStatsCard state={hackerrank} username={profile.hackerrankUsername} />
+                <GithubStatsCard state={github} username={profile.githubUrl.split('/').pop() || ''} />
               </div>
             </div>
           )}
 
-          {/* ─── 5. Save / Cancel ────────────────────────────────────── */}
+          {/* ─── 5. Empty State ───────────────────────────────────────── */}
+          {!hasAnyStats && !isLoading && (
+            <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#6b7280', fontSize: '0.875rem' }}>
+              <Icon name="chart-bar" size={24} />
+              <p style={{ marginTop: '0.5rem' }}>No data available. Please sync your platforms.</p>
+            </div>
+          )}
+
+          {/* ─── 6. Save / Cancel ────────────────────────────────────── */}
           <div className="profile-save-row">
             <button
               type="button"

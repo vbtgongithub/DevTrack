@@ -6,6 +6,7 @@ import leetcodeLogo from '@/assets/logos/LeetCode.png';
 import codeforcesLogo from '@/assets/logos/Codeforces.png';
 import codechefLogo from '@/assets/logos/CodeChef.png';
 import hackerrankLogo from '@/assets/logos/HackerRank.png';
+import githubLogo from '@/assets/logos/github.png';
 
 export type PlatformLogoProps = {
   platform: Platform;
@@ -19,6 +20,7 @@ const iconName: Record<Platform, string> = {
   codeforces: 'chart-bar',
   codechef: 'academic-cap',
   hackerrank: 'academic-cap',
+  github: 'code-bracket',
 };
 
 const label: Record<Platform, string> = {
@@ -26,6 +28,7 @@ const label: Record<Platform, string> = {
   codeforces: 'Codeforces',
   codechef: 'CodeChef',
   hackerrank: 'HackerRank',
+  github: 'GitHub',
 };
 
 const platformLogos: Record<Platform, string> = {
@@ -33,6 +36,7 @@ const platformLogos: Record<Platform, string> = {
   codeforces: codeforcesLogo,
   codechef: codechefLogo,
   hackerrank: hackerrankLogo,
+  github: githubLogo,
 };
 
 export const PlatformLogo: React.FC<PlatformLogoProps> = React.memo(

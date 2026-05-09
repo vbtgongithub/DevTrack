@@ -26,6 +26,7 @@ const platformLabel: Record<Platform, string> = {
   codeforces: 'Codeforces',
   codechef: 'CodeChef',
   hackerrank: 'HackerRank',
+  github: 'GitHub',
 };
 
 const statusMeta: Record<SubmissionStatus, { label: string; icon: string }> = {

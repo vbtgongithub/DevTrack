@@ -5,11 +5,10 @@ import { HeatmapCard } from '../components/dsa/HeatmapCard';
 import { SubmissionsTable } from '../components/dsa/SubmissionsTable';
 import { TopicProgress } from '../components/dsa/TopicProgress';
 import { PlatformOverview } from '../components/dsa/PlatformOverview';
-import { ErrorState } from '../components/dsa/ErrorState';
+import { ContestList } from '../components/dsa/ContestList';
 import { InsightsCard } from '../components/dsa/InsightsCard';
 import { Icon } from '../components/shared/Icon';
 import type { DsaData } from '../types/dsa';
-import { mockData } from '../mocks/dsaMockData';
 
 /* ─── Summary Bar ─── */
 const DsaSummaryBar: React.FC<{ heatmap: number[]; stats: DsaData['stats'] }> = ({ heatmap, stats }) => {
@@ -22,11 +21,11 @@ const DsaSummaryBar: React.FC<{ heatmap: number[]; stats: DsaData['stats'] }> = 
   const ratingDisplay = lcRatingStat?.value && lcRatingStat.value !== '—'
     ? `LeetCode rating: ${lcRatingStat.value}`
     : (() => {
-        const cfStat = stats.find((s) => s.label === 'CF Rating');
-        return cfStat?.value && cfStat.value !== '—'
-          ? `Codeforces rating: ${cfStat.value}`
-          : 'No rating data yet';
-      })();
+      const cfStat = stats.find((s) => s.label === 'CF Rating');
+      return cfStat?.value && cfStat.value !== '—'
+        ? `Codeforces rating: ${cfStat.value}`
+        : 'No rating data yet';
+    })();
 
   const summaryItems = [
     { emoji: '📊', text: `Total solved: ${totalSolved}`, type: 'blue' },
@@ -74,7 +73,9 @@ const DsaPage: React.FC = () => {
   const { data, loading, error } = useDsaData();
   const [mounted, setMounted] = React.useState(false);
 
-  const safeData: DsaData = data ?? mockData;
+  // No mock fallback — show empty defaults when backend returns no data
+  const emptyData: DsaData = { stats: [], heatmap: [], submissions: [], contests: [], topics: [], platformOverview: [] };
+  const safeData: DsaData = data ?? emptyData;
 
   const heatmap365 = React.useMemo(() => {
     const arr = safeData.heatmap ?? [];
@@ -106,7 +107,20 @@ const DsaPage: React.FC = () => {
   if (error && !data) {
     return (
       <div className="dt-fade-in">
-        <ErrorState subtitle="Network error" onRetry={() => window.location.reload()} />
+        <div className="dt-card p-10 text-center max-w-md mx-auto">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+            <Icon name="exclamation-triangle" size={24} className="text-red-500" />
+          </div>
+          <p className="text-base font-semibold text-gray-900">Failed to load DSA data</p>
+          <p className="mt-1 text-sm text-gray-500">{error}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 text-sm font-medium rounded-lg bg-gray-900 text-white hover:bg-black cursor-pointer transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -144,13 +158,16 @@ const DsaPage: React.FC = () => {
           {/* 2. Recent Submissions */}
           <SubmissionsTable title="Recent Submissions" submissions={safeData.submissions} />
 
-          {/* 3. Topic Mastery — UPGRADED */}
+          {/* 3. Topic Mastery */}
           <TopicProgress title="Topic Mastery" topics={safeData.topics} />
 
-          {/* 4. Platform Overview */}
+          {/* 4. Contest History */}
+          <ContestList title="Contest History" contests={safeData.contests} />
+
+          {/* 5. Platform Overview */}
           <PlatformOverview title="Platform Overview" items={safeData.platformOverview} submissions={safeData.submissions} />
 
-          {/* 5. Insights */}
+          {/* 6. Insights */}
           <InsightsCard title="Insights" submissions={safeData.submissions} topics={safeData.topics} stats={safeData.stats} />
         </div>
       </PageShell>

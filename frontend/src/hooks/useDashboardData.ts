@@ -1,190 +1,138 @@
 // ============================================================================
-// useDashboardData.ts — Dashboard Data Hook
+// useDashboardData.ts — Dashboard Data Hook (CACHED)
 // ============================================================================
 
 import { useEffect, useCallback, useRef } from 'react';
-import { useDashboardStore } from '../store/dashboardStore';
+import axiosClient from '../utils/axiosClient';
 import { useUserStore } from '../store/userStore';
-import { fetchDashboard } from '../services/dashboardService';
-import { transformDashboard } from '../viewmodels/dashboardVM';
-import { isStale, TTL } from '../utils/stale';
-import type { DashboardVM, HookReturn } from '../types/vm.types';
-import type { ApiDashboardResponse, ApiError, ApiUser } from '../types/api.types';
+import { useDashboardStore } from '../store/dashboardStore';
+import { fetchGithubDashboardStats, type GithubDashboardStats } from '../services/dashboardService';
+import type {
+  ApiResponse,
+  ApiDashboardResponse,
+  ApiPlatformStats,
+  ApiDashboardStats,
+  ApiStreakData,
+  ApiMission,
+  ApiDashboardRecentActivity,
+} from '../types/api.types';
 
-const DEV_MODE = true;
-const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 1500;
+export interface DashboardData {
+  totalSolved: number;
+  easy: number;
+  medium: number;
+  hard: number;
+  streak: number;
+  stats: ApiDashboardStats;
+  streakData: ApiStreakData;
+  platformStats: ApiPlatformStats[];
+  missions: ApiMission[];
+  recentActivity: ApiDashboardRecentActivity[];
+  githubStats: GithubDashboardStats | null;
+}
 
-export function useDashboardData(): HookReturn<DashboardVM> {
-  const {
-    data,
-    status,
-    error,
-    lastFetchedAt,
-    setData,
-    setStatus,
-    setError,
-  } = useDashboardStore();
+const STALE_MS = 60_000;
 
-  const user = useUserStore((s) => s.user);
+interface UseDashboardDataReturn {
+  data: DashboardData | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
 
-  const retriesRef = useRef(0);
+export function useDashboardData(): UseDashboardDataReturn {
+  const userId = useUserStore((s) => s.user?.id ?? null);
+  
+  const storeData = useDashboardStore((s) => s.data) as DashboardData | null;
+  const storeStatus = useDashboardStore((s) => s.status);
+  const storeError = useDashboardStore((s) => s.error);
+  const storeLastFetchedAt = useDashboardStore((s) => s.lastFetchedAt);
+
   const abortRef = useRef<AbortController | null>(null);
-  const fetchDataRef = useRef<(bypassCache?: boolean) => Promise<void>>(async () => {});
 
-  const fetchData = useCallback(
-    async (bypassCache: boolean = false) => {
-      // Skip if cache is still fresh
-      if (!bypassCache && !isStale(lastFetchedAt, TTL.DEFAULT)) {
+  const fetchDashboard = useCallback(
+    (force = false) => {
+      if (!userId) {
+        useDashboardStore.getState().reset();
         return;
       }
 
-      setStatus('loading');
+      const state = useDashboardStore.getState();
 
-      // 🔥 DEV MODE (NO AUTH, NO BACKEND)
-      if (!user && DEV_MODE) {
-        try {
-          const mockUser: ApiUser = {
-            id: 'dev-user',
-            email: 'dev@example.com',
-            username: 'Varshith',
-            displayName: 'Varshith',
-            avatarUrl: null,
-            bio: null,
-            timezone: 'UTC',
-            joinedAt: new Date().toISOString(),
-            lastActiveAt: new Date().toISOString(),
-            isEmailVerified: true,
-            role: 'user',
-          };
-
-          const mockResponse: ApiDashboardResponse = {
-            stats: {
-              totalProblems: 320,
-              totalSubmissions: 500,
-              totalActiveDays: 120,
-              currentStreak: 5,
-              longestStreak: 12,
-              totalProjects: 6,
-              totalCommits: 250,
-              totalPullRequests: 30,
-              totalContributions: 400,
-            },
-            streak: {
-              currentStreak: 5,
-              longestStreak: 12,
-              lastActiveDate: new Date().toISOString(),
-              streakStartDate: new Date().toISOString(),
-              isActiveToday: true,
-              streakHistory: [],
-            },
-            platformStats: [],
-            missions: [],
-            recentActivity: [],
-          };
-
-          const now = Date.now();
-
-          const vm = transformDashboard(
-            mockResponse,
-            mockUser,
-            now
-          );
-
-          if (!vm) {
-            throw new Error('VM transformation failed');
-          }
-
-          console.log('FINAL VM:', vm);
-
-          setData(vm);
-          setStatus('success');
-          retriesRef.current = 0;
-
-          return;
-        } catch (err) {
-          console.error('❌ DEV MODE ERROR:', err);
-          setError('Failed to load mock dashboard');
-          setStatus('error');
-          return;
+      if (
+        !force &&
+        state.data !== null &&
+        state.lastFetchedAt !== null &&
+        Date.now() - state.lastFetchedAt < STALE_MS
+      ) {
+        if (state.status === 'loading') {
+          useDashboardStore.getState().setStatus('success');
         }
-      }
-
-      // ❌ No user & not in DEV mode
-      if (!user) {
-        setError('User not authenticated');
-        setStatus('error');
         return;
       }
 
-      // Cancel previous request
       abortRef.current?.abort();
-      abortRef.current = new AbortController();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
-      try {
-        const response = await fetchDashboard();
+      useDashboardStore.getState().setStatus('loading');
 
-        const now = Date.now();
+      Promise.all([
+        axiosClient.get<ApiResponse<ApiDashboardResponse>>('/dashboard', { signal: controller.signal }),
+        fetchGithubDashboardStats().catch(() => null)
+      ])
+        .then(([dashRes, ghRes]) => {
+          if (controller.signal.aborted) return;
 
-        const vm = transformDashboard(
-          response.data,
-          user,
-          now
-        );
+          const b = dashRes.data.data;
+          const platforms = b.platformStats || [];
+          const githubStats = ghRes?.data || null;
 
-        if (!vm) {
-          throw new Error('VM transformation failed');
-        }
+          const dashData: DashboardData = {
+            totalSolved: platforms.reduce((s, p) => s + (p.totalSolved || 0), 0),
+            easy: platforms.reduce((s, p) => s + (p.easySolved || 0), 0),
+            medium: platforms.reduce((s, p) => s + (p.mediumSolved || 0), 0),
+            hard: platforms.reduce((s, p) => s + (p.hardSolved || 0), 0),
+            streak: b.streak?.currentStreak || 0,
+            stats: b.stats,
+            streakData: b.streak,
+            platformStats: platforms,
+            missions: b.missions || [],
+            recentActivity: b.recentActivity || [],
+            githubStats,
+          };
 
-        console.log('FINAL VM:', vm);
-
-        setData(vm);
-        setStatus('success');
-        retriesRef.current = 0;
-      } catch (err) {
-        const apiError = err as ApiError;
-        const message = apiError?.message || 'Failed to load dashboard';
-
-        // Retry only for server errors
-        if (
-          retriesRef.current < MAX_RETRIES &&
-          (apiError?.statusCode >= 500 || apiError?.code === 'UNKNOWN_ERROR')
-        ) {
-          retriesRef.current++;
-
-          setTimeout(() => {
-            void fetchDataRef.current(true);
-          }, RETRY_DELAY_MS * retriesRef.current);
-
-          return;
-        }
-
-        setError(message);
-        setStatus('error');
-        retriesRef.current = 0;
-      }
+          useDashboardStore.getState().setData(dashData);
+        })
+        .catch((err) => {
+          if (controller.signal.aborted) return;
+          const message =
+            err && typeof err === 'object' && 'message' in err
+              ? String((err as { message: string }).message)
+              : 'Failed to load dashboard data';
+          useDashboardStore.getState().setError(message);
+        });
     },
-    [lastFetchedAt, user, setData, setStatus, setError]
+    [userId]
   );
 
   useEffect(() => {
-    fetchDataRef.current = fetchData;
-  }, [fetchData]);
-
-  fetchDataRef.current = fetchData;
-
-  useEffect(() => {
-    fetchData();
-
+    fetchDashboard();
     return () => {
       abortRef.current?.abort();
     };
-  }, [fetchData]);
+  }, [fetchDashboard]);
 
-  const refresh = useCallback(() => {
-    retriesRef.current = 0;
-    fetchData(true);
-  }, [fetchData]);
+  useEffect(() => {
+    if (storeLastFetchedAt === null && storeStatus !== 'loading' && userId) {
+      fetchDashboard(true);
+    }
+  }, [storeLastFetchedAt, storeStatus, userId, fetchDashboard]);
 
-  return { data, status, error, refresh };
+  return {
+    data: storeData,
+    loading: storeStatus === 'loading',
+    error: storeError,
+    refetch: () => fetchDashboard(true),
+  };
 }

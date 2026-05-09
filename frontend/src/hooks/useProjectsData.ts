@@ -11,6 +11,9 @@ import {
   fetchProjects,
   fetchProject,
   fetchProjectTasks,
+  createProject as apiCreateProject,
+  updateProject as apiUpdateProject,
+  deleteProject as apiDeleteProject,
 } from '../services/projectsService';
 import {
   transformProjectsPage,
@@ -22,7 +25,7 @@ import type {
   ProjectDetailVM,
   HookReturn,
 } from '../types/vm.types';
-import type { ApiError, ApiProjectFilters } from '../types/api.types';
+import type { ApiError, ApiProjectFilters, ApiProjectCreatePayload, ApiProjectUpdatePayload } from '../types/api.types';
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1500;
@@ -44,6 +47,9 @@ export function useProjectsData(): HookReturn<ProjectsPageVM> & {
     sortOrder: string;
     search: string;
   };
+  createProject: (payload: ApiProjectCreatePayload) => Promise<void>;
+  updateProject: (id: string, payload: ApiProjectUpdatePayload) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
 } {
   const {
     listData: data,
@@ -134,6 +140,24 @@ export function useProjectsData(): HookReturn<ProjectsPageVM> & {
     fetchData(true);
   }, [fetchData]);
 
+  const handleCreate = useCallback(async (payload: ApiProjectCreatePayload) => {
+    await apiCreateProject(payload);
+    useProjectsStore.getState().invalidateList();
+    await fetchData(true);
+  }, [fetchData]);
+
+  const handleUpdate = useCallback(async (id: string, payload: ApiProjectUpdatePayload) => {
+    await apiUpdateProject(id, payload);
+    useProjectsStore.getState().invalidateList();
+    await fetchData(true);
+  }, [fetchData]);
+
+  const handleDelete = useCallback(async (id: string) => {
+    await apiDeleteProject(id);
+    useProjectsStore.getState().invalidateList();
+    await fetchData(true);
+  }, [fetchData]);
+
   return {
     data,
     status,
@@ -144,6 +168,9 @@ export function useProjectsData(): HookReturn<ProjectsPageVM> & {
     setSearch,
     clearFilters,
     currentFilters: filters,
+    createProject: handleCreate,
+    updateProject: handleUpdate,
+    deleteProject: handleDelete,
   };
 }
 

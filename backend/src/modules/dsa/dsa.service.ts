@@ -1,6 +1,6 @@
 // src/modules/dsa/dsa.service.ts
 import { Types } from 'mongoose';
-import { DsaProblem, DsaTopicProgress, DsaSubmission, DailyActivity, PlatformStats } from '../../db/models/index.js';
+import { DsaProblem, DsaTopicProgress, DsaSubmission, DsaContest, DailyActivity, PlatformStats } from '../../db/models/index.js';
 import type {
   ApiDsaListResponse,
   ApiDsaProblem,
@@ -15,6 +15,12 @@ import type {
   ApiDsaDashboardSubmission,
   ApiDsaTopic,
   ApiDsaPlatformOverviewItem,
+  ApiDsaSubmissionsListResponse,
+  ApiDsaSubmissionEntry,
+  ApiDsaContestsListResponse,
+  ApiDsaContest,
+  ApiDsaTopicsListResponse,
+  ApiDsaTopicAnalytics,
 } from '../../types/api.types.js';
 import { parsePaginationParams, createPagination, getSkipCount, buildSortOptions } from '../../shared/pagination.js';
 
@@ -399,6 +405,176 @@ function getStartOfWeek(date: Date): Date {
   result.setHours(0, 0, 0, 0);
   result.setDate(result.getDate() - result.getDay()); // Sunday as week start
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// SUBMISSIONS LIST
+// ---------------------------------------------------------------------------
+
+export async function getSubmissions(
+  userId: string,
+  filters: { platform?: string; status?: string; page?: number; pageSize?: number }
+): Promise<ApiDsaSubmissionsListResponse> {
+  const { page, pageSize } = parsePaginationParams({
+    page: filters.page?.toString(),
+    pageSize: filters.pageSize?.toString(),
+  });
+
+  const query: Record<string, unknown> = { userId: new Types.ObjectId(userId) };
+  if (filters.platform) query.platform = filters.platform;
+  if (filters.status) query.status = filters.status;
+
+  const skip = getSkipCount({ page, pageSize });
+
+  const [submissions, totalCount] = await Promise.all([
+    DsaSubmission.find(query)
+      .sort({ submittedAt: -1 })
+      .skip(skip)
+      .limit(pageSize)
+      .populate('problemId', 'title difficulty category')
+      .lean(),
+    DsaSubmission.countDocuments(query),
+  ]);
+
+  type PopulatedProblem = { title?: string; difficulty?: string; category?: string } | null;
+
+  const mapped: ApiDsaSubmissionEntry[] = submissions.map((s) => {
+    const problem = s.problemId as unknown as PopulatedProblem;
+    return {
+      id: (s._id as Types.ObjectId).toString(),
+      platform: s.platform,
+      problemName: problem?.title ?? 'Unknown Problem',
+      problemDifficulty: problem?.difficulty ?? null,
+      problemCategory: problem?.category ?? null,
+      status: s.status,
+      language: s.language,
+      executionTime: s.executionTime,
+      memoryUsed: s.memoryUsed,
+      submittedAt: s.submittedAt.toISOString(),
+    };
+  });
+
+  const pagination: ApiPagination = createPagination(totalCount, { page, pageSize });
+
+  return { submissions: mapped, pagination };
+}
+
+// ---------------------------------------------------------------------------
+// CONTESTS LIST
+// ---------------------------------------------------------------------------
+
+export async function getContests(
+  userId: string,
+  filters: { platform?: string; page?: number; pageSize?: number }
+): Promise<ApiDsaContestsListResponse> {
+  const { page, pageSize } = parsePaginationParams({
+    page: filters.page?.toString(),
+    pageSize: filters.pageSize?.toString(),
+  });
+
+  const query: Record<string, unknown> = { userId: new Types.ObjectId(userId) };
+  if (filters.platform) query.platform = filters.platform;
+
+  const skip = getSkipCount({ page, pageSize });
+
+  const [contests, totalCount] = await Promise.all([
+    DsaContest.find(query).sort({ participatedAt: -1 }).skip(skip).limit(pageSize).lean(),
+    DsaContest.countDocuments(query),
+  ]);
+
+  const mapped: ApiDsaContest[] = contests.map((c) => ({
+    id: (c._id as Types.ObjectId).toString(),
+    platform: c.platform,
+    contestName: c.contestName,
+    rank: c.rank,
+    totalParticipants: c.totalParticipants,
+    problemsSolved: c.problemsSolved,
+    ratingBefore: c.ratingBefore,
+    ratingAfter: c.ratingAfter,
+    ratingChange: c.ratingChange,
+    participatedAt: c.participatedAt.toISOString(),
+  }));
+
+  const pagination: ApiPagination = createPagination(totalCount, { page, pageSize });
+
+  return { contests: mapped, pagination };
+}
+
+// ---------------------------------------------------------------------------
+// TOPICS ANALYTICS
+// ---------------------------------------------------------------------------
+
+export async function getTopicAnalytics(userId: string): Promise<ApiDsaTopicsListResponse> {
+  // First try DsaTopicProgress (pre-aggregated)
+  const topicProgress = await DsaTopicProgress.find({ userId: new Types.ObjectId(userId) }).lean();
+
+  let topics: ApiDsaTopicAnalytics[];
+  let totalSolved = 0;
+  let totalProblems = 0;
+
+  if (topicProgress.length > 0) {
+    topics = topicProgress.map((t) => {
+      totalSolved += t.solvedCount;
+      totalProblems += t.totalProblems;
+      return {
+        topicName: t.topicName,
+        totalProblems: t.totalProblems,
+        solvedCount: t.solvedCount,
+        easyCount: t.easyCount,
+        easySolved: t.easySolved,
+        mediumCount: t.mediumCount,
+        mediumSolved: t.mediumSolved,
+        hardCount: t.hardCount,
+        hardSolved: t.hardSolved,
+        solveRate: t.totalProblems > 0 ? Math.round((t.solvedCount / t.totalProblems) * 100) : 0,
+      };
+    });
+  } else {
+    // Fallback: aggregate from DsaProblem.category + tags
+    const aggregated = await DsaProblem.aggregate([
+      { $match: { userId: new Types.ObjectId(userId) } },
+      {
+        $group: {
+          _id: '$category',
+          totalProblems: { $sum: 1 },
+          solvedCount: { $sum: { $cond: [{ $eq: ['$status', 'solved'] }, 1, 0] } },
+          easyCount: { $sum: { $cond: [{ $eq: ['$difficulty', 'easy'] }, 1, 0] } },
+          easySolved: { $sum: { $cond: [{ $and: [{ $eq: ['$status', 'solved'] }, { $eq: ['$difficulty', 'easy'] }] }, 1, 0] } },
+          mediumCount: { $sum: { $cond: [{ $eq: ['$difficulty', 'medium'] }, 1, 0] } },
+          mediumSolved: { $sum: { $cond: [{ $and: [{ $eq: ['$status', 'solved'] }, { $eq: ['$difficulty', 'medium'] }] }, 1, 0] } },
+          hardCount: { $sum: { $cond: [{ $eq: ['$difficulty', 'hard'] }, 1, 0] } },
+          hardSolved: { $sum: { $cond: [{ $and: [{ $eq: ['$status', 'solved'] }, { $eq: ['$difficulty', 'hard'] }] }, 1, 0] } },
+        },
+      },
+      { $sort: { solvedCount: -1 } },
+    ]);
+
+    topics = aggregated.map((t) => {
+      totalSolved += t.solvedCount;
+      totalProblems += t.totalProblems;
+      return {
+        topicName: t._id || 'Uncategorized',
+        totalProblems: t.totalProblems,
+        solvedCount: t.solvedCount,
+        easyCount: t.easyCount,
+        easySolved: t.easySolved,
+        mediumCount: t.mediumCount,
+        mediumSolved: t.mediumSolved,
+        hardCount: t.hardCount,
+        hardSolved: t.hardSolved,
+        solveRate: t.totalProblems > 0 ? Math.round((t.solvedCount / t.totalProblems) * 100) : 0,
+      };
+    });
+  }
+
+  return {
+    topics,
+    summary: {
+      totalTopics: topics.length,
+      totalSolved,
+      totalProblems,
+    },
+  };
 }
 
 async function updateTopicProgress(userId: string, topicName: string, difficulty: string): Promise<void> {

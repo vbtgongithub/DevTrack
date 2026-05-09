@@ -29,7 +29,7 @@ export const StatCard: React.FC<StatCardProps> = React.memo(({ data, className }
         .join(' ')}
     >
       <div className="h-10 w-10 rounded-md bg-white flex items-center justify-center">
-        <Icon name={data.icon} size={16} className="text-dt-text" />
+        <Icon name={data.icon || 'chart-bar'} size={16} className="text-dt-text" />
       </div>
 
       <div className="min-w-0">

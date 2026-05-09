@@ -1,131 +1,127 @@
 // ============================================================================
 // useActivityData.ts — Activity Data Hook
 // ============================================================================
-// The ONLY place where services are called for activity.
-// Integrates: service → ViewModel → store caching → exposes HookReturn.
+// Fetches from unified endpoint: GET /api/activity
+// Returns { events, heatmap } in a single call.
+// No mocks. No localStorage.
 // ============================================================================
 
 import { useEffect, useCallback, useRef } from 'react';
+import axiosClient from '../utils/axiosClient';
+import { useUserStore } from '../store/userStore';
 import { useActivityStore } from '../store/activityStore';
-import { fetchActivityHeatmap, fetchActivityFeed } from '../services/activityService';
-import { transformActivityPage } from '../viewmodels/activityVM';
-import { isStale, TTL } from '../utils/stale';
-import type { ActivityPageVM, HookReturn } from '../types/vm.types';
-import type { ApiError, ApiActivityFilters } from '../types/api.types';
+import type { ActivityPageVM } from '../types/vm.types';
 
-const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 1500;
+export interface ActivityEvent {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  platform: string;
+  url: string | null;
+  tags: string[];
+  metadata: Record<string, string | number | boolean>;
+  occurredAt: string;
+}
 
-export function useActivityData(): HookReturn<ActivityPageVM> & {
-  setYear: (year: number) => void;
-  setPage: (page: number) => void;
-  setFilter: (key: string, value: string) => void;
-  clearFilters: () => void;
-  currentFilters: { platform: string; type: string; dateRange: string };
-} {
-  const {
-    data,
-    status,
-    error,
-    lastFetchedAt,
-    currentYear,
-    currentPage,
-    filters,
-    setData,
-    setStatus,
-    setError,
-    setYear,
-    setPage,
-    setFilter,
-    clearFilters,
-  } = useActivityStore();
+interface UseActivityDataReturn {
+  events: ActivityEvent[];
+  heatmapSummary: Record<string, number>;
+  loading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
 
-  const retriesRef = useRef(0);
+export function useActivityData(): UseActivityDataReturn {
+  const userId = useUserStore((s) => s.user?.id ?? null);
+  const store = useActivityStore();
   const abortRef = useRef<AbortController | null>(null);
-  const fetchDataRef = useRef<(bypassCache?: boolean) => Promise<void>>(async () => {});
 
-  const fetchData = useCallback(
-    async (bypassCache: boolean = false) => {
-      if (!bypassCache && !isStale(lastFetchedAt, TTL.SHORT)) {
-        return;
-      }
+  const fetchActivity = useCallback(() => {
+    if (!userId) {
+      useActivityStore.getState().reset();
+      return;
+    }
 
-      abortRef.current?.abort();
-      abortRef.current = new AbortController();
+    const state = useActivityStore.getState();
+    if (state.status === 'loading') return;
 
-      setStatus('loading');
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-      try {
-        // Build API filters from store state
-        const apiFilters: ApiActivityFilters = {
-          page: currentPage,
-          pageSize: 20,
-        };
-        if (filters.platform) apiFilters.platform = filters.platform;
-        if (filters.type) apiFilters.type = filters.type;
+    useActivityStore.getState().setStatus('loading');
+    useActivityStore.getState().setError(null);
 
-        // Fetch both heatmap and feed in parallel
-        const [heatmapResponse, feedResponse] = await Promise.all([
-          fetchActivityHeatmap(currentYear),
-          fetchActivityFeed(apiFilters),
-        ]);
-
-        const now = Date.now();
-        const vm = transformActivityPage(
-          heatmapResponse.data,
-          feedResponse.data,
-          now
-        );
-        setData(vm);
-        retriesRef.current = 0;
-      } catch (err) {
-        const apiError = err as ApiError;
-        const message = apiError.message || 'Failed to load activity';
-
-        if (
-          retriesRef.current < MAX_RETRIES &&
-          (apiError.statusCode >= 500 || apiError.code === 'UNKNOWN_ERROR')
-        ) {
-          retriesRef.current++;
-          setTimeout(() => {
-            void fetchDataRef.current(true);
-          }, RETRY_DELAY_MS * retriesRef.current);
-          return;
-        }
-
-        setError(message);
-        retriesRef.current = 0;
-      }
-    },
-    [lastFetchedAt, currentYear, currentPage, filters, setData, setStatus, setError]
-  );
+    axiosClient
+      .get('/activity', { signal: controller.signal })
+      .then((res) => {
+        if (controller.signal.aborted) return;
+        const data = res.data?.data;
+        // Map to the shape expected by the store/VM
+        useActivityStore.getState().setData({
+          heatmap: {
+            year: new Date().getFullYear(),
+            days: [], // HeatmapDayVM[]
+            monthLabels: [],
+            weekdayLabels: [],
+            totalContributions: "0",
+            legendLevels: []
+          },
+          feed: {
+            items: [],
+            hasMore: false,
+            currentPage: 1,
+            totalPages: 1
+          },
+          summary: {
+            totalActivities: "0",
+            activeDays: "0",
+            currentStreak: "0",
+            longestStreak: "0",
+            mostActiveDay: "Unknown",
+            avgPerDay: "0",
+            platformBreakdown: [],
+            typeBreakdown: []
+          },
+          filters: {
+            platforms: [],
+            types: [],
+            dateRanges: []
+          },
+          // Custom fields for this hook
+          _rawEvents: data?.events || [],
+          _rawHeatmap: data?.heatmap || {}
+        } as unknown as ActivityPageVM);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        const message =
+          err && typeof err === 'object' && 'message' in err
+            ? String((err as { message: string }).message)
+            : 'Failed to load activity data';
+        useActivityStore.getState().setError(message);
+      });
+  }, [userId]);
 
   useEffect(() => {
-    fetchDataRef.current = fetchData;
-  }, [fetchData]);
+    if (userId && (!store.data || store.lastFetchedAt === null) && store.status !== 'loading') {
+      fetchActivity();
+    }
+  }, [userId, fetchActivity, store.data, store.status, store.lastFetchedAt]);
 
+  // Refetch when sync completes
   useEffect(() => {
-    fetchData();
-
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, [fetchData]);
-
-  const refresh = useCallback(() => {
-    retriesRef.current = 0;
-    fetchData(true);
-  }, [fetchData]);
+    const handler = () => fetchActivity();
+    window.addEventListener('devtrack:activity-invalidate', handler);
+    return () => window.removeEventListener('devtrack:activity-invalidate', handler);
+  }, [fetchActivity]);
 
   return {
-    data,
-    status,
-    error,
-    refresh,
-    setYear,
-    setPage,
-    setFilter,
-    clearFilters,
-    currentFilters: filters,
+    events: (store.data as unknown as Record<string, unknown>)?._rawEvents as ActivityEvent[] || [],
+    heatmapSummary: (store.data as unknown as Record<string, unknown>)?._rawHeatmap as Record<string, number> || {},
+    loading: store.status === 'loading',
+    error: store.error,
+    refetch: fetchActivity
   };
 }

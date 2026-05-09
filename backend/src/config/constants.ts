@@ -79,6 +79,7 @@ export const ACTIVITY_TYPES = {
   CONTEST_PARTICIPATED: 'contest_participated',
   STREAK_MILESTONE: 'streak_milestone',
   NOTE_ADDED: 'note_added',
+  SETTINGS_UPDATED: 'settings_updated',
 } as const;
 
 // Mission types

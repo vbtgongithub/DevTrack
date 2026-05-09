@@ -1,8 +1,20 @@
 // src/db/models/userSettings.model.ts
 import { Schema, model, type Document } from 'mongoose';
 
+export interface IPlatform {
+  username?: string;
+  handle?: string;
+  lastSyncedAt: Date | null;
+}
+
 export interface IUserSettings extends Document {
   userId: Schema.Types.ObjectId;
+  platforms: {
+    github: IPlatform;
+    codeforces: IPlatform;
+    leetcode: IPlatform;
+    hackerrank: IPlatform;
+  };
   notifications: {
     emailNotifications: boolean;
     pushNotifications: boolean;
@@ -27,8 +39,15 @@ export interface IUserSettings extends Document {
     showProjects: boolean;
     showDsaProgress: boolean;
   };
+  createdAt: Date;
   updatedAt: Date;
 }
+
+const platformSchema = new Schema<IPlatform>({
+  username: { type: String, default: '' },
+  handle: { type: String, default: '' },
+  lastSyncedAt: { type: Date, default: null },
+}, { _id: false });
 
 const userSettingsSchema = new Schema<IUserSettings>(
   {
@@ -38,6 +57,12 @@ const userSettingsSchema = new Schema<IUserSettings>(
       required: true,
       unique: true,
       index: true,
+    },
+    platforms: {
+      github: { type: platformSchema, default: () => ({}) },
+      codeforces: { type: platformSchema, default: () => ({}) },
+      leetcode: { type: platformSchema, default: () => ({}) },
+      hackerrank: { type: platformSchema, default: () => ({}) },
     },
     notifications: {
       emailNotifications: { type: Boolean, default: true },

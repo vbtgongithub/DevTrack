@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React from 'react';
-import type { HistorySubmission } from '../../mocks/historyMockData';
+import type { HistorySubmission } from '../../types/activity';
 import { PlatformLogo } from '../dsa/PlatformLogo';
 
 type Props = {
@@ -82,7 +82,31 @@ export const TodayActivity: React.FC<Props> = ({ submissions }) => {
       {/* Submission list */}
       <div className="space-y-1">
         {todayItems.map((s) => {
+          const isGithubSync = s.activityType === 'settings_updated' && s.platform === 'github';
           const isWA = s.status !== 'accepted';
+
+          if (isGithubSync) {
+            const repos = typeof s.metadata?.public_repos === 'number' ? s.metadata.public_repos : 0;
+            const followers = typeof s.metadata?.followers === 'number' ? s.metadata.followers : 0;
+            return (
+              <div
+                key={s.id}
+                className="flex items-center gap-3 py-2.5 px-3 rounded-xl border border-transparent hover:border-gray-200 hover:bg-gray-50/60 hover:shadow-sm transition-all duration-200 cursor-default"
+              >
+                <div className="w-8 h-8 rounded-lg bg-violet-50 border border-violet-100 flex items-center justify-center shrink-0">
+                  <PlatformLogo platform="github" iconSize={15} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-medium text-gray-900 truncate">{s.problem}</div>
+                  <div className="text-[11px] text-gray-400">{repos} repos · {followers} followers · {s.time}</div>
+                </div>
+                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wider bg-violet-50 text-violet-600 border border-violet-100">
+                  SYNC
+                </span>
+              </div>
+            );
+          }
+
           return (
             <div
               key={s.id}

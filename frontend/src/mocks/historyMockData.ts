@@ -13,6 +13,8 @@ export type HistorySubmission = {
   time: string; // e.g. "10:30 AM"
   date: string; // e.g. "2026-04-08"
   dateLabel: string; // e.g. "Today", "Yesterday", "Apr 06"
+  activityType?: string; // e.g. "settings_updated" for GitHub sync
+  metadata?: Record<string, string | number | boolean>; // extra data from backend
 };
 
 export type DayActivity = {

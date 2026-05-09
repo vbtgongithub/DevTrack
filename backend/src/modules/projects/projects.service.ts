@@ -1,6 +1,8 @@
 // src/modules/projects/projects.service.ts
 import { Types } from 'mongoose';
 import { Project, ProjectTask, ActivityEvent } from '../../db/models/index.js';
+import { createActivity } from '../activity/activity.service.js';
+import { logger } from '../../shared/logger.js';
 import type {
   ApiProjectListResponse,
   ApiProject,
@@ -73,6 +75,23 @@ export async function createProject(userId: string, payload: ApiProjectCreatePay
     openIssues: 0,
   });
 
+  // Activity logging
+  createActivity(userId, {
+    type: 'project_created',
+    title: `Created project ${payload.name}`,
+    description: payload.description || '',
+    platform: 'devtrack',
+    url: payload.repoUrl ?? null,
+    tags: ['project', 'create'],
+    metadata: {
+      projectId: project._id.toString(),
+      projectName: payload.name,
+      status: payload.status,
+    },
+  }).catch((err: unknown) => {
+    logger.warn('Failed to log project create activity', { error: err instanceof Error ? err.message : String(err) });
+  });
+
   return mapProjectToApi(project.toObject() as unknown as Record<string, unknown> & { _id: { toString(): string } });
 }
 
@@ -87,10 +106,43 @@ export async function updateProject(
     { new: true }
   ).lean();
 
+  if (project) {
+    // Build a human-readable description of what changed
+    const changes: string[] = [];
+    if (payload.name) changes.push(`renamed to "${payload.name}"`);
+    if (payload.status) changes.push(`status → ${payload.status}`);
+    if (payload.visibility) changes.push(`visibility → ${payload.visibility}`);
+    if (payload.techStack) changes.push('updated tech stack');
+    const desc = changes.length > 0 ? changes.join(', ') : 'updated project details';
+
+    createActivity(userId, {
+      type: 'project_updated',
+      title: `Updated project ${project.name}`,
+      description: desc,
+      platform: 'devtrack',
+      url: (project.repoUrl as string) ?? null,
+      tags: ['project', 'update'],
+      metadata: {
+        projectId,
+        projectName: project.name as string,
+      },
+    }).catch((err: unknown) => {
+      logger.warn('Failed to log project update activity', { error: err instanceof Error ? err.message : String(err) });
+    });
+  }
+
   return project ? mapProjectToApi(project) : null;
 }
 
 export async function deleteProject(userId: string, projectId: string): Promise<boolean> {
+  // Read project name before deleting
+  const project = await Project.findOne({
+    _id: new Types.ObjectId(projectId),
+    userId: new Types.ObjectId(userId),
+  }).lean();
+
+  if (!project) return false;
+
   // Delete associated tasks first
   await ProjectTask.deleteMany({ projectId: new Types.ObjectId(projectId) });
 
@@ -98,6 +150,23 @@ export async function deleteProject(userId: string, projectId: string): Promise<
     _id: new Types.ObjectId(projectId),
     userId: new Types.ObjectId(userId),
   });
+
+  if (result.deletedCount > 0) {
+    createActivity(userId, {
+      type: 'project_deleted',
+      title: `Deleted project ${project.name}`,
+      description: `Removed project "${project.name}" and its tasks`,
+      platform: 'devtrack',
+      url: null,
+      tags: ['project', 'delete'],
+      metadata: {
+        projectId,
+        projectName: project.name,
+      },
+    }).catch((err: unknown) => {
+      logger.warn('Failed to log project delete activity', { error: err instanceof Error ? err.message : String(err) });
+    });
+  }
 
   return result.deletedCount > 0;
 }

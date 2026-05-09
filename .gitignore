@@ -7,10 +7,20 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
+# Dependencies
+node_modules/
+
+# Build output
 dist
 dist-ssr
-*.local
+build
+coverage
+
+# Environment files
+.env
+.env.*
+.env.local
+!.env.example
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +32,43 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local AI/Tooling files
+.claude/
+.claude/settings.local.json
+.claude/settings.json
+.claude/CLAUDE.md
+.claude/memory/
+.claude/agents/
+.cursor/
+cursor/
+
+# Markdown docs (keep only production docs)
+*.md
+!README.md
+!PROJECT_STATUS.md
+!prompt.md
+
+# Local documentation (not needed for production)
+docs/
+claude/
+
+# Local scripts (dev helpers)
+scripts/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# OS files
+Thumbs.db
+ehthumbs.db
+
+# Architecture docs (local only)
+DevTrack-Architecture.docx
+
+# Prompt files (temp)
+prompt.md

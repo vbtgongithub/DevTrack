@@ -175,10 +175,32 @@ export const EMPTY_HACKERRANK_STATS: HackerRankStats = {
 };
 
 // ---------------------------------------------------------------------------
-// 6. PLATFORM STATE (per-platform loading / error)
+// 6. GITHUB STATS
 // ---------------------------------------------------------------------------
 
-export type PlatformName = 'leetcode' | 'codeforces' | 'codechef' | 'hackerrank';
+export interface GithubStats {
+  username: string;
+  publicRepos: number;
+  followers: number;
+  following: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const EMPTY_GITHUB_STATS: GithubStats = {
+  username: '',
+  publicRepos: 0,
+  followers: 0,
+  following: 0,
+  createdAt: '',
+  updatedAt: '',
+};
+
+// ---------------------------------------------------------------------------
+// 7. PLATFORM STATE (per-platform loading / error)
+// ---------------------------------------------------------------------------
+
+export type PlatformName = 'leetcode' | 'codeforces' | 'codechef' | 'hackerrank' | 'github';
 
 export interface PlatformState<T> {
   data: T | null;
@@ -192,6 +214,7 @@ export interface AllPlatformStats {
   codeforces: PlatformState<CodeforcesStats>;
   codechef: PlatformState<CodeChefStats>;
   hackerrank: PlatformState<HackerRankStats>;
+  github: PlatformState<GithubStats>;
 }
 
 export const EMPTY_PLATFORM_STATE = <T>(): PlatformState<T> => ({

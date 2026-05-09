@@ -6,7 +6,7 @@ import { dsaRoutes } from '../modules/dsa/index.js';
 import { activityRoutes } from '../modules/activity/index.js';
 import { projectsRoutes } from '../modules/projects/index.js';
 import { profileRoutes } from '../modules/profile/index.js';
-import { settingsRoutes } from '../modules/settings/index.js';
+import settingsRoutes from './settings.routes.js';
 import { syncRoutes } from '../modules/platform-sync/index.js';
 
 const router = Router();

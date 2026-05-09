@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React from 'react';
-import type { FilterOption } from '../../mocks/historyMockData';
+import type { FilterOption } from '../../types/activity';
 
 type Props = {
   active: FilterOption;

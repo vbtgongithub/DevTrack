@@ -14,11 +14,12 @@ const label: Record<Platform, string> = {
   codeforces: 'Codeforces',
   codechef: 'CodeChef',
   hackerrank: 'HackerRank',
+  github: 'GitHub',
 };
 
 export const PlatformOverview: React.FC<PlatformOverviewProps> = React.memo(({ title, items, submissions, className }) => {
   const platformCounts = React.useMemo(() => {
-    const base: Record<Platform, number> = { leetcode: 0, codeforces: 0, codechef: 0, hackerrank: 0 };
+    const base: Record<Platform, number> = { leetcode: 0, codeforces: 0, codechef: 0, hackerrank: 0, github: 0 };
     if (!submissions) return base;
     return submissions.reduce<Record<Platform, number>>((acc, s) => {
       acc[s.platform] = (acc[s.platform] ?? 0) + 1;
