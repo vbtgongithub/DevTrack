@@ -16,6 +16,14 @@ import { envConfig } from './envCheck';
 const BASE_URL = envConfig.VITE_API_BASE_URL;
 const TIMEOUT = 15_000; // 15 seconds
 
+type AuthInvalidHandler = (() => void) | null;
+
+let onAuthInvalid: AuthInvalidHandler = null;
+
+export function setOnAuthInvalid(handler: AuthInvalidHandler) {
+  onAuthInvalid = handler;
+}
+
 // ---------------------------------------------------------------------------
 // Create Axios Instance
 // ---------------------------------------------------------------------------
@@ -84,6 +92,7 @@ axiosClient.interceptors.response.use(
         // Refresh failed — clear tokens and redirect
         localStorage.removeItem('devtrack_access_token');
         localStorage.removeItem('devtrack_refresh_token');
+        onAuthInvalid?.();
         window.location.href = '/login';
         return Promise.reject(error);
       }

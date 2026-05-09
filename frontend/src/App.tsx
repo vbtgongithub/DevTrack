@@ -46,12 +46,6 @@ const AppShell: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const user = useUserStore((s) => s.user);
-  const logout = useUserStore((s) => s.logout);
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login', { replace: true });
-  };
 
   const navItems: SidebarNavItemVM[] = NAV_ITEMS.map((item) => ({
     ...item,
@@ -89,7 +83,6 @@ const AppShell: React.FC = () => {
           onNotificationsClick={() => {}}
           onProfileClick={() => navigate('/settings')}
           onSearchClick={() => {}}
-          onLogout={handleLogout}
         />
 
         <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">

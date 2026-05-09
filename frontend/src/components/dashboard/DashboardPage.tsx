@@ -49,27 +49,27 @@ const DashboardPage: React.FC = () => {
       <DashboardHeader />
 
       {/* 2. Merged Insight Strip */}
-      <TodaySummaryBar data={data} />
+      <TodaySummaryBar />
 
       {/* 3. PRIMARY ZONE — Streak (large) + Daily Goal + Achievements */}
-      <GamificationPanel data={data} />
+      <GamificationPanel />
 
       {/* GitHub Overview Profile */}
       <GithubOverviewCard data={data} />
 
       {/* 4. Stats Grid */}
-      <StatsGrid data={data} />
+      <StatsGrid />
 
       {/* 5. AI INSIGHTS — Visually Dominant */}
-      <EnhancedInsightsCard data={data} />
+      <EnhancedInsightsCard />
 
       {/* 6. Progress Cards */}
-      <ProgressCards data={data} />
+      <ProgressCards />
 
       {/* 7. Mission + Contests + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         <div className="h-full">
-          <MissionCard missions={data?.missions} />
+          <MissionCard />
         </div>
         <div className="h-full">
           <AnnouncementSection />
