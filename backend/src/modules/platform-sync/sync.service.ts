@@ -327,7 +327,6 @@ async function fetchUniqueSolvedProblems(handle: string): Promise<number> {
 
   return solvedProblems.size;
 }
-}
 
 export async function syncAllPlatforms(userId: string): Promise<SyncResult[]> {
   const platforms = await ConnectedPlatform.find({
