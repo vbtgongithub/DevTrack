@@ -2,10 +2,11 @@
 // DashboardHeader.tsx — Premium Dashboard Header
 // ============================================================================
 import React from 'react';
-import type { DashboardHeaderProps } from '../../types/ui.types';
 import { Icon } from '../shared/Icon';
+import { useUserStore } from '../../store/userStore';
 
-export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ data }) => {
+export const DashboardHeader: React.FC = () => {
+  const displayName = useUserStore((s) => s.user?.displayName) || 'there';
   const now = new Date();
   const hour = now.getHours();
   const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -20,7 +21,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ data }) => {
     <div className="flex items-start justify-between gap-4">
       <div className="flex flex-col gap-1.5">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-          {timeGreeting}, {data.displayName} 👋
+          {timeGreeting}, {displayName} 👋
         </h1>
         <div className="flex items-center gap-3 text-sm text-gray-500">
           <span className="flex items-center gap-1.5">

@@ -6,7 +6,6 @@
 // ============================================================================
 
 import type {
-  DashboardHeaderVM,
   StreakBannerVM,
   StatsGridVM,
   StatCardVM,
@@ -83,10 +82,6 @@ export interface PageShellProps {
 // ---------------------------------------------------------------------------
 // 2. DASHBOARD COMPONENT PROPS
 // ---------------------------------------------------------------------------
-
-export interface DashboardHeaderProps {
-  data: DashboardHeaderVM;
-}
 
 export interface StreakBannerProps {
   data: StreakBannerVM;
