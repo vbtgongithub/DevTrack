@@ -92,7 +92,11 @@ axiosClient.interceptors.response.use(
         // Refresh failed — clear tokens and redirect
         localStorage.removeItem('devtrack_access_token');
         localStorage.removeItem('devtrack_refresh_token');
-        onAuthInvalid?.();
+        try {
+          onAuthInvalid?.();
+        } catch {
+          // ignore — redirect should still happen
+        }
         window.location.href = '/login';
         return Promise.reject(error);
       }
