@@ -5,7 +5,9 @@ export type PlatformStatCardColor = 'yellow' | 'blue' | 'orange' | 'green';
 export type PlatformStatCardProps = {
   name: string;
   problems: number;
+  label?: string;
   rating: string | number;
+  ratingLabel?: string;
   logo: string;
   color: PlatformStatCardColor;
 };
@@ -20,7 +22,9 @@ const COLOR_ACCENTS: Record<PlatformStatCardColor, { bar: string; badge: string 
 export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
   name,
   problems,
+  label = 'Problems Solved',
   rating,
+  ratingLabel = 'Rating',
   logo,
   color,
 }) => {
@@ -66,11 +70,11 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
         <div className="text-3xl font-bold text-gray-900 leading-none tabular-nums whitespace-nowrap">
           {problems.toLocaleString()}
         </div>
-        <div className="mt-1 text-xs text-gray-500 whitespace-nowrap">Problems Solved</div>
+        <div className="mt-1 text-xs text-gray-500 whitespace-nowrap">{label}</div>
       </div>
 
       <div className="min-w-0 pt-3 border-t border-gray-50 flex items-center justify-between gap-4">
-        <span className="text-xs text-gray-400 font-medium">Rating</span>
+        <span className="text-xs text-gray-400 font-medium">{ratingLabel}</span>
         <span className={[
           'text-xs font-bold px-2 py-0.5 rounded-full border tabular-nums',
           accent.badge,

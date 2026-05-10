@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
 
 type Mode = 'login' | 'register';
@@ -27,40 +28,81 @@ const Field: React.FC<FieldProps> = ({
   error,
   required,
   autoFocus,
-}) => (
-  <div className="space-y-2">
-    <label htmlFor={id} className="block text-xs font-medium text-gray-400 uppercase tracking-wider">
-      {label}
-    </label>
-    <input
-      id={id}
-      type={type}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      required={required}
-      autoFocus={autoFocus}
-      className={`
-        w-full px-4 py-3.5 rounded-xl text-sm text-white
-        bg-[#1E293B]/50 backdrop-blur-sm
-        border transition-all duration-200 ease-out
-        placeholder:text-gray-600
-        outline-none
-        ${error
-          ? 'border-red-500/50 focus:border-red-500'
-          : 'border-[#334155]/50 focus:border-indigo-500/50 hover:border-[#475569]'
-        }
-      `}
-    />
-    {error && (
-      <p className="text-xs text-red-400 pl-1">{error}</p>
-    )}
-  </div>
-);
+}) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === 'password';
+  const inputType = isPassword && showPassword ? 'text' : type;
+
+  return (
+    <div className="space-y-1.5 relative group">
+      <label htmlFor={id} className="block text-[13px] font-semibold text-[#0F172A]">
+        {label}
+        {required && <span className="text-[#7C6CF2] ml-1" aria-hidden="true">*</span>}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          type={inputType}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          autoFocus={autoFocus}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className={`
+            w-full px-4 py-3.5 rounded-xl text-[14px] text-[#0F172A] font-medium
+            bg-[#FAFAF8] 
+            border transition-all duration-300 ease-out
+            placeholder:text-[#94A3B8] placeholder:font-normal
+            outline-none
+            ${error
+              ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10 bg-white'
+              : 'border-[rgba(15,23,42,0.06)] hover:border-[rgba(15,23,42,0.12)] focus:border-[#7C6CF2] focus:ring-4 focus:ring-[#7C6CF2]/10 bg-[#FAFAF8] focus:bg-white'
+            }
+            ${isPassword ? 'pr-12' : ''}
+          `}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#0F172A] transition-colors p-1"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            )}
+          </button>
+        )}
+      </div>
+      <AnimatePresence>
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            id={`${id}-error`}
+            className="text-[13px] text-red-500 font-medium pl-1 m-0 absolute -bottom-5"
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 /* ─── Spinner Component ─── */
 const Spinner: React.FC = () => (
-  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
   </svg>
@@ -68,6 +110,7 @@ const Spinner: React.FC = () => (
 
 /* ─── Main Component ─── */
 export const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>('login');
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -138,6 +181,8 @@ export const LoginPage: React.FC = () => {
       } else {
         await storeRegister(form.email, form.username, form.displayName, form.password);
       }
+      // Navigate to dashboard after successful auth
+      navigate('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed. Please try again.');
     } finally {
@@ -153,29 +198,42 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden bg-[#0B1020]">
+    <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden bg-[#F7F6F3] font-sans selection:bg-[#7C6CF2]/15 selection:text-[#0F172A]">
       {/* ─── Background Effects ─── */}
-      <div className="absolute inset-0 bg-[#0B1020]" />
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[120px]" />
-      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[100px]" />
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.015%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-50" />
+      <div className="absolute inset-0 pointer-events-none bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay z-0" />
+      <motion.div 
+        animate={{ 
+          y: [0, -20, 0],
+          x: [0, 10, 0],
+        }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#7C6CF2]/10 rounded-full blur-[120px]" 
+      />
+      <motion.div 
+        animate={{ 
+          y: [0, 20, 0],
+          x: [0, -15, 0],
+        }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-[#A78BFA]/10 rounded-full blur-[100px]" 
+      />
 
       {/* ─── Card Container ─── */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-[420px]"
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 w-full max-w-[440px]"
       >
         {/* ─── Branding ─── */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-10">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-            className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/25 mb-4"
+            transition={{ delay: 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="inline-flex items-center justify-center w-14 h-14 rounded-[18px] bg-white border border-[rgba(15,23,42,0.06)] shadow-[0_4px_12px_rgba(15,23,42,0.06)] mb-6"
           >
-            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-[#0F172A]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
             </svg>
           </motion.div>
@@ -183,59 +241,58 @@ export const LoginPage: React.FC = () => {
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.15, duration: 0.5 }}
-            className="text-3xl font-bold text-white tracking-tight"
+            className="text-[32px] font-bold text-[#0F172A] tracking-tight leading-tight"
           >
-            DevTrack
+            Welcome to DevTrack
           </motion.h1>
           <motion.p
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-sm text-gray-500 mt-2"
+            className="text-[15px] text-[#64748B] mt-2 font-medium"
           >
-            Your developer journey, elevated.
+            Log in to continue your developer journey.
           </motion.p>
         </div>
 
-        {/* ─── Glass Card ─── */}
+        {/* ─── Soft Card ─── */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.25, duration: 0.5 }}
-          className="rounded-3xl p-8 bg-[#111827]/80 backdrop-blur-xl border border-[#1E293B]/50 shadow-2xl shadow-black/20"
+          className="relative rounded-[28px] p-8 sm:p-10 bg-white border border-[rgba(15,23,42,0.06)] shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_rgba(15,23,42,0.06)]"
         >
           {/* ─── Tab Toggle ─── */}
-          <div className="flex rounded-xl bg-[#1E293B]/50 backdrop-blur-sm p-1 mb-7">
+          <div className="flex rounded-2xl bg-[#F1EFEA] p-1.5 mb-8 border border-[rgba(15,23,42,0.04)]">
             {(['login', 'register'] as Mode[]).map((m) => (
-              <motion.button
+              <button
                 key={m}
                 type="button"
                 onClick={() => switchMode(m)}
                 className={`
-                  flex-1 py-2.5 text-sm font-medium rounded-lg
+                  flex-1 py-2.5 text-[14px] font-semibold rounded-xl
                   transition-all duration-300 ease-out
                   relative overflow-hidden
                   ${mode === m
-                    ? 'text-white'
-                    : 'text-gray-500 hover:text-gray-300'
+                    ? 'text-[#0F172A] shadow-[0_1px_3px_rgba(15,23,42,0.06)]'
+                    : 'text-[#64748B] hover:text-[#0F172A]'
                   }
                 `}
-                whileTap={{ scale: 0.98 }}
               >
                 {mode === m && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    className="absolute inset-0 bg-white rounded-xl border border-[rgba(15,23,42,0.04)]"
+                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
                 <span className="relative z-10">{m === 'login' ? 'Sign In' : 'Create Account'}</span>
-              </motion.button>
+              </button>
             ))}
           </div>
 
           {/* ─── Form ─── */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <AnimatePresence mode="wait">
               {mode === 'register' && (
                 <motion.div
@@ -243,7 +300,7 @@ export const LoginPage: React.FC = () => {
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="space-y-5"
+                  className="space-y-6"
                 >
                   <Field
                     id="ag-displayName"
@@ -311,6 +368,7 @@ export const LoginPage: React.FC = () => {
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
+                  className="pt-2"
                 >
                   <Field
                     id="ag-confirmPassword"
@@ -327,34 +385,36 @@ export const LoginPage: React.FC = () => {
             </AnimatePresence>
 
             {/* ─── Global Error ─── */}
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-start gap-2.5 rounded-xl bg-red-500/10 backdrop-blur-sm border border-red-500/20 px-4 py-3"
-              >
-                <svg className="w-4 h-4 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                </svg>
-                <p className="text-sm text-red-300 leading-snug">{error}</p>
-              </motion.div>
-            )}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-100 px-4 py-3"
+                >
+                  <svg className="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
+                  <p className="text-[14px] font-medium text-red-600 leading-snug">{error}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* ─── Submit Button ─── */}
             <motion.button
               type="submit"
               disabled={loading}
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.01, translateY: -1 }}
               whileTap={{ scale: 0.98 }}
               className="
-                w-full py-3.5 px-4 mt-2
-                bg-gradient-to-r from-indigo-500 to-purple-600
-                hover:from-indigo-600 hover:to-purple-700
-                disabled:from-indigo-400 disabled:to-purple-400 disabled:cursor-not-allowed
-                text-white font-semibold text-sm
-                rounded-xl
-                shadow-lg shadow-indigo-500/20
-                hover:shadow-indigo-500/30
+                w-full py-3.5 px-4 mt-4
+                bg-[#7C6CF2] hover:bg-[#6b5ae0]
+                disabled:bg-[#A78BFA] disabled:cursor-not-allowed
+                text-white font-semibold text-[15px]
+                rounded-[14px]
+                shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_16px_rgba(124,108,242,0.2)]
+                hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_24px_rgba(124,108,242,0.3)]
                 transition-all duration-300 ease-out
                 flex items-center justify-center gap-2
               "
@@ -369,38 +429,38 @@ export const LoginPage: React.FC = () => {
               )}
             </motion.button>
           </form>
-
-          {/* ─── Footer Link ─── */}
-          <p className="text-center text-sm text-gray-500 mt-6">
-            {mode === 'login' ? (
-              <>
-                Don't have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => switchMode('register')}
-                  className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors duration-200"
-                >
-                  Create one
-                </button>
-              </>
-            ) : (
-              <>
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => switchMode('login')}
-                  className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors duration-200"
-                >
-                  Sign in
-                </button>
-              </>
-            )}
-          </p>
         </motion.div>
 
+        {/* ─── Footer Link ─── */}
+        <p className="text-center text-[14px] text-[#64748B] mt-8 font-medium">
+          {mode === 'login' ? (
+            <>
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => switchMode('register')}
+                className="font-semibold text-[#0F172A] hover:text-[#7C6CF2] transition-colors duration-200 underline decoration-[rgba(15,23,42,0.1)] underline-offset-4 hover:decoration-[#7C6CF2]/40"
+              >
+                Create one
+              </button>
+            </>
+          ) : (
+            <>
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => switchMode('login')}
+                className="font-semibold text-[#0F172A] hover:text-[#7C6CF2] transition-colors duration-200 underline decoration-[rgba(15,23,42,0.1)] underline-offset-4 hover:decoration-[#7C6CF2]/40"
+              >
+                Sign in
+              </button>
+            </>
+          )}
+        </p>
+
         {/* ─── Subtle Brand Footer ─── */}
-        <p className="text-center text-xs text-gray-600 mt-6 tracking-wider">
-          DEVTRACK &middot; TRACK &middot; BUILD &middot; SHIP
+        <p className="text-center text-[11px] text-[#94A3B8] mt-10 font-medium tracking-widest uppercase">
+          DEVTRACK
         </p>
       </motion.div>
     </div>

@@ -3,12 +3,11 @@
 // ============================================================================
 
 import React from 'react';
-import type { LeetCodeStats, CodeforcesStats, CodeChefStats, HackerRankStats, GithubStats, PlatformState } from '../../types/profile.types';
+import type { LeetCodeStats, CodeforcesStats, CodeChefStats, GithubStats, PlatformState } from '../../types/profile.types';
 
 import leetcodeLogo from '@/assets/logos/LeetCode.png';
 import codeforcesLogo from '@/assets/logos/Codeforces.png';
 import codechefLogo from '@/assets/logos/CodeChef.png';
-import hackerrankLogo from '@/assets/logos/HackerRank.png';
 
 // ---------------------------------------------------------------------------
 // Helper: get Codeforces rank color
@@ -282,60 +281,6 @@ export const CodeChefStatsCard: React.FC<{ state: PlatformState<CodeChefStats>; 
 
 CodeChefStatsCard.displayName = 'CodeChefStatsCard';
 
-// ---------------------------------------------------------------------------
-// HackerRank Card
-// ---------------------------------------------------------------------------
-export const HackerRankStatsCard: React.FC<{ state: PlatformState<HackerRankStats>; username: string }> = React.memo(
-  ({ state, username }) => {
-    if (!state.data && !state.loading) return null;
-
-    return (
-      <div className="platform-stats-card platform-stats-card--hackerrank">
-        <div className="platform-stats-card__header">
-          <div className="platform-stats-card__header-left">
-            <img src={hackerrankLogo} alt="HackerRank" style={{ width: 24, height: 24 }} />
-            <div>
-              <div className="platform-stats-card__name">HackerRank</div>
-              <div className="platform-stats-card__username">@{username}</div>
-            </div>
-          </div>
-          {state.data && state.data.score > 0 && (
-            <span
-              className="platform-stats-card__rating-badge"
-              style={{ background: '#e6fef0', color: '#00c853' }}
-            >
-              {state.data.score} Score
-            </span>
-          )}
-        </div>
-
-        {state.loading ? (
-          <StatsSkeleton />
-        ) : state.data ? (
-          <div className="platform-stats-card__stats-grid">
-            <div className="platform-stat-item">
-              <div className="platform-stat-item__label">Total Solved</div>
-              <div className="platform-stat-item__value">{state.data.totalSolved}</div>
-            </div>
-            <div className="platform-stat-item">
-              <div className="platform-stat-item__label">Contests</div>
-              <div className="platform-stat-item__value">{state.data.totalContests || '—'}</div>
-            </div>
-            <div className="platform-stat-item">
-              <div className="platform-stat-item__label">Badges</div>
-              <div className="platform-stat-item__value">{state.data.badges || '—'}</div>
-            </div>
-            <div className="platform-stat-item">
-              <div className="platform-stat-item__label">Certificates</div>
-              <div className="platform-stat-item__value">{state.data.certificates || '—'}</div>
-            </div>
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-);
-
 export const GithubStatsCard: React.FC<{ state: PlatformState<GithubStats>; username: string }> = React.memo(
   ({ state, username }) => {
     if (!state.data && !state.loading) return null;
@@ -359,26 +304,43 @@ export const GithubStatsCard: React.FC<{ state: PlatformState<GithubStats>; user
         {state.loading ? (
           <StatsSkeleton />
         ) : state.data ? (
-          <div className="platform-stats-card__stats-grid">
-            <div className="platform-stat-item">
-              <div className="platform-stat-item__label">Public Repos</div>
-              <div className="platform-stat-item__value">{state.data.publicRepos}</div>
-            </div>
-            <div className="platform-stat-item">
-              <div className="platform-stat-item__label">Followers</div>
-              <div className="platform-stat-item__value">{state.data.followers}</div>
-            </div>
-            <div className="platform-stat-item">
-              <div className="platform-stat-item__label">Following</div>
-              <div className="platform-stat-item__value">{state.data.following}</div>
-            </div>
-            <div className="platform-stat-item">
-              <div className="platform-stat-item__label">Created</div>
-              <div className="platform-stat-item__value" style={{ fontSize: 11 }}>
-                {state.data.createdAt ? new Date(state.data.createdAt).toLocaleDateString() : '—'}
+          <>
+            <div className="platform-stats-card__stats-grid">
+              <div className="platform-stat-item">
+                <div className="platform-stat-item__label">Public Repos</div>
+                <div className="platform-stat-item__value">{state.data.publicRepos}</div>
+              </div>
+              <div className="platform-stat-item">
+                <div className="platform-stat-item__label">Followers</div>
+                <div className="platform-stat-item__value">{state.data.followers}</div>
+              </div>
+              <div className="platform-stat-item">
+                <div className="platform-stat-item__label">Stars</div>
+                <div className="platform-stat-item__value">{state.data.totalStars}</div>
+              </div>
+              <div className="platform-stat-item">
+                <div className="platform-stat-item__label">Following</div>
+                <div className="platform-stat-item__value">{state.data.following}</div>
               </div>
             </div>
-          </div>
+
+            {state.data.topLanguages && state.data.topLanguages.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {state.data.topLanguages.slice(0, 3).map(lang => (
+                  <span key={lang} className="px-2 py-0.5 text-[10px] font-bold bg-dt-primary/5 text-dt-primary rounded-md border border-dt-primary/10">
+                    {lang}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
+              <span className="text-[10px] text-gray-400 font-medium">Created</span>
+              <span className="text-[10px] font-bold text-gray-600">
+                {state.data.createdAt ? new Date(state.data.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short' }) : '—'}
+              </span>
+            </div>
+          </>
         ) : null}
       </div>
     );

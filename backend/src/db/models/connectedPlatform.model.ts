@@ -3,7 +3,7 @@ import { Schema, model, type Document } from 'mongoose';
 
 export interface IConnectedPlatform extends Document {
   userId: Schema.Types.ObjectId;
-  platformName: 'leetcode' | 'codeforces' | 'github' | 'hackerrank' | 'codechef';
+  platformName: 'leetcode' | 'codeforces' | 'github' | 'codechef';
   username: string;
   profileUrl: string;
   accessToken: string | null;
@@ -25,7 +25,7 @@ const connectedPlatformSchema = new Schema<IConnectedPlatform>(
     },
     platformName: {
       type: String,
-      enum: ['leetcode', 'codeforces', 'github', 'hackerrank', 'codechef'],
+      enum: ['leetcode', 'codeforces', 'github', 'codechef'],
       required: true,
     },
     username: {

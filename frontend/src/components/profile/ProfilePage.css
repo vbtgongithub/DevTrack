@@ -435,7 +435,6 @@
 .platform-stats-card--leetcode::before { background: linear-gradient(90deg, #f59e0b, #f97316); }
 .platform-stats-card--codeforces::before { background: linear-gradient(90deg, #3b82f6, #6366f1); }
 .platform-stats-card--codechef::before { background: linear-gradient(90deg, #795548, #a1887f); }
-.platform-stats-card--hackerrank::before { background: linear-gradient(90deg, #00c853, #00ea64); }
 
 .platform-stats-card__header {
   display: flex;

@@ -50,7 +50,7 @@ export interface UserSettingsResponse {
     github: PlatformConfig;
     codeforces: PlatformConfig;
     leetcode: PlatformConfig;
-    hackerrank: PlatformConfig;
+    codechef: PlatformConfig;
   };
   notifications: NotificationSettings;
   appearance: AppearanceSettings;
@@ -64,7 +64,7 @@ export interface UpdateSettingsPayload {
     github?: PlatformConfig;
     codeforces?: PlatformConfig;
     leetcode?: PlatformConfig;
-    hackerrank?: PlatformConfig;
+    codechef?: PlatformConfig;
   };
 }
 

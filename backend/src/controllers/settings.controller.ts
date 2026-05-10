@@ -16,7 +16,7 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 
 /** Allowed platform names — single source of truth. */
-const ALLOWED_PLATFORMS = ['github', 'codeforces', 'leetcode', 'hackerrank'] as const;
+const ALLOWED_PLATFORMS = ['github', 'codeforces', 'leetcode', 'codechef'] as const;
 type AllowedPlatform = typeof ALLOWED_PLATFORMS[number];
 
 /** Shape a client may send for a single platform. */
@@ -44,7 +44,7 @@ const updateSettingsSchema: z.ZodType<SettingsUpdateInput> = z.object({
     github:     platformFieldSchema.optional(),
     codeforces: platformFieldSchema.optional(),
     leetcode:   platformFieldSchema.optional(),
-    hackerrank: platformFieldSchema.optional(),
+    codechef:   platformFieldSchema.optional(),
   }).strict().optional(),                 // rejects platforms not in the list
 }).strict();                              // rejects top-level unknowns
 

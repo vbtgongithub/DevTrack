@@ -6,20 +6,18 @@
 // ============================================================================
 
 import React from 'react';
-import type { ProfileData, PlatformState, LeetCodeStats, CodeforcesStats, CodeChefStats, HackerRankStats } from '../../types/profile.types';
+import type { ProfileData, PlatformState, LeetCodeStats, CodeforcesStats, CodeChefStats } from '../../types/profile.types';
 import { Icon } from '../shared/Icon';
 
 import leetcodeLogo from '@/assets/logos/LeetCode.png';
 import codeforcesLogo from '@/assets/logos/Codeforces.png';
 import codechefLogo from '@/assets/logos/CodeChef.png';
-import hackerrankLogo from '@/assets/logos/HackerRank.png';
 
 interface CPProfilesCardProps {
   profile: ProfileData;
   leetcode: PlatformState<LeetCodeStats>;
   codeforces: PlatformState<CodeforcesStats>;
   codechef: PlatformState<CodeChefStats>;
-  hackerrank: PlatformState<HackerRankStats>;
   onUpdate: <K extends keyof ProfileData>(field: K, value: ProfileData[K]) => void;
   onFetchAll: () => void;
   // Sync lifecycle props
@@ -29,7 +27,7 @@ interface CPProfilesCardProps {
 }
 
 type PlatformConfig = {
-  key: 'leetcodeUsername' | 'codeforcesUsername' | 'codechefUsername' | 'hackerrankUsername';
+  key: 'leetcodeUsername' | 'codeforcesUsername' | 'codechefUsername';
   label: string;
   logo: string;
   placeholder: string;
@@ -56,7 +54,7 @@ function formatLastSynced(iso: string | null): string {
 }
 
 export const CPProfilesCard: React.FC<CPProfilesCardProps> = React.memo(
-  ({ profile, leetcode, codeforces, codechef, hackerrank, onUpdate, onFetchAll, syncState, syncMessage, lastSyncedAt }) => {
+  ({ profile, leetcode, codeforces, codechef, onUpdate, onFetchAll, syncState, syncMessage, lastSyncedAt }) => {
     const platforms: PlatformConfig[] = [
       {
         key: 'leetcodeUsername',
@@ -82,22 +80,13 @@ export const CPProfilesCard: React.FC<CPProfilesCardProps> = React.memo(
         bgColor: '#faf5f0',
         status: codechef.loading ? 'loading' : codechef.error ? 'error' : codechef.data ? 'connected' : 'idle',
       },
-      {
-        key: 'hackerrankUsername',
-        label: 'HackerRank',
-        logo: hackerrankLogo,
-        placeholder: 'e.g. hackerrank_user',
-        bgColor: '#e6fef0',
-        status: hackerrank.loading ? 'loading' : hackerrank.error ? 'error' : hackerrank.data ? 'connected' : 'idle',
-      },
     ];
 
     const isSyncing = syncState === 'syncing';
     const hasAnyUsername =
       profile.leetcodeUsername.trim() ||
       profile.codeforcesUsername.trim() ||
-      profile.codechefUsername.trim() ||
-      profile.hackerrankUsername.trim();
+      profile.codechefUsername.trim();
 
     return (
       <div className="profile-card">
@@ -144,12 +133,6 @@ export const CPProfilesCard: React.FC<CPProfilesCardProps> = React.memo(
           <div className="platform-error">
             <Icon name="exclamation-triangle" size={14} />
             <span>CodeChef: {codechef.error}</span>
-          </div>
-        )}
-        {hackerrank.error && (
-          <div className="platform-error">
-            <Icon name="exclamation-triangle" size={14} />
-            <span>HackerRank: {hackerrank.error}</span>
           </div>
         )}
 

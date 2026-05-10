@@ -13,7 +13,6 @@ import type {
   LeetCodeStats,
   CodeforcesStats,
   CodeChefStats,
-  HackerRankStats,
   GithubStats,
   PlatformState,
 } from '../types/profile.types';
@@ -41,7 +40,6 @@ interface ProfileStore {
   leetcode: PlatformState<LeetCodeStats>;
   codeforces: PlatformState<CodeforcesStats>;
   codechef: PlatformState<CodeChefStats>;
-  hackerrank: PlatformState<HackerRankStats>;
   github: PlatformState<GithubStats>;
 
   // Sync lifecycle
@@ -65,7 +63,7 @@ interface ProfileStore {
   clearSyncMessage: () => void;
 
   // Actions: Populate stats from dashboard data (called by ProfilePage)
-  populateFromDashboard: (platforms: ApiPlatformStats[]) => void;
+  populateFromDashboard: (platforms: ApiPlatformStats[], githubStats?: any) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -78,7 +76,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   leetcode: EMPTY_PLATFORM_STATE<LeetCodeStats>(),
   codeforces: EMPTY_PLATFORM_STATE<CodeforcesStats>(),
   codechef: EMPTY_PLATFORM_STATE<CodeChefStats>(),
-  hackerrank: EMPTY_PLATFORM_STATE<HackerRankStats>(),
   github: EMPTY_PLATFORM_STATE<GithubStats>(),
 
   syncState: 'idle',
@@ -156,16 +153,15 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   // ─── Populate platform stats from dashboard data ────────────────────
   // Called by ProfilePage with data from useDashboardData.
   // This avoids a separate /api/profile/platforms/stats call.
-  populateFromDashboard: (platforms: ApiPlatformStats[]) => {
+  populateFromDashboard: (platforms: ApiPlatformStats[], githubStats?: any) => {
     const now = Date.now();
-
+ 
     // Reset all first
     const lc = EMPTY_PLATFORM_STATE<LeetCodeStats>();
     const cf = EMPTY_PLATFORM_STATE<CodeforcesStats>();
     const cc = EMPTY_PLATFORM_STATE<CodeChefStats>();
-    const hr = EMPTY_PLATFORM_STATE<HackerRankStats>();
     const gh = EMPTY_PLATFORM_STATE<GithubStats>();
-
+ 
     for (const p of platforms) {
       const name = p.platformName.toLowerCase();
       if (name === 'leetcode') {
@@ -174,14 +170,24 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         Object.assign(cf, { data: mapToCodeforcesStats(p), loading: false, lastFetchedAt: now });
       } else if (name === 'codechef') {
         Object.assign(cc, { data: mapToCodeChefStats(p), loading: false, lastFetchedAt: now });
-      } else if (name === 'hackerrank') {
-        Object.assign(hr, { data: mapToHackerRankStats(p), loading: false, lastFetchedAt: now });
       } else if (name === 'github') {
-        Object.assign(gh, { data: mapToGithubStats(p), loading: false, lastFetchedAt: now });
+        // If we have specialized githubStats, use them as they are more detailed
+        const data = githubStats ? {
+          username: p.username,
+          publicRepos: githubStats.repos,
+          followers: githubStats.followers,
+          following: githubStats.following,
+          totalStars: githubStats.totalStars,
+          topLanguages: githubStats.topLanguages,
+          createdAt: githubStats.lastSyncedAt, // Fallback if created_at not available
+          updatedAt: githubStats.lastSyncedAt,
+        } : mapToGithubStats(p);
+        
+        Object.assign(gh, { data, loading: false, lastFetchedAt: now });
       }
     }
-
-    set({ leetcode: lc, codeforces: cf, codechef: cc, hackerrank: hr, github: gh });
+ 
+    set({ leetcode: lc, codeforces: cf, codechef: cc, github: gh });
   },
 
   // ─── Sync All Platforms ─────────────────────────────────────────────
@@ -199,7 +205,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       leetcode: { ...get().leetcode, loading: true, error: null },
       codeforces: { ...get().codeforces, loading: true, error: null },
       codechef: { ...get().codechef, loading: true, error: null },
-      hackerrank: { ...get().hackerrank, loading: true, error: null },
       github: { ...get().github, loading: true, error: null },
     });
 
@@ -208,7 +213,6 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       ['leetcode', profile.leetcodeUsername],
       ['codeforces', profile.codeforcesUsername],
       ['codechef', profile.codechefUsername],
-      ['hackerrank', profile.hackerrankUsername],
     ];
 
     const connectPromises = platformMap
@@ -312,27 +316,16 @@ function mapToCodeforcesStats(p: ApiPlatformStats): CodeforcesStats {
 }
 
 function mapToCodeChefStats(p: ApiPlatformStats): CodeChefStats {
+  const raw = p.rawData || {};
   return {
     name: p.username,
     currentRating: typeof p.rating === 'number' ? p.rating : 0,
-    highestRating: typeof p.rating === 'number' ? p.rating : 0,
-    stars: '0★',
-    globalRank: 0,
+    highestRating: (raw.highestRating as number) ?? (typeof p.rating === 'number' ? p.rating : 0),
+    stars: (raw.stars as string) ?? '0★',
+    globalRank: parseInt(String(raw.globalRank || '0'), 10),
     countryRank: 0,
     countryName: '',
     totalProblemsSolved: p.totalSolved,
-  };
-}
-
-function mapToHackerRankStats(p: ApiPlatformStats): HackerRankStats {
-  return {
-    username: p.username,
-    totalSolved: p.totalSolved,
-    totalContests: p.totalContests,
-    badges: 0,
-    certificates: 0,
-    level: p.rank ?? '—',
-    score: typeof p.rating === 'number' ? p.rating : 0,
   };
 }
 
@@ -343,6 +336,8 @@ function mapToGithubStats(p: ApiPlatformStats): GithubStats {
     publicRepos: (raw.public_repos as number) ?? 0,
     followers: (raw.followers as number) ?? 0,
     following: (raw.following as number) ?? 0,
+    totalStars: (raw.total_stars as number) ?? 0,
+    topLanguages: (raw.top_languages as string[]) ?? [],
     createdAt: (raw.created_at as string) ?? '',
     updatedAt: (raw.updated_at as string) ?? '',
   };

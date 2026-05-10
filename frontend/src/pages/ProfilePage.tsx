@@ -7,25 +7,28 @@
 // ============================================================================
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageShell } from '../components/layout/PageShell';
 import { ProfileHeader } from '../components/profile/ProfileHeader';
 import { PersonalInfoCard } from '../components/profile/PersonalInfoCard';
 import { CareerGoalsCard } from '../components/profile/CareerGoalsCard';
 import { CPProfilesCard } from '../components/profile/CPProfilesCard';
-import { LeetCodeStatsCard, CodeforcesStatsCard, CodeChefStatsCard, HackerRankStatsCard, GithubStatsCard } from '../components/profile/PlatformStatsCard';
+import { LeetCodeStatsCard, CodeforcesStatsCard, CodeChefStatsCard, GithubStatsCard } from '../components/profile/PlatformStatsCard';
 import { SocialProfilesCard } from '../components/profile/SocialProfilesCard';
 import { useProfileStore } from '../store/profileStore';
+import { useUserStore } from '../store/userStore';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { Icon } from '../components/shared/Icon';
 import '../components/profile/ProfilePage.css';
 
 const ProfilePage: React.FC = () => {
+  const navigate = useNavigate();
+  const logout = useUserStore((s) => s.logout);
   const {
     profile,
     leetcode,
     codeforces,
     codechef,
-    hackerrank,
     github,
     syncState,
     syncMessage,
@@ -55,9 +58,9 @@ const ProfilePage: React.FC = () => {
   // Populate profile platform stats from dashboard data (single source)
   React.useEffect(() => {
     if (dashboard?.platformStats) {
-      populateFromDashboard(dashboard.platformStats);
+      populateFromDashboard(dashboard.platformStats, dashboard.githubStats);
     }
-  }, [dashboard?.platformStats, populateFromDashboard]);
+  }, [dashboard?.platformStats, dashboard?.githubStats, populateFromDashboard]);
 
   // Compute aggregate stats from platform data
   const totalSolved = React.useMemo(() => {
@@ -65,9 +68,9 @@ const ProfilePage: React.FC = () => {
     if (leetcode.data) total += leetcode.data.solvedProblem;
     if (codeforces.data) total += codeforces.data.totalSolved;
     if (codechef.data) total += codechef.data.totalProblemsSolved;
-    if (hackerrank.data) total += hackerrank.data.totalSolved;
+    if (github.data) total += github.data.publicRepos;
     return total;
-  }, [leetcode.data, codeforces.data, codechef.data, hackerrank.data]);
+  }, [leetcode.data, codeforces.data, codechef.data, github.data]);
 
   const bestRating = React.useMemo(() => {
     const ratings: number[] = [];
@@ -81,8 +84,8 @@ const ProfilePage: React.FC = () => {
     loadFromStorage(); // Reset to saved state
   };
 
-  const hasAnyStats = leetcode.data || codeforces.data || codechef.data || hackerrank.data || github.data;
-  const isLoading = dashLoading || leetcode.loading || codeforces.loading || codechef.loading || hackerrank.loading || github.loading;
+  const hasAnyStats = leetcode.data || codeforces.data || codechef.data || github.data;
+  const isLoading = dashLoading || leetcode.loading || codeforces.loading || codechef.loading || github.loading;
 
   return (
     <div className={['transition-opacity duration-300', mounted ? 'opacity-100' : 'opacity-0'].join(' ')}>
@@ -121,7 +124,6 @@ const ProfilePage: React.FC = () => {
               leetcode={leetcode}
               codeforces={codeforces}
               codechef={codechef}
-              hackerrank={hackerrank}
               onUpdate={updateField}
               onFetchAll={fetchAllPlatforms}
               syncState={syncState}
@@ -142,7 +144,6 @@ const ProfilePage: React.FC = () => {
                 <LeetCodeStatsCard state={leetcode} username={profile.leetcodeUsername} />
                 <CodeforcesStatsCard state={codeforces} username={profile.codeforcesUsername} />
                 <CodeChefStatsCard state={codechef} username={profile.codechefUsername} />
-                <HackerRankStatsCard state={hackerrank} username={profile.hackerrankUsername} />
                 <GithubStatsCard state={github} username={profile.githubUrl.split('/').pop() || ''} />
               </div>
             </div>
@@ -156,24 +157,37 @@ const ProfilePage: React.FC = () => {
             </div>
           )}
 
-          {/* ─── 6. Save / Cancel ────────────────────────────────────── */}
-          <div className="profile-save-row">
+          {/* ─── 6. Actions ────────────────────────────────────── */}
+          <div className="flex justify-between items-center w-full mt-4 pb-8">
             <button
               type="button"
-              className="profile-cancel-btn"
-              onClick={handleCancel}
-              disabled={!isDirty}
+              onClick={async () => {
+                await logout();
+                navigate('/');
+              }}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-100 hover:border-red-200"
             >
-              Cancel
+              <Icon name="log-out" size={16} />
+              Log Out
             </button>
-            <button
-              type="button"
-              className="profile-save-btn"
-              onClick={saveToStorage}
-              disabled={!isDirty || isSaving}
-            >
-              {isSaving ? 'Saving...' : 'Save Changes'}
-            </button>
+            <div className="profile-save-row" style={{ marginTop: 0 }}>
+              <button
+                type="button"
+                className="profile-cancel-btn"
+                onClick={handleCancel}
+                disabled={!isDirty}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="profile-save-btn"
+                onClick={saveToStorage}
+                disabled={!isDirty || isSaving}
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
           </div>
         </div>
       </PageShell>

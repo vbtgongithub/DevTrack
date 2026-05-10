@@ -10,7 +10,10 @@ export async function register(req: Request, res: Response): Promise<void> {
 }
 
 export async function login(req: Request, res: Response): Promise<void> {
+  const { emailOrUsername } = req.body;
+  console.log(`[AUTH] Login attempt received for: ${emailOrUsername}`);
   const result = await authService.login(req.body);
+  console.log(`[AUTH] Login successful for: ${emailOrUsername}`);
   successResponse(res, result, 'Login successful');
 }
 

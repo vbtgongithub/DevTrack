@@ -13,7 +13,6 @@ const platformFromLabel = (platform: string) => {
   const lower = platform.toLowerCase();
   if (lower.includes('leet')) return 'leetcode';
   if (lower.includes('force')) return 'codeforces';
-  if (lower.includes('rank')) return 'hackerrank';
   return 'codechef';
 };
 

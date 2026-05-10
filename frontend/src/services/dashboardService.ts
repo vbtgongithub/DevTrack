@@ -19,6 +19,8 @@ export interface GithubDashboardStats {
   repos: number;
   followers: number;
   following: number;
+  totalStars: number;
+  topLanguages: string[];
   avatarUrl: string | null;
   name: string | null;
   bio: string | null;

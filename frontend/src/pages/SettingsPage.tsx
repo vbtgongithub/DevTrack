@@ -82,7 +82,7 @@ const IntegrationsTab: React.FC = () => {
     github: { username: '' },
     codeforces: { handle: '' },
     leetcode: { username: '' },
-    hackerrank: { username: '' },
+    codechef: { username: '' },
   });
 
   const [isSyncingGithub, setIsSyncingGithub] = useState(false);
@@ -94,7 +94,7 @@ const IntegrationsTab: React.FC = () => {
         github: { username: settings.platforms.github?.username || '' },
         codeforces: { handle: settings.platforms.codeforces?.handle || '' },
         leetcode: { username: settings.platforms.leetcode?.username || '' },
-        hackerrank: { username: settings.platforms.hackerrank?.username || '' },
+        codechef: { username: settings.platforms.codechef?.username || '' },
       });
     }
   }, [settings]);
@@ -157,7 +157,7 @@ const IntegrationsTab: React.FC = () => {
     checkAndUpdate('github', 'username');
     checkAndUpdate('codeforces', 'handle');
     checkAndUpdate('leetcode', 'username');
-    checkAndUpdate('hackerrank', 'username');
+    checkAndUpdate('codechef', 'username');
 
     if (Object.keys(updatedPlatforms).length > 0) {
       await updateSettings({ platforms: updatedPlatforms });
@@ -216,13 +216,13 @@ const IntegrationsTab: React.FC = () => {
             disabled={isSaving}
           />
           <InputField
-            label="HackerRank Username"
-            value={formState.hackerrank.username}
-            onChange={(e) => handleChange('hackerrank', 'username', e.target.value)}
-            placeholder="Enter HackerRank username"
+            label="CodeChef Username"
+            value={formState.codechef.username}
+            onChange={(e) => handleChange('codechef', 'username', e.target.value)}
+            placeholder="Enter CodeChef username"
             disabled={isSaving}
           />
-          
+
           <div className="flex justify-end pt-4">
             <button
               onClick={handleSave}

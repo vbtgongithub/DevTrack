@@ -17,7 +17,7 @@ import { Types } from 'mongoose';
 import { createActivity } from '../activity/activity.service.js';
 
 // Platforms that support sync
-const SUPPORTED_PLATFORMS = ['leetcode', 'codeforces', 'codechef', 'github', 'hackerrank'];
+const SUPPORTED_PLATFORMS = ['leetcode', 'codeforces', 'codechef', 'github'];
 
 /**
  * POST /platforms/sync-all

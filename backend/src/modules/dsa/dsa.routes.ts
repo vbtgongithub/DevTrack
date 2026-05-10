@@ -8,7 +8,7 @@ const router = Router();
 
 const problemCreateSchema = z.object({
   title: z.string().min(1),
-  platform: z.enum(['leetcode', 'codeforces', 'hackerrank', 'codechef', 'other']),
+  platform: z.enum(['leetcode', 'codeforces']),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   url: z.string().url(),
   tags: z.array(z.string()),
@@ -38,6 +38,7 @@ router.post('/problems/:id/favorite', authMiddleware, asyncHandler(controller.to
 router.patch('/problems/bulk-status', authMiddleware, validateBody(bulkUpdateSchema), asyncHandler(controller.bulkUpdateStatus));
 router.get('/stats', authMiddleware, asyncHandler(controller.getStats));
 router.get('/dashboard', authMiddleware, asyncHandler(controller.getDashboard));
+router.get('/heatmap', authMiddleware, asyncHandler(controller.getHeatmap));
 router.get('/submissions', authMiddleware, asyncHandler(controller.getSubmissions));
 router.get('/contests', authMiddleware, asyncHandler(controller.getContests));
 router.get('/topics', authMiddleware, asyncHandler(controller.getTopicAnalytics));

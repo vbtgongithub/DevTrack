@@ -112,7 +112,7 @@ export interface ApiStreakDay {
 
 export interface ApiPlatformStats {
   platformId: string;
-  platformName: 'leetcode' | 'codeforces' | 'github' | 'hackerrank' | 'codechef';
+  platformName: 'leetcode' | 'codeforces' | 'github' | 'codechef';
   username: string;
   totalSolved: number;
   easySolved: number;
@@ -153,12 +153,25 @@ export interface ApiDashboardRecentActivity {
   occurredAt: string; // ISO 8601
 }
 
+export interface ApiGithubDashboardStats {
+  repos: number;
+  followers: number;
+  following: number;
+  totalStars: number;
+  topLanguages: string[];
+  avatarUrl: string | null;
+  name: string | null;
+  bio: string | null;
+  lastSyncedAt: string;
+}
+
 export interface ApiDashboardResponse {
   stats: ApiDashboardStats;
   streak: ApiStreakData;
   platformStats: ApiPlatformStats[];
   missions: ApiMission[];
   recentActivity: ApiDashboardRecentActivity[];
+  githubStats: ApiGithubDashboardStats | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -224,7 +237,7 @@ export interface ApiDsaProblem {
   id: string;
   externalId: string;
   title: string;
-  platform: 'leetcode' | 'codeforces' | 'hackerrank' | 'codechef' | 'other';
+  platform: 'leetcode' | 'codeforces' | 'codechef' | 'other';
   difficulty: 'easy' | 'medium' | 'hard';
   url: string;
   tags: string[];

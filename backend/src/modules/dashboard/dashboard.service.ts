@@ -24,6 +24,8 @@ export interface GithubDashboardStatsData {
   repos: number;
   followers: number;
   following: number;
+  totalStars: number;
+  topLanguages: string[];
   avatarUrl: string | null;
   name: string | null;
   bio: string | null;
@@ -33,12 +35,13 @@ export interface GithubDashboardStatsData {
 
 
 export async function getDashboard(userId: string): Promise<ApiDashboardResponse> {
-  const [stats, streak, platformStats, missions, recentActivity] = await Promise.all([
+  const [stats, streak, platformStats, missions, recentActivity, githubStats] = await Promise.all([
     getDashboardStats(userId),
     getStreakData(userId),
     getPlatformStats(userId),
     getMissions(userId),
     getRecentActivity(userId, 10),
+    getGithubDashboardStats(userId),
   ]);
 
   return {
@@ -47,6 +50,7 @@ export async function getDashboard(userId: string): Promise<ApiDashboardResponse
     platformStats,
     missions,
     recentActivity,
+    githubStats,
   };
 }
 
@@ -210,10 +214,13 @@ async function getStreakHistory(userId: string): Promise<ApiStreakData['streakHi
   });
 }
 
+const VALID_PLATFORMS = ['leetcode', 'codeforces', 'github', 'codechef'] as const;
+
 export async function getPlatformStats(userId: string): Promise<ApiPlatformStats[]> {
   const platforms = await ConnectedPlatform.find({
     userId: new Types.ObjectId(userId),
     isConnected: true,
+    platformName: { $in: VALID_PLATFORMS },
   });
 
   const statsPromises = platforms.map(async (platform) => {
@@ -222,23 +229,25 @@ export async function getPlatformStats(userId: string): Promise<ApiPlatformStats
       platformName: platform.platformName,
     });
 
-    // TASK 3: GitHub repos are NOT "solved problems" — zero out DSA metrics for GitHub
+    // GitHub repos are counted towards totalSolved for consistency,
+    // but we can distinguish them by platformId if needed.
     const isGithub = platform.platformName === 'github';
 
     return {
       platformId: platform.platformName,
-      platformName: platform.platformName,
+      platformName: platform.platformName as 'leetcode' | 'codeforces' | 'github',
       username: platform.username,
-      totalSolved: isGithub ? 0 : (stats?.totalSolved || 0),
-      easySolved: isGithub ? 0 : (stats?.easySolved || 0),
-      mediumSolved: isGithub ? 0 : (stats?.mediumSolved || 0),
-      hardSolved: isGithub ? 0 : (stats?.hardSolved || 0),
-      rating: isGithub ? null : (stats?.rating ?? null),
-      rank: isGithub ? null : (stats?.rank ?? null),
-      totalContests: isGithub ? 0 : (stats?.totalContests || 0),
+      totalSolved: stats?.totalSolved || 0,
+      easySolved: stats?.easySolved || 0,
+      mediumSolved: stats?.mediumSolved || 0,
+      hardSolved: stats?.hardSolved || 0,
+      rating: stats?.rating ?? null,
+      rank: stats?.rank ?? null,
+      totalContests: stats?.totalContests || 0,
       lastSyncedAt: platform.lastSyncedAt?.toISOString() || new Date().toISOString(),
       profileUrl: platform.profileUrl,
       isConnected: platform.isConnected,
+      rawData: stats?.rawData || {},
     };
   });
 
@@ -269,6 +278,8 @@ export async function getGithubDashboardStats(userId: string): Promise<GithubDas
     repos: (raw.public_repos as number) ?? 0,
     followers: (raw.followers as number) ?? 0,
     following: (raw.following as number) ?? 0,
+    totalStars: (raw.total_stars as number) ?? 0,
+    topLanguages: (raw.top_languages as string[]) ?? [],
     avatarUrl: (raw.avatar_url as string) ?? null,
     name: (raw.name as string) ?? null,
     bio: (raw.bio as string) ?? null,

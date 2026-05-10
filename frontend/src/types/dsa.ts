@@ -1,5 +1,5 @@
 export type SubmissionStatus = 'accepted' | 'wrong';
-export type Platform = 'leetcode' | 'codeforces' | 'codechef' | 'hackerrank' | 'github';
+export type Platform = 'leetcode' | 'codeforces' | 'codechef' | 'github';
 
 export type Submission = {
   id: string;

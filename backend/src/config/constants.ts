@@ -38,12 +38,6 @@ export const PLATFORMS = {
     baseUrl: 'https://github.com',
     profileUrl: (username: string) => `https://github.com/${username}`,
   },
-  HACKERRANK: {
-    id: 'hackerrank',
-    name: 'HackerRank',
-    baseUrl: 'https://hackerrank.com',
-    profileUrl: (username: string) => `https://hackerrank.com/${username}`,
-  },
 } as const;
 
 export type PlatformId = keyof typeof PLATFORMS;

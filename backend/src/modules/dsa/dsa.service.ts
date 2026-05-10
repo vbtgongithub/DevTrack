@@ -21,19 +21,83 @@ import type {
   ApiDsaContest,
   ApiDsaTopicsListResponse,
   ApiDsaTopicAnalytics,
+  ApiDsaHeatmapResponse,
 } from '../../types/api.types.js';
 import { parsePaginationParams, createPagination, getSkipCount, buildSortOptions } from '../../shared/pagination.js';
-
 const ALLOWED_SORT_FIELDS = ['title', 'difficulty', 'lastSubmittedAt', 'solvedAt', 'timeTaken'];
+
+// ---------------------------------------------------------------------------
+// Inline Aggregation Service (Replacing deleted ingestion module)
+// ---------------------------------------------------------------------------
+const aggregationService = {
+  generateHeatmap: async (userId: string, days: number) => {
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    start.setHours(0, 0, 0, 0);
+
+    const submissions = await DsaSubmission.aggregate([
+      { $match: { userId: new Types.ObjectId(userId), submittedAt: { $gte: start } } },
+      { $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$submittedAt' } },
+          count: { $sum: 1 }
+      }}
+    ]);
+
+    const heatmap = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const found = submissions.find(s => s._id === dateStr);
+      heatmap.push({ date: dateStr, count: found ? found.count : 0 });
+    }
+    return heatmap;
+  },
+
+  calculateStreaks: async (userId: string, days: number) => {
+    const heatmap = await aggregationService.generateHeatmap(userId, days);
+    let current = 0;
+    let longest = 0;
+    let tempStreak = 0;
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    for (let i = 0; i < heatmap.length; i++) {
+      if (heatmap[i].count > 0) {
+        tempStreak++;
+        if (tempStreak > longest) longest = tempStreak;
+      } else {
+        tempStreak = 0;
+      }
+    }
+
+    const todayCount = heatmap.find(h => h.date === today)?.count || 0;
+    const yesterdayCount = heatmap.find(h => h.date === yesterdayStr)?.count || 0;
+
+    if (todayCount > 0) {
+      current = tempStreak; // Because the loop ended with today
+    } else if (yesterdayCount > 0) {
+      // Loop ended with today (0), so yesterday was the last day of tempStreak before it reset
+      // We need to recalculate current streak properly
+      let c = 0;
+      for (let i = heatmap.length - 2; i >= 0; i--) {
+        if (heatmap[i].count > 0) c++;
+        else break;
+      }
+      current = c;
+    }
+
+    return { current, longest };
+  }
+};
 
 export async function getDashboard(userId: string): Promise<ApiDsaDashboardResponse> {
   const userObjId = new Types.ObjectId(userId);
-  const now = new Date();
-  const yearAgo = new Date(now);
-  yearAgo.setDate(yearAgo.getDate() - 364);
-  yearAgo.setHours(0, 0, 0, 0);
 
-  const [problemStats, topicProgress, recentSubmissions, dailyActivities, platformStatsArr] = await Promise.all([
+  // Phase 8: Backend owns ALL aggregation - use aggregation service
+  const [problemStats, topicProgress, recentSubmissions, platformStatsArr, heatmapData, streaks] = await Promise.all([
     DsaProblem.aggregate([
       { $match: { userId: userObjId } },
       {
@@ -49,18 +113,19 @@ export async function getDashboard(userId: string): Promise<ApiDsaDashboardRespo
       .limit(20)
       .populate('problemId', 'title category difficulty')
       .lean(),
-    DailyActivity.find({ userId: userObjId, date: { $gte: yearAgo, $lte: now } }).lean(),
     PlatformStats.find({ userId: userObjId }).lean(),
+    aggregationService.generateHeatmap(userId, 365),
+    aggregationService.calculateStreaks(userId, 365),
   ]);
 
-  // Build 365-day heatmap (index 0 = 364 days ago, index 364 = today)
+  // Build heatmap array (for backward compatibility)
+  const heatmap: number[] = [];
   const activityMap = new Map<string, number>();
-  for (const act of dailyActivities) {
-    const key = new Date(act.date).toISOString().split('T')[0];
-    activityMap.set(key, act.count);
+  for (const day of heatmapData) {
+    activityMap.set(day.date, day.count);
   }
 
-  const heatmap: number[] = [];
+  const now = new Date();
   for (let i = 364; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
@@ -68,30 +133,16 @@ export async function getDashboard(userId: string): Promise<ApiDsaDashboardRespo
     heatmap.push(activityMap.get(key) ?? 0);
   }
 
-  // Current streak (consecutive days with activity ending today)
-  let currentStreak = 0;
-  for (let i = heatmap.length - 1; i >= 0; i--) {
-    if (heatmap[i] > 0) currentStreak++;
-    else break;
-  }
-
-  // Max streak over the year
-  let maxStreak = 0;
-  let tempStreak = 0;
-  for (const count of heatmap) {
-    if (count > 0) {
-      maxStreak = Math.max(maxStreak, ++tempStreak);
-    } else {
-      tempStreak = 0;
-    }
-  }
+  // Use aggregation service results
+  const currentStreak = streaks.current;
+  const maxStreak = streaks.longest;
 
   const localSolved = (problemStats[0]?.totalSolved as number) ?? 0;
   // Use sum of platform solved counts when user hasn't manually tracked problems
-  const platformTotalSolved = platformStatsArr.reduce((sum, p) => sum + (p.totalSolved ?? 0), 0);
+  const platformTotalSolved = platformStatsArr.reduce((sum: number, p: any) => sum + (p.totalSolved ?? 0), 0);
   const totalSolved = localSolved > 0 ? localSolved : platformTotalSolved;
 
-  const bestRating = platformStatsArr.reduce((max, p) => Math.max(max, p.rating ?? 0), 0);
+  const bestRating = platformStatsArr.reduce((max: number, p: any) => Math.max(max, p.rating ?? 0), 0);
 
   const stats: ApiDsaSummaryItem[] = [
     { label: 'Problems Solved', value: String(totalSolved), icon: 'check-circle' },
@@ -100,21 +151,21 @@ export async function getDashboard(userId: string): Promise<ApiDsaDashboardRespo
     { label: 'Max Streak', value: `${maxStreak} days`, icon: 'trophy' },
   ];
 
-  const topics: ApiDsaTopic[] = topicProgress.map((t) => ({
+  const topics: ApiDsaTopic[] = topicProgress.map((t: any) => ({
     name: t.topicName,
     progress: t.totalProblems > 0 ? Math.round((t.solvedCount / t.totalProblems) * 100) : 0,
   }));
 
   const platformOverview: ApiDsaPlatformOverviewItem[] = platformStatsArr
-    .filter((p) => p.platformName !== 'github')
-    .map((p) => ({
+    .filter((p: any) => p.platformName !== 'github')
+    .map((p: any) => ({
       platform: p.platformName,
       stat: p.rating ? `Rating ${p.rating}` : `Solved ${p.totalSolved}`,
     }));
 
   type PopulatedProblem = { title?: string; category?: string; difficulty?: string } | null;
 
-  const submissions: ApiDsaDashboardSubmission[] = recentSubmissions.map((s) => {
+  const submissions: ApiDsaDashboardSubmission[] = recentSubmissions.map((s: any) => {
     const problem = s.problemId as unknown as PopulatedProblem;
     return {
       id: (s._id as Types.ObjectId).toString(),
@@ -609,5 +660,25 @@ function mapProblemToApi(problem: Record<string, unknown> & { _id: { toString():
     isFavorite: (problem.isFavorite as boolean) || false,
     createdAt: (problem.createdAt as Date).toISOString(),
     updatedAt: (problem.updatedAt as Date).toISOString(),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// HEATMAP - Phase 7: Generate from DsaSubmission (not DailyActivity)
+// ---------------------------------------------------------------------------
+
+export async function getHeatmap(userId: string, days?: number): Promise<ApiDsaHeatmapResponse> {
+  const heatmapData = await aggregationService.generateHeatmap(userId, days ?? 365);
+  const streaks = await aggregationService.calculateStreaks(userId, days ?? 365);
+
+  const totalSubmissions = heatmapData.reduce((sum: number, day: any) => sum + day.count, 0);
+  const activeDays = heatmapData.filter((day: any) => day.count > 0).length;
+
+  return {
+    heatmap: heatmapData,
+    totalSubmissions,
+    activeDays,
+    currentStreak: streaks.current,
+    longestStreak: streaks.longest,
   };
 }

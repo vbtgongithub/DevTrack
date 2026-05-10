@@ -14,7 +14,6 @@ const platformLabel: Record<Platform, string> = {
   leetcode: 'LeetCode',
   codeforces: 'Codeforces',
   codechef: 'CodeChef',
-  hackerrank: 'HackerRank',
   github: 'GitHub',
 };
 
@@ -37,7 +36,7 @@ export const InsightsCard: React.FC<InsightsCardProps> = React.memo(
         acc[s.platform] = (acc[s.platform] ?? 0) + 1;
         return acc;
       },
-      { leetcode: 0, codeforces: 0, codechef: 0, hackerrank: 0, github: 0 }
+      { leetcode: 0, codeforces: 0, codechef: 0, github: 0 }
     );
 
     const mostActivePlatform = (Object.keys(platformCounts) as Platform[]).reduce((best, p) =>

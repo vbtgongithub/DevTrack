@@ -3,7 +3,7 @@ import { Schema, model, type Document } from 'mongoose';
 
 export interface IPlatformStats extends Document {
   userId: Schema.Types.ObjectId;
-  platformName: 'leetcode' | 'codeforces' | 'github' | 'hackerrank' | 'codechef';
+  platformName: 'leetcode' | 'codeforces' | 'github' | 'codechef';
   username: string;
   totalSolved: number;
   easySolved: number;
@@ -27,7 +27,7 @@ const platformStatsSchema = new Schema<IPlatformStats>(
     },
     platformName: {
       type: String,
-      enum: ['leetcode', 'codeforces', 'github', 'hackerrank', 'codechef'],
+      enum: ['leetcode', 'codeforces', 'github', 'codechef'],
       required: true,
     },
     username: {

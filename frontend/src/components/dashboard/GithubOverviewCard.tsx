@@ -51,7 +51,7 @@ export const GithubOverviewCard: React.FC<GithubOverviewCardProps> = ({ data }) 
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <div className="bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center border border-gray-100">
           <span className="text-xs font-semibold text-gray-500 uppercase mb-1">Repositories</span>
           <span className="text-2xl font-bold text-gray-900">{ghStats.repos}</span>
@@ -61,10 +61,28 @@ export const GithubOverviewCard: React.FC<GithubOverviewCardProps> = ({ data }) 
           <span className="text-2xl font-bold text-gray-900">{ghStats.followers}</span>
         </div>
         <div className="bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center border border-gray-100">
+          <span className="text-xs font-semibold text-gray-500 uppercase mb-1">Stars</span>
+          <span className="text-2xl font-bold text-gray-900">{ghStats.totalStars}</span>
+        </div>
+        <div className="bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center border border-gray-100">
           <span className="text-xs font-semibold text-gray-500 uppercase mb-1">Following</span>
           <span className="text-2xl font-bold text-gray-900">{ghStats.following}</span>
         </div>
       </div>
+
+      {ghStats.topLanguages && ghStats.topLanguages.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="text-xs font-semibold text-gray-500 uppercase">Top Languages:</span>
+          {ghStats.topLanguages.slice(0, 5).map((lang) => (
+            <span
+              key={lang}
+              className="px-3 py-1 text-xs font-medium bg-purple-50 text-purple-700 rounded-full border border-purple-100"
+            >
+              {lang}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

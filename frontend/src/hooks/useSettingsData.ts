@@ -8,7 +8,7 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { fetchSettings } from '../services/settingsService';
 import { transformSettingsPage } from '../viewmodels/settingsVM';
-import { isStale, TTL } from '../utils/stale';
+
 import type { SettingsPageVM, HookReturn, DataStatus } from '../types/vm.types';
 import type { ApiError } from '../types/api.types';
 
@@ -32,7 +32,7 @@ export function useSettingsData(
 
   const fetchData = useCallback(
     async (bypassCache: boolean = false) => {
-      if (!bypassCache && !isStale(lastFetchedAt, TTL.LONG)) {
+      if (!bypassCache && lastFetchedAt && Date.now() - lastFetchedAt < 60 * 60 * 1000) {
         // If data exists but tab changed, just update the tab in VM
         if (data && data.activeTab !== currentTab) {
           setData({ ...data, activeTab: currentTab });

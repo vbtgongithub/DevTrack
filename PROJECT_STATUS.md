@@ -24,7 +24,7 @@ DevTrack is an all-in-one developer productivity + tracking platform that unifie
 - DSA progress (problems solved, heatmap, submissions across platforms)
 - Project tracking (projects, tasks, progress)
 - Activity history (timeline + heatmap)
-- Platform sync (LeetCode, Codeforces, CodeChef, HackerRank, GitHub)
+- Platform sync (LeetCode, Codeforces, CodeChef, GitHub)
 
 **Target users:** Students preparing for placements, self-taught devs, solo builders.
 
@@ -128,7 +128,7 @@ DevTrack is an all-in-one developer productivity + tracking platform that unifie
 - No frontend-derived fake totals
 
 ### TASK 3 — DSA Ingestion ✅
-- All 5 platforms supported (LeetCode, Codeforces, CodeChef, HackerRank, GitHub)
+- All 4 platforms supported (LeetCode, Codeforces, CodeChef, GitHub)
 - Deduplication via findOne checks
 - Error handling (non-fatal)
 - Topic analytics updates
@@ -161,11 +161,11 @@ DevTrack is an all-in-one developer productivity + tracking platform that unifie
 |--------|--------|----------|
 | Auth + Session | ✅ | JWT + refresh, 401 handler, store reset |
 | Dashboard | ✅ | MongoDB aggregation, no mock data |
-| DSA Ingestion | ✅ | All 5 platforms, deduplication |
+| DSA Ingestion | ✅ | All 4 platforms, deduplication |
 | Activity | ✅ | All types with frontend support |
 | Projects | ✅ | CRUD via API, store sync |
 | Settings | ✅ | MongoDB persistence |
-| Platform Sync | ✅ | 5 platforms supported |
+| Platform Sync | ✅ | 4 platforms supported |
 | Landing Page | ✅ | Premium SaaS, Framer Motion |
 
 ---
@@ -176,11 +176,11 @@ DevTrack is an all-in-one developer productivity + tracking platform that unifie
 |---------|--------|----------|-------|
 | Auth + Session | ✅ Done | P0 | JWT refresh, store reset |
 | Dashboard | ✅ Done | P0 | Backend aggregation |
-| DSA Ingestion | ✅ Done | P0 | All 5 platforms |
+| DSA Ingestion | ✅ Done | P0 | All 4 platforms |
 | Activity | ✅ Done | P0 | All types supported |
 | Projects CRUD | ✅ Done | P0 | API persistence |
 | Settings | ✅ Done | P1 | MongoDB storage |
-| Platform Sync | ✅ Done | P0 | 5 platforms |
+| Platform Sync | ✅ Done | P0 | 4 platforms |
 | Landing Page | ✅ Done | P0 | Premium SaaS design |
 | Docker Production | ✅ Done | P0 | Production-ready |
 | AI Assistant | ❌ Not started | P3 | After MVP |
@@ -191,7 +191,7 @@ DevTrack is an all-in-one developer productivity + tracking platform that unifie
 
 - ✅ Frontend lint now passes (0 warnings, 0 errors)
 - ✅ tsconfig.app.json - removed deprecated options
-- ✅ DSA ingestion extended to all platforms
+- ✅ DSA ingestion extended to all platforms (LeetCode, Codeforces, CodeChef, GitHub)
 - ✅ Activity types complete (all 12 types)
 - ✅ GitHub sync activity added
 - ✅ World-class landing page built
@@ -208,7 +208,7 @@ DevTrack is an all-in-one developer productivity + tracking platform that unifie
 - Backend build: passing
 - Auth/session: verified
 - Dashboard: backend-driven
-- Platform sync: all 5 platforms
+- Platform sync: all 4 platforms
 - Activity: complete
 - Landing page: premium SaaS quality
 - Docker: production-ready

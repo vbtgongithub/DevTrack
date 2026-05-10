@@ -28,7 +28,6 @@ export interface ProfileData {
   leetcodeUsername: string;
   codeforcesUsername: string;
   codechefUsername: string;
-  hackerrankUsername: string;
 }
 
 export const DEFAULT_PROFILE: ProfileData = {
@@ -45,7 +44,6 @@ export const DEFAULT_PROFILE: ProfileData = {
   leetcodeUsername: '',
   codeforcesUsername: '',
   codechefUsername: '',
-  hackerrankUsername: '',
 };
 
 // ---------------------------------------------------------------------------
@@ -151,31 +149,7 @@ export const EMPTY_CODECHEF_STATS: CodeChefStats = {
 };
 
 // ---------------------------------------------------------------------------
-// 5. HACKERRANK STATS
-// ---------------------------------------------------------------------------
-
-export interface HackerRankStats {
-  username: string;
-  totalSolved: number;
-  totalContests: number;
-  badges: number;
-  certificates: number;
-  level: string;
-  score: number;
-}
-
-export const EMPTY_HACKERRANK_STATS: HackerRankStats = {
-  username: '',
-  totalSolved: 0,
-  totalContests: 0,
-  badges: 0,
-  certificates: 0,
-  level: '—',
-  score: 0,
-};
-
-// ---------------------------------------------------------------------------
-// 6. GITHUB STATS
+// 5. GITHUB STATS
 // ---------------------------------------------------------------------------
 
 export interface GithubStats {
@@ -183,6 +157,8 @@ export interface GithubStats {
   publicRepos: number;
   followers: number;
   following: number;
+  totalStars: number;
+  topLanguages: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -192,6 +168,8 @@ export const EMPTY_GITHUB_STATS: GithubStats = {
   publicRepos: 0,
   followers: 0,
   following: 0,
+  totalStars: 0,
+  topLanguages: [],
   createdAt: '',
   updatedAt: '',
 };
@@ -200,7 +178,7 @@ export const EMPTY_GITHUB_STATS: GithubStats = {
 // 7. PLATFORM STATE (per-platform loading / error)
 // ---------------------------------------------------------------------------
 
-export type PlatformName = 'leetcode' | 'codeforces' | 'codechef' | 'hackerrank' | 'github';
+export type PlatformName = 'leetcode' | 'codeforces' | 'codechef' | 'github';
 
 export interface PlatformState<T> {
   data: T | null;
@@ -213,7 +191,6 @@ export interface AllPlatformStats {
   leetcode: PlatformState<LeetCodeStats>;
   codeforces: PlatformState<CodeforcesStats>;
   codechef: PlatformState<CodeChefStats>;
-  hackerrank: PlatformState<HackerRankStats>;
   github: PlatformState<GithubStats>;
 }
 

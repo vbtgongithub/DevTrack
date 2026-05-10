@@ -79,6 +79,12 @@ export async function getDashboard(req: AuthenticatedRequest, res: Response): Pr
   successResponse(res, data, 'Dashboard data retrieved successfully');
 }
 
+export async function getHeatmap(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const days = req.query.days ? parseInt(req.query.days as string, 10) : undefined;
+  const data = await service.getHeatmap(req.user!.id, days);
+  successResponse(res, data, 'Heatmap data retrieved successfully');
+}
+
 export async function getSubmissions(req: AuthenticatedRequest, res: Response): Promise<void> {
   const filters = {
     platform: req.query.platform as string | undefined,

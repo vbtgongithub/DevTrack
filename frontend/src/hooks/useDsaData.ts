@@ -18,7 +18,6 @@ const VALID_PLATFORMS: ReadonlySet<string> = new Set<Platform>([
   'leetcode',
   'codeforces',
   'codechef',
-  'hackerrank',
   'github',
 ]);
 
@@ -50,7 +49,7 @@ export function useDsaData(): {
     setDetailError(null);
     try {
       const [subsRes, contestsRes, topicsRes] = await Promise.all([
-        fetchDsaSubmissions({ pageSize: 20 }),
+        fetchDsaSubmissions({ pageSize: 100 }),
         fetchDsaContests({ pageSize: 20 }),
         fetchDsaTopics(),
       ]);

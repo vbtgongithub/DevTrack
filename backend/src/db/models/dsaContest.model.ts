@@ -3,7 +3,7 @@ import { Schema, model, type Document } from 'mongoose';
 
 export interface IDsaContest extends Document {
   userId: Schema.Types.ObjectId;
-  platform: 'leetcode' | 'codeforces' | 'hackerrank' | 'codechef' | 'other';
+  platform: 'leetcode' | 'codeforces' | 'codechef' | 'other';
   contestName: string;
   rank: number | null;
   totalParticipants: number | null;
@@ -25,7 +25,7 @@ const dsaContestSchema = new Schema<IDsaContest>(
     },
     platform: {
       type: String,
-      enum: ['leetcode', 'codeforces', 'hackerrank', 'codechef', 'other'],
+      enum: ['leetcode', 'codeforces', 'codechef', 'other'],
       required: true,
     },
     contestName: {

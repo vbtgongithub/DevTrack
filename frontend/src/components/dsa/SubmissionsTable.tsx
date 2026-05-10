@@ -25,7 +25,6 @@ const platformLabel: Record<Platform, string> = {
   leetcode: 'LeetCode',
   codeforces: 'Codeforces',
   codechef: 'CodeChef',
-  hackerrank: 'HackerRank',
   github: 'GitHub',
 };
 
@@ -38,13 +37,15 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
   ({ title, submissions, className }) => {
     const [statusFilter, setStatusFilter] = React.useState<'all' | SubmissionStatus>('all');
     const [difficultyFilter, setDifficultyFilter] = React.useState<'all' | NonNullable<Submission['difficulty']>>('all');
+    const [platformFilter, setPlatformFilter] = React.useState<'all' | Platform>('all');
     const [sortBy, setSortBy] = React.useState<'date-desc' | 'date-asc' | 'status' | 'platform' | 'difficulty'>('date-desc');
 
     const rows = React.useMemo(() => {
       const filtered = submissions.filter((s) => {
         const okStatus = statusFilter === 'all' ? true : s.status === statusFilter;
         const okDifficulty = difficultyFilter === 'all' ? true : s.difficulty === difficultyFilter;
-        return okStatus && okDifficulty;
+        const okPlatform = platformFilter === 'all' ? true : s.platform === platformFilter;
+        return okStatus && okDifficulty && okPlatform;
       });
 
       const byDate = (a: Submission, b: Submission) => {
@@ -67,7 +68,7 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
       });
 
       return sorted;
-    }, [submissions, statusFilter, difficultyFilter, sortBy]);
+    }, [submissions, statusFilter, difficultyFilter, platformFilter, sortBy]);
 
     return (
       <section
@@ -108,6 +109,21 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
                 <option value="easy">Easy</option>
                 <option value="medium">Medium</option>
                 <option value="hard">Hard</option>
+              </select>
+            </div>
+
+            <div className="inline-flex items-center gap-2 rounded-xl border border-dt-border/70 bg-dt-bg/40 px-3 py-2">
+              <span className="text-xs font-semibold text-dt-muted">Platform</span>
+              <select
+                value={platformFilter}
+                onChange={(e) => setPlatformFilter(e.target.value as typeof platformFilter)}
+                className="bg-transparent text-sm text-dt-text outline-none"
+                aria-label="Filter by platform"
+              >
+                <option value="all">All</option>
+                <option value="leetcode">LeetCode</option>
+                <option value="codeforces">Codeforces</option>
+                <option value="github">GitHub</option>
               </select>
             </div>
 

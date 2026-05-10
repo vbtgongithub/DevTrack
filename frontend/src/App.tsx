@@ -80,9 +80,9 @@ const AppShell: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Topbar
           data={topbarData}
-          onNotificationsClick={() => {}}
+          onNotificationsClick={() => { }}
           onProfileClick={() => navigate('/settings')}
-          onSearchClick={() => {}}
+          onSearchClick={() => { }}
         />
 
         <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">

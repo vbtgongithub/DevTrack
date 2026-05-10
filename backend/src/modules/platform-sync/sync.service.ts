@@ -2,7 +2,9 @@
 import { Types } from 'mongoose';
 import { ConnectedPlatform, PlatformStats, SyncJob, DsaSubmission, DsaContest, DsaTopicProgress, DsaProblem, DailyActivity } from '../../db/models/index.js';
 import { logger } from '../../shared/logger.js';
-import { createActivity } from '../activity/activity.service.js';
+import { createActivity, incrementDailyActivity } from '../activity/activity.service.js';
+import * as cheerio from 'cheerio';
+import { env } from '../../config/env.js';
 
 const SYNC_TIMEOUT_MS = 15000;
 
@@ -48,36 +50,67 @@ async function fetchWithTimeout(url: string): Promise<Response> {
   }
 }
 
+async function fetchLeetCodeGraphQL(query: string, variables: Record<string, any>): Promise<any> {
+  const res = await fetch('https://leetcode.com/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Referer': 'https://leetcode.com',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`LeetCode GraphQL error: ${res.status}`);
+  }
+
+  return res.json();
+}
+
 async function fetchLeetCodeRealStats(username: string): Promise<FetchedPlatformStats> {
-  const [solvedRes, contestRes] = await Promise.allSettled([
-    fetchWithTimeout(`https://alfa-leetcode-api.onrender.com/${encodeURIComponent(username)}/solved`),
-    fetchWithTimeout(`https://alfa-leetcode-api.onrender.com/${encodeURIComponent(username)}/contest`),
-  ]);
+  const query = `
+    query userProfile($username: String!) {
+      matchedUser(username: $username) {
+        submitStatsGlobal {
+          acSubmissionNum {
+            difficulty
+            count
+          }
+        }
+      }
+      userContestRanking(username: $username) {
+        attendedContestsCount
+        rating
+      }
+    }
+  `;
 
-  if (solvedRes.status === 'rejected') throw new Error(`LeetCode API unreachable: ${solvedRes.reason}`);
-  if (!solvedRes.value.ok) {
-    const status = solvedRes.value.status;
-    if (status === 404) throw new Error('LeetCode user not found');
-    throw new Error(`LeetCode API error (${status})`);
+  const response = await fetchLeetCodeGraphQL(query, { username });
+  const data = response.data;
+
+  if (!data.matchedUser) {
+    throw new Error('LeetCode user not found');
   }
 
-  const solved = await solvedRes.value.json() as Record<string, unknown>;
+  const stats = data.matchedUser.submitStatsGlobal.acSubmissionNum;
+  const contest = data.userContestRanking || { attendedContestsCount: 0, rating: null };
 
-  let contest: Record<string, unknown> = {};
-  if (contestRes.status === 'fulfilled' && contestRes.value.ok) {
-    try { contest = await contestRes.value.json() as Record<string, unknown>; } catch { /* optional */ }
-  }
+  const totalSolved = stats.find((s: any) => s.difficulty === 'All')?.count || 0;
+  const easySolved = stats.find((s: any) => s.difficulty === 'Easy')?.count || 0;
+  const mediumSolved = stats.find((s: any) => s.difficulty === 'Medium')?.count || 0;
+  const hardSolved = stats.find((s: any) => s.difficulty === 'Hard')?.count || 0;
 
   return {
     username,
-    totalSolved: (solved.solvedProblem as number) ?? 0,
-    easySolved: (solved.easySolved as number) ?? 0,
-    mediumSolved: (solved.mediumSolved as number) ?? 0,
-    hardSolved: (solved.hardSolved as number) ?? 0,
-    rating: contest.contestRating ? Math.round(contest.contestRating as number) : null,
+    totalSolved,
+    easySolved,
+    mediumSolved,
+    hardSolved,
+    rating: contest.rating ? Math.round(contest.rating) : null,
     rank: null,
-    totalContests: (contest.contestAttend as number) ?? 0,
-    rawData: { solved, contest },
+    totalContests: contest.attendedContestsCount || 0,
+    rawData: data,
   };
 }
 
@@ -177,50 +210,118 @@ async function fetchCodeforcesRealStats(username: string): Promise<FetchedPlatfo
 }
 
 async function fetchCodeChefRealStats(username: string): Promise<FetchedPlatformStats> {
-  const res = await fetchWithTimeout(
-    `https://codechef-api.vercel.app/handle/${encodeURIComponent(username)}`
-  );
+  const url = `https://www.codechef.com/users/${encodeURIComponent(username)}`;
+  logger.info(`CodeChef scraping started for user: ${username}`, { url });
+
+  // Fetch with realistic browser User-Agent
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.5',
+    },
+  });
+
+  logger.info(`CodeChef scrape response status: ${res.status}`, { url });
 
   if (!res.ok) {
-    if (res.status === 404) throw new Error('CodeChef user not found');
-    throw new Error(`CodeChef API error (${res.status})`);
-  }
-
-  const json = await res.json() as Record<string, unknown>;
-  if (json.success === false) throw new Error((json.message as string) ?? 'CodeChef user not found');
-
-  return {
-    username,
-    totalSolved: (json.totalProblemsSolved as number) ?? 0,
-    easySolved: 0,
-    mediumSolved: 0,
-    hardSolved: 0,
-    rating: (json.currentRating as number) ?? null,
-    rank: (json.stars as string) ?? null,
-    totalContests: 0,
-    rawData: json,
-  };
-}
-
-async function fetchHackerRankRealStats(username: string): Promise<FetchedPlatformStats> {
-  // Unofficial REST API for badges
-  const res = await fetchWithTimeout(
-    `https://www.hackerrank.com/rest/hackers/${encodeURIComponent(username)}/badges`
-  );
-
-  if (!res.ok) {
-    if (res.status === 404) throw new Error('HackerRank user not found');
-    throw new Error(`HackerRank API error (${res.status})`);
-  }
-
-  const json = await res.json() as { model: Array<{ badge_name: string; stars: number; solved: number }> };
-  
-  // HackerRank solved count is distributed across badges
-  let totalSolved = 0;
-  if (json.model && Array.isArray(json.model)) {
-    for (const badge of json.model) {
-      totalSolved += badge.solved || 0;
+    if (res.status === 404) {
+      logger.error('CodeChef user not found', { username, url });
+      throw new Error('CodeChef user not found');
     }
+    const errorText = await res.text().catch(() => 'No response body');
+    logger.error(`CodeChef scrape error (${res.status})`, { username, url, errorText: errorText.slice(0, 200) });
+    throw new Error(`CodeChef scrape error (${res.status})`);
+  }
+
+  const html = await res.text();
+  const $ = cheerio.load(html);
+
+  // Parse rating - look for .rating-number
+  let rating: number | null = null;
+  const ratingEl = $('.rating-number').first();
+  if (ratingEl.length) {
+    const ratingText = ratingEl.text().trim();
+    const parsed = parseInt(ratingText, 10);
+    if (!isNaN(parsed)) {
+      rating = parsed;
+    }
+  }
+  logger.info('CodeChef rating parsed', { username, rating });
+
+  // Parse highest rating (may be in different location)
+  let highestRating: number | null = null;
+  const highestEl = $('.rating-header .highest').first();
+  if (highestEl.length) {
+    const highestText = highestEl.text().replace(/[^0-9]/g, '');
+    const parsed = parseInt(highestText, 10);
+    if (!isNaN(parsed)) {
+      highestRating = parsed;
+    }
+  }
+
+  // Parse global rank (if available)
+  let globalRank: string | null = null;
+  const rankEl = $('.profile-loaction-item').filter(function() {
+    return $(this).text().toLowerCase().includes('global rank');
+  }).first();
+  if (rankEl.length) {
+    const rankText = rankEl.text();
+    const rankMatch = rankText.match(/(\d+[\d,]*)/);
+    if (rankMatch) {
+      globalRank = rankMatch[1].replace(/,/g, '');
+    }
+  }
+
+  // Parse total solved problems - selector: section.problems-solved h5
+  let totalSolved = 0;
+  const problemsSolvedEl = $('section.problems-solved h5').first();
+  if (problemsSolvedEl.length) {
+    const problemsText = problemsSolvedEl.text();
+    // Text example: "Total Problems Solved: 277"
+    const match = problemsText.match(/(\d+[\d,]*)/);
+    if (match) {
+      const parsed = parseInt(match[1].replace(/,/g, ''), 10);
+      if (!isNaN(parsed)) {
+        totalSolved = parsed;
+      }
+    }
+  }
+
+  // Fallback: also check for .problems-solved .heading
+  if (totalSolved === 0) {
+    const headingEl = $('.problems-solved .heading').first();
+    if (headingEl.length) {
+      const headingText = headingEl.text();
+      const match = headingText.match(/(\d+[\d,]*)/);
+      if (match) {
+        const parsed = parseInt(match[1].replace(/,/g, ''), 10);
+        if (!isNaN(parsed)) {
+          totalSolved = parsed;
+        }
+      }
+    }
+  }
+
+  // Parse stars (e.g., 1★, 2★)
+  let stars: string | null = null;
+  const starsEl = $('.rating-star').first();
+  if (starsEl.length) {
+    stars = starsEl.text().trim();
+  }
+
+  logger.info('CodeChef stats parsed', {
+    username,
+    totalSolved,
+    rating,
+    highestRating,
+    globalRank,
+    stars,
+  });
+
+  // Return empty state if no data found (user might exist but have no activity)
+  if (rating === null && totalSolved === 0) {
+    logger.warn('CodeChef user exists but no stats found - possible private profile or new user', { username });
   }
 
   return {
@@ -229,28 +330,107 @@ async function fetchHackerRankRealStats(username: string): Promise<FetchedPlatfo
     easySolved: 0,
     mediumSolved: 0,
     hardSolved: 0,
-    rating: null,
-    rank: null,
+    rating,
+    rank: stars || globalRank, // Prefer star rating as display rank for CodeChef
     totalContests: 0,
-    rawData: json as unknown as Record<string, unknown>,
+    rawData: {
+      rating,
+      highestRating,
+      globalRank,
+      stars,
+      totalSolved,
+      scrapedAt: new Date().toISOString(),
+    },
   };
 }
 
 async function fetchGithubRealStats(username: string): Promise<FetchedPlatformStats> {
-  const res = await fetchWithTimeout(`https://api.github.com/users/${encodeURIComponent(username)}`);
-  
-  if (!res.ok) {
-    if (res.status === 404) throw new Error('GitHub user not found');
-    if (res.status === 403) throw new Error('GitHub API rate limit exceeded');
-    throw new Error(`GitHub API error (${res.status})`);
+  // Build headers - use Bearer token if available, otherwise anonymous
+  const headers: Record<string, string> = {
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+
+  // Add authentication if token is available
+  const githubToken = env.GITHUB_TOKEN;
+  if (githubToken) {
+    headers['Authorization'] = `Bearer ${githubToken}`;
+    logger.info('Using authenticated GitHub API requests');
+  } else {
+    logger.warn('No GitHub token configured - using anonymous requests (rate limited)');
   }
 
-  const data = await res.json() as Record<string, unknown>;
+  // Fetch user profile
+  const userRes = await fetch(
+    `https://api.github.com/users/${encodeURIComponent(username)}`,
+    { headers }
+  );
+
+  if (!userRes.ok) {
+    if (userRes.status === 404) {
+      logger.error('GitHub user not found', { username });
+      throw new Error('GitHub user not found');
+    }
+    if (userRes.status === 403) {
+      logger.error('GitHub API rate limit exceeded', { username });
+      throw new Error('GitHub API rate limit exceeded - consider adding GITHUB_TOKEN');
+    }
+    const errorText = await userRes.text().catch(() => 'No response body');
+    logger.error(`GitHub API error (${userRes.status})`, { username, errorText: errorText.slice(0, 200) });
+    throw new Error(`GitHub API error (${userRes.status})`);
+  }
+
+  const data = await userRes.json() as Record<string, unknown>;
 
   const publicRepos = (data.public_repos as number) ?? 0;
   const followers = (data.followers as number) ?? 0;
   const following = (data.following as number) ?? 0;
-  
+
+  // Lightweight enrichment: fetch repos to get totalStars and topLanguages
+  let totalStars = 0;
+  const languageCounts: Record<string, number> = {};
+
+  try {
+    const reposRes = await fetch(
+      `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`,
+      { headers }
+    );
+
+    if (reposRes.ok) {
+      const repos = await reposRes.json() as Array<Record<string, unknown>>;
+
+      for (const repo of repos) {
+        const stars = (repo.stargazers_count as number) ?? 0;
+        totalStars += stars;
+
+        const language = (repo.language as string) ?? null;
+        if (language) {
+          languageCounts[language] = (languageCounts[language] ?? 0) + 1;
+        }
+      }
+
+      logger.info('GitHub repos enrichment completed', {
+        username,
+        reposCount: repos.length,
+        totalStars,
+        languages: Object.keys(languageCounts).length,
+      });
+    } else if (reposRes.status === 403) {
+      logger.warn('GitHub repos API rate limited - skipping enrichment', { username });
+    }
+  } catch (err) {
+    logger.warn('GitHub repos enrichment failed (non-fatal)', {
+      username,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  // Get top 5 languages
+  const topLanguages = Object.entries(languageCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([lang]) => lang);
+
   return {
     username,
     totalSolved: publicRepos, // Map repos as the primary metric for GitHub
@@ -264,11 +444,14 @@ async function fetchGithubRealStats(username: string): Promise<FetchedPlatformSt
       public_repos: publicRepos,
       followers,
       following,
+      total_stars: totalStars,
+      top_languages: topLanguages,
       name: data.name ?? null,
       bio: data.bio ?? null,
       avatar_url: data.avatar_url ?? null,
       html_url: data.html_url ?? null,
       created_at: data.created_at ?? null,
+      synced_at: new Date().toISOString(),
     },
   };
 }
@@ -278,7 +461,6 @@ async function fetchRealStats(platformName: string, username: string): Promise<F
     case 'leetcode': return fetchLeetCodeRealStats(username);
     case 'codeforces': return fetchCodeforcesRealStats(username);
     case 'codechef': return fetchCodeChefRealStats(username);
-    case 'hackerrank': return fetchHackerRankRealStats(username);
     case 'github': return fetchGithubRealStats(username);
     default: throw new Error(`Platform "${platformName}" sync not supported`);
   }
@@ -388,7 +570,7 @@ export async function syncPlatform(userId: string, platformName: string): Promis
 
   const job = await SyncJob.create({
     userId: new Types.ObjectId(userId),
-    platformName: platformName as 'leetcode' | 'codeforces' | 'github' | 'hackerrank' | 'codechef',
+    platformName: platformName as 'leetcode' | 'codeforces' | 'github' | 'codechef',
     status: 'running',
   });
 
@@ -412,8 +594,8 @@ export async function syncPlatform(userId: string, platformName: string): Promis
       { upsert: true, new: true }
     );
 
-    // TASK 2: Run DSA ingestion pipeline for non-GitHub platforms
-    if (platformName !== 'github') {
+    // TASK 2: Run DSA ingestion pipeline for non-GitHub/non-CodeChef platforms
+    if (platformName !== 'github' && platformName !== 'codechef') {
       try {
         await ingestDsaData(userId, platformName, platform.username, fetched);
       } catch (ingestionErr) {
@@ -579,9 +761,6 @@ async function ingestDsaData(
     case 'codechef':
       await ingestCodeChefSubmissions(userId, username);
       break;
-    case 'hackerrank':
-      await ingestHackerRankSubmissions(userId, username);
-      break;
   }
 
   // STEP 2.4 — Update topic analytics from platform stats
@@ -600,55 +779,91 @@ async function ingestDsaData(
 async function ingestCodeforcesSubmissions(userId: string, handle: string): Promise<number> {
   const userObjId = new Types.ObjectId(userId);
   let ingested = 0;
+  let fetched = 0;
+  let parsed = 0;
+  let duplicates = 0;
+  let failed = 0;
+  let skipped = 0;
 
   try {
+    logger.info('Codeforces submission ingestion started', { userId, handle });
+
     const res = await fetchWithTimeout(
       `https://codeforces.com/api/user.status?handle=${encodeURIComponent(handle)}&from=1&count=100`
     );
-    if (!res.ok) return 0;
+
+    if (!res.ok) {
+      logger.warn('Codeforces submissions API returned non-ok status', { userId, handle, status: res.status });
+      return 0;
+    }
 
     const data = await res.json() as { status: string; result?: CodeforcesSubmissionBackend[] };
-    if (data.status !== 'OK' || !data.result) return 0;
+    fetched = 1;
+
+    if (data.status !== 'OK' || !data.result) {
+      logger.warn('Codeforces submissions response invalid', { userId, handle, status: data.status });
+      return 0;
+    }
+
+    logger.info('Codeforces submissions received', { userId, handle, count: data.result.length });
 
     for (const sub of data.result) {
-      if (!sub.problem || !sub.verdict) continue;
+      if (!sub.problem || !sub.verdict) {
+        skipped++;
+        continue;
+      }
+
+      parsed++;
 
       const submittedAt = sub.creationTimeSeconds
         ? new Date(sub.creationTimeSeconds * 1000)
         : new Date();
 
-      // Deduplication check
-      const exists = await DsaSubmission.findOne({
-        userId: userObjId,
-        platform: 'codeforces',
-        submittedAt,
-      }).lean();
-      if (exists) continue;
-
-      // Find or create DsaProblem
+      // Deduplication check - use problem key + time for deduplication
       const problemKey = `${sub.problem.contestId ?? 'na'}-${sub.problem.index ?? 'na'}`;
-      let problem = await DsaProblem.findOne({
+      const existingProblem = await DsaProblem.findOne({
         userId: userObjId,
         externalId: problemKey,
         platform: 'codeforces',
       });
 
-      if (!problem) {
-        problem = await DsaProblem.create({
+      if (existingProblem) {
+        const exists = await DsaSubmission.findOne({
           userId: userObjId,
-          externalId: problemKey,
-          title: sub.problem.name ?? 'Unknown',
           platform: 'codeforces',
-          difficulty: 'medium',
-          url: sub.problem.contestId
-            ? `https://codeforces.com/problemset/problem/${sub.problem.contestId}/${sub.problem.index}`
-            : 'https://codeforces.com',
-          tags: [],
-          category: 'Competitive',
-          status: sub.verdict === 'OK' ? 'solved' : 'attempted',
-          submissionCount: 1,
-          isFavorite: false,
-        });
+          problemId: existingProblem._id,
+          submittedAt,
+        }).lean();
+        if (exists) {
+          duplicates++;
+          continue;
+        }
+      }
+
+      let problem = existingProblem;
+
+      if (!problem) {
+        try {
+          problem = await DsaProblem.create({
+            userId: userObjId,
+            externalId: problemKey,
+            title: sub.problem.name ?? 'Unknown',
+            platform: 'codeforces',
+            difficulty: 'medium',
+            url: sub.problem.contestId
+              ? `https://codeforces.com/problemset/problem/${sub.problem.contestId}/${sub.problem.index}`
+              : 'https://codeforces.com',
+            tags: [],
+            category: 'Competitive',
+            status: sub.verdict === 'OK' ? 'solved' : 'attempted',
+            submissionCount: 1,
+            isFavorite: false,
+          });
+        } catch (createErr) {
+          failed++;
+          logger.warn('Failed to create Codeforces problem', { userId, handle, problemKey, error: createErr instanceof Error ? createErr.message : String(createErr) });
+          continue;
+        }
       }
 
       const status: 'accepted' | 'wrong' | 'time_limit_exceeded' | 'runtime_error' | 'compilation_error' =
@@ -658,38 +873,72 @@ async function ingestCodeforcesSubmissions(userId: string, handle: string): Prom
           : sub.verdict === 'COMPILATION_ERROR' ? 'compilation_error'
           : 'wrong';
 
-      await DsaSubmission.create({
-        userId: userObjId,
-        problemId: problem._id,
-        platform: 'codeforces',
-        status,
-        language: sub.language ?? 'unknown',
-        codeSnippet: null,
-        submittedAt,
-        executionTime: null,
-        memoryUsed: null,
-      });
+      try {
+        await DsaSubmission.create({
+          userId: userObjId,
+          problemId: problem._id,
+          platform: 'codeforces',
+          status,
+          language: sub.language ?? 'unknown',
+          codeSnippet: null,
+          submittedAt,
+          executionTime: null,
+          memoryUsed: null,
+        });
 
-      ingested++;
+        // Update heatmap (consistency graph)
+        try {
+          await incrementDailyActivity(userId, submittedAt, 'submission');
+        } catch (actErr) {
+          // Non-fatal
+        }
 
-      if (sub.verdict === 'OK' && problem.status !== 'solved') {
-        await DsaProblem.findByIdAndUpdate(problem._id, {
-          status: 'solved',
-          solvedAt: submittedAt,
-          lastSubmittedAt: submittedAt,
-          $inc: { submissionCount: 1 },
+        if (sub.verdict === 'OK' && problem.status !== 'solved') {
+          await DsaProblem.findByIdAndUpdate(problem._id, {
+            status: 'solved',
+            solvedAt: submittedAt,
+            lastSubmittedAt: submittedAt,
+            $inc: { submissionCount: 1 },
+          });
+        } else {
+          // Update submission count for attempted problems
+          await DsaProblem.findByIdAndUpdate(problem._id, {
+            $inc: { submissionCount: 1 },
+            lastSubmittedAt: submittedAt,
+          });
+        }
+
+        ingested++;
+      } catch (subErr) {
+        failed++;
+        logger.warn('Failed to create Codeforces submission', {
+          userId,
+          handle,
+          problemKey,
+          error: subErr instanceof Error ? subErr.message : String(subErr),
         });
       }
     }
   } catch (err) {
-    logger.warn('Codeforces submission ingestion error (non-fatal)', {
+    logger.warn('Codeforces submission ingestion failed', {
+      userId,
+      handle,
       error: err instanceof Error ? err.message : String(err),
     });
   }
 
-  if (ingested > 0) {
-    logger.info(`Ingested ${ingested} Codeforces submissions`, { userId });
-  }
+  // Log ingestion summary
+  logger.info('Codeforces submission ingestion summary', {
+    userId,
+    handle,
+    fetched,
+    parsed,
+    ingested,
+    duplicates,
+    failed,
+    skipped,
+  });
+
   return ingested;
 }
 
@@ -737,14 +986,11 @@ async function ingestCodeforcesContests(userId: string, fetched: FetchedPlatform
 // ---------------------------------------------------------------------------
 // LEETCODE INGESTION
 // ---------------------------------------------------------------------------
-
 interface LeetCodeSubmission {
   id: string;
   title: string;
   titleSlug: string;
   timestamp: string;
-  status: string;
-  lang: string;
 }
 
 interface LeetCodeContest {
@@ -756,103 +1002,157 @@ interface LeetCodeContest {
 async function ingestLeetCodeSubmissions(userId: string, username: string): Promise<number> {
   const userObjId = new Types.ObjectId(userId);
   let ingested = 0;
+  let fetched = 0;
+  let parsed = 0;
+  let duplicates = 0;
+  let failed = 0;
+  let skipped = 0;
 
   try {
-    const res = await fetchWithTimeout(
-      `https://alfa-leetcode-api.onrender.com/${encodeURIComponent(username)}/submissions?limit=100`
-    );
-    if (!res.ok) return 0;
+    logger.info('LeetCode submission ingestion started', { userId, username });
 
-    const data = await res.json() as { submissions?: LeetCodeSubmission[] };
-    if (!data.submissions || !Array.isArray(data.submissions)) return 0;
+    const query = `
+      query recentAcSubmissions($username: String!, $limit: Int!) {
+        recentAcSubmissionList(username: $username, limit: $limit) {
+          id
+          title
+          titleSlug
+          timestamp
+        }
+      }
+    `;
 
-    for (const sub of data.submissions) {
-      if (!sub.title || !sub.timestamp) continue;
+    const response = await fetchLeetCodeGraphQL(query, { username, limit: 20 });
+    const submissions = response.data?.recentAcSubmissionList;
+
+    if (!Array.isArray(submissions)) {
+      logger.error('LeetCode submissions response format unexpected', { userId, username });
+      return 0;
+    }
+
+    fetched = submissions.length;
+
+    for (const sub of submissions) {
+      // Skip invalid submissions
+      if (!sub.title || !sub.timestamp || !sub.id) {
+        skipped++;
+        continue;
+      }
+
+      parsed++;
 
       const submittedAt = new Date(parseInt(sub.timestamp) * 1000);
-      if (isNaN(submittedAt.getTime())) continue;
+      if (isNaN(submittedAt.getTime())) {
+        skipped++;
+        continue;
+      }
 
-      // Deduplication by userId + platform + externalId
-      const exists = await DsaSubmission.findOne({
+      // Deduplication check
+      const externalId = sub.id;
+      const existingSub = await DsaSubmission.findOne({
         userId: userObjId,
         platform: 'leetcode',
-        problemId: { $exists: true }, // Will be linked after problem creation
+        externalId,
       }).lean();
-      // Use externalId-based deduplication for LeetCode
+
+      if (existingSub) {
+        duplicates++;
+        continue;
+      }
+
       const problemKey = sub.titleSlug;
-      const existingProblem = await DsaProblem.findOne({
+      let existingProblem = await DsaProblem.findOne({
         userId: userObjId,
         externalId: problemKey,
         platform: 'leetcode',
       });
-      if (existingProblem) {
-        const existingSub = await DsaSubmission.findOne({
+
+      const difficulty = 'medium';
+
+      try {
+        let problem = existingProblem;
+
+        if (!problem) {
+          problem = await DsaProblem.create({
+            userId: userObjId,
+            externalId: problemKey,
+            title: sub.title,
+            platform: 'leetcode',
+            difficulty,
+            url: `https://leetcode.com/problems/${sub.titleSlug}`,
+            tags: [],
+            category: 'Data Structures & Algorithms',
+            status: 'solved',
+            submissionCount: 1,
+            isFavorite: false,
+          });
+        } else {
+          if (problem.status !== 'solved') {
+            await DsaProblem.findByIdAndUpdate(problem._id, {
+              status: 'solved',
+              solvedAt: submittedAt,
+              lastSubmittedAt: submittedAt,
+              $inc: { submissionCount: 1 },
+            });
+          } else {
+            await DsaProblem.findByIdAndUpdate(problem._id, {
+              $inc: { submissionCount: 1 },
+              lastSubmittedAt: submittedAt,
+            });
+          }
+        }
+
+        await DsaSubmission.create({
           userId: userObjId,
+          problemId: problem._id,
           platform: 'leetcode',
-          problemId: existingProblem._id,
+          externalId,
+          status: 'accepted',
+          language: 'unknown',
+          codeSnippet: null,
           submittedAt,
-        }).lean();
-        if (existingSub) continue;
-      }
-
-      // Determine difficulty from status (LeetCode API doesn't provide difficulty directly)
-      const difficulty = 'medium'; // Default, would need separate API call
-
-      let problem = existingProblem;
-      if (!problem) {
-        problem = await DsaProblem.create({
-          userId: userObjId,
-          externalId: problemKey,
-          title: sub.title,
-          platform: 'leetcode',
-          difficulty,
-          url: `https://leetcode.com/problems/${sub.titleSlug}`,
-          tags: [],
-          category: 'Data Structures & Algorithms',
-          status: sub.status === 'AC' ? 'solved' : 'attempted',
-          submissionCount: 1,
-          isFavorite: false,
+          executionTime: null,
+          memoryUsed: null,
         });
-      }
 
-      const status: 'accepted' | 'wrong' | 'time_limit_exceeded' | 'runtime_error' | 'compilation_error' =
-        sub.status === 'AC' ? 'accepted' : sub.status === 'TLE' ? 'time_limit_exceeded'
-          : sub.status === 'MLE' ? 'runtime_error'
-          : sub.status === 'CE' ? 'compilation_error'
-          : 'wrong';
+        try {
+          await incrementDailyActivity(userId, submittedAt, 'submission');
+        } catch (actErr) {
+          // Non-fatal
+        }
 
-      await DsaSubmission.create({
-        userId: userObjId,
-        problemId: problem._id,
-        platform: 'leetcode',
-        status,
-        language: sub.lang ?? 'unknown',
-        codeSnippet: null,
-        submittedAt,
-        executionTime: null,
-        memoryUsed: null,
-      });
-
-      ingested++;
-
-      if (sub.status === 'AC' && problem.status !== 'solved') {
-        await DsaProblem.findByIdAndUpdate(problem._id, {
-          status: 'solved',
-          solvedAt: submittedAt,
-          lastSubmittedAt: submittedAt,
-          $inc: { submissionCount: 1 },
+        ingested++;
+      } catch (createErr) {
+        failed++;
+        logger.warn('Failed to create LeetCode submission', {
+          userId,
+          username,
+          problemKey,
+          error: createErr instanceof Error ? createErr.message : String(createErr),
         });
       }
     }
   } catch (err) {
-    logger.warn('LeetCode submission ingestion error (non-fatal)', {
+    logger.warn('LeetCode submission ingestion failed', {
+      userId,
+      username,
       error: err instanceof Error ? err.message : String(err),
     });
   }
 
-  if (ingested > 0) {
-    logger.info(`Ingested ${ingested} LeetCode submissions`, { userId });
-  }
+  console.log(`\n[LeetCode Sync]\nFetched: ${fetched}\nParsed: ${parsed}\nNormalized: ${parsed}\nInserted: ${ingested}\nSkipped: ${duplicates}\n`);
+
+  logger.info('LeetCode submission ingestion summary', {
+    userId,
+    username,
+    fetched,
+    parsed,
+    ingested,
+    duplicates,
+    failed,
+    skipped,
+  });
+
   return ingested;
 }
 
@@ -913,207 +1213,13 @@ async function ingestLeetCodeContests(userId: string, fetched: FetchedPlatformSt
 // ---------------------------------------------------------------------------
 
 async function ingestCodeChefSubmissions(userId: string, username: string): Promise<number> {
-  const userObjId = new Types.ObjectId(userId);
-  let ingested = 0;
-
-  try {
-    const res = await fetchWithTimeout(
-      `https://codechef-api.vercel.app/submissions/${encodeURIComponent(username)}?limit=100`
-    );
-    if (!res.ok) return 0;
-
-    const data = await res.json() as Record<string, unknown>;
-    const submissions = (data.submissions ?? []) as Array<{
-      code: string;
-      problem_code: string;
-      language: string;
-      date: string;
-      status: string;
-    }>;
-
-    for (const sub of submissions) {
-      if (!sub.problem_code || !sub.date) continue;
-
-      const submittedAt = new Date(sub.date);
-      if (isNaN(submittedAt.getTime())) continue;
-
-      const problemKey = sub.problem_code;
-      let problem = await DsaProblem.findOne({
-        userId: userObjId,
-        externalId: problemKey,
-        platform: 'codechef',
-      });
-
-      if (!problem) {
-        problem = await DsaProblem.create({
-          userId: userObjId,
-          externalId: problemKey,
-          title: sub.problem_code,
-          platform: 'codechef',
-          difficulty: 'medium',
-          url: `https://www.codechef.com/problems/${sub.problem_code}`,
-          tags: [],
-          category: 'Competitive',
-          status: sub.status === 'accepted' ? 'solved' : 'attempted',
-          submissionCount: 1,
-          isFavorite: false,
-        });
-      }
-
-      // Check for duplicate
-      const existingSub = await DsaSubmission.findOne({
-        userId: userObjId,
-        platform: 'codechef',
-        problemId: problem._id,
-        submittedAt,
-      }).lean();
-      if (existingSub) continue;
-
-      const status: 'accepted' | 'wrong' | 'time_limit_exceeded' | 'runtime_error' | 'compilation_error' =
-        sub.status === 'accepted' ? 'accepted' : sub.status === 'time limit exceeded' ? 'time_limit_exceeded'
-          : sub.status === 'runtime error' ? 'runtime_error'
-          : sub.status === 'compilation error' ? 'compilation_error'
-          : 'wrong';
-
-      await DsaSubmission.create({
-        userId: userObjId,
-        problemId: problem._id,
-        platform: 'codechef',
-        status,
-        language: sub.language ?? 'unknown',
-        codeSnippet: null,
-        submittedAt,
-        executionTime: null,
-        memoryUsed: null,
-      });
-
-      ingested++;
-
-      if (sub.status === 'accepted' && problem.status !== 'solved') {
-        await DsaProblem.findByIdAndUpdate(problem._id, {
-          status: 'solved',
-          solvedAt: submittedAt,
-          lastSubmittedAt: submittedAt,
-          $inc: { submissionCount: 1 },
-        });
-      }
-    }
-  } catch (err) {
-    logger.warn('CodeChef submission ingestion error (non-fatal)', {
-      error: err instanceof Error ? err.message : String(err),
-    });
-  }
-
-  if (ingested > 0) {
-    logger.info(`Ingested ${ingested} CodeChef submissions`, { userId });
-  }
-  return ingested;
+  // CodeChef submissions API (codechef-api.vercel.app) is dead - skip ingestion gracefully
+  // Stats are still synced via profile scraping, but individual submissions won't be ingested
+  // This is a TEMPORARY SAFE FALLBACK per prompt.md requirements
+  logger.info('CodeChef submission ingestion skipped - external API unavailable', { userId, username });
+  return 0;
 }
 
-// ---------------------------------------------------------------------------
-// HACKERRANK INGESTION
-// ---------------------------------------------------------------------------
-
-interface HackerRankSubmission {
-  name: string;
-  status: string;
-  time: string;
-  language: string;
-}
-
-async function ingestHackerRankSubmissions(userId: string, username: string): Promise<number> {
-  const userObjId = new Types.ObjectId(userId);
-  let ingested = 0;
-
-  try {
-    const res = await fetchWithTimeout(
-      `https://www.hackerrank.com/rest/hackers/${encodeURIComponent(username)}/submissions?limit=100`
-    );
-    if (!res.ok) return 0;
-
-    const data = await res.json() as { models?: HackerRankSubmission[] };
-    if (!data.models || !Array.isArray(data.models)) return 0;
-
-    for (const sub of data.models) {
-      if (!sub.name || !sub.time) continue;
-
-      const submittedAt = new Date(sub.time);
-      if (isNaN(submittedAt.getTime())) continue;
-
-      const problemKey = sub.name.replace(/\s+/g, '-').toLowerCase();
-      let problem = await DsaProblem.findOne({
-        userId: userObjId,
-        externalId: problemKey,
-        platform: 'hackerrank',
-      });
-
-      if (!problem) {
-        problem = await DsaProblem.create({
-          userId: userObjId,
-          externalId: problemKey,
-          title: sub.name,
-          platform: 'hackerrank',
-          difficulty: 'medium',
-          url: `https://www.hackerrank.com/challenges/${sub.name.replace(/\s+/g, '-').toLowerCase()}`,
-          tags: [],
-          category: 'Practice',
-          status: sub.status === 'Accepted' ? 'solved' : 'attempted',
-          submissionCount: 1,
-          isFavorite: false,
-        });
-      }
-
-      // Check for duplicate
-      const existingSub = await DsaSubmission.findOne({
-        userId: userObjId,
-        platform: 'hackerrank',
-        problemId: problem._id,
-        submittedAt,
-      }).lean();
-      if (existingSub) continue;
-
-      const status: 'accepted' | 'wrong' | 'time_limit_exceeded' | 'runtime_error' | 'compilation_error' =
-        sub.status === 'Accepted' ? 'accepted'
-          : sub.status === 'Wrong Answer' ? 'wrong'
-          : sub.status === 'Time Limit Exceeded' ? 'time_limit_exceeded'
-          : sub.status === 'Runtime Error' ? 'runtime_error'
-          : sub.status === 'Compilation Error' ? 'compilation_error'
-          : 'wrong';
-
-      await DsaSubmission.create({
-        userId: userObjId,
-        problemId: problem._id,
-        platform: 'hackerrank',
-        status,
-        language: sub.language ?? 'unknown',
-        codeSnippet: null,
-        submittedAt,
-        executionTime: null,
-        memoryUsed: null,
-      });
-
-      ingested++;
-
-      if (sub.status === 'Accepted' && problem.status !== 'solved') {
-        await DsaProblem.findByIdAndUpdate(problem._id, {
-          status: 'solved',
-          solvedAt: submittedAt,
-          lastSubmittedAt: submittedAt,
-          $inc: { submissionCount: 1 },
-        });
-      }
-    }
-  } catch (err) {
-    logger.warn('HackerRank submission ingestion error (non-fatal)', {
-      error: err instanceof Error ? err.message : String(err),
-    });
-  }
-
-  if (ingested > 0) {
-    logger.info(`Ingested ${ingested} HackerRank submissions`, { userId });
-  }
-  return ingested;
-}
 
 /**
  * STEP 2.4: Update DsaTopicProgress from platform sync data.
@@ -1129,7 +1235,6 @@ async function updatePlatformTopicAnalytics(
   const topicName = platformName === 'codeforces' ? 'Competitive Programming'
     : platformName === 'leetcode' ? 'LeetCode Problems'
     : platformName === 'codechef' ? 'CodeChef Problems'
-    : platformName === 'hackerrank' ? 'HackerRank Challenges'
     : 'General';
 
   await DsaTopicProgress.findOneAndUpdate(
