@@ -6,7 +6,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import axiosClient from '../utils/axiosClient';
 import { useUserStore } from '../store/userStore';
 import { useDashboardStore } from '../store/dashboardStore';
-import { fetchGithubDashboardStats, type GithubDashboardStats } from '../services/dashboardService';
+import { type GithubDashboardStats } from '../services/dashboardService';
 import type {
   ApiResponse,
   ApiDashboardResponse,
@@ -77,16 +77,13 @@ export function useDashboardData(): UseDashboardDataReturn {
 
       useDashboardStore.getState().setStatus('loading');
 
-      Promise.all([
-        axiosClient.get<ApiResponse<ApiDashboardResponse>>('/dashboard', { signal: controller.signal }),
-        fetchGithubDashboardStats().catch(() => null)
-      ])
-        .then(([dashRes, ghRes]) => {
+      axiosClient.get<ApiResponse<ApiDashboardResponse>>('/dashboard', { signal: controller.signal })
+        .then((res) => {
           if (controller.signal.aborted) return;
 
-          const b = dashRes.data.data;
+          const b = res.data.data;
           const platforms = b.platformStats || [];
-          const githubStats = ghRes?.data || null;
+          const githubStats = b.githubStats || null;
 
           const dashData: DashboardData = {
             totalSolved: platforms.reduce((s, p) => s + (p.totalSolved || 0), 0),

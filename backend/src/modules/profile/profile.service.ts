@@ -1,6 +1,7 @@
 // src/modules/profile/profile.service.ts
 import { Types } from 'mongoose';
 import { User, UserProfile, ConnectedPlatform, PlatformStats } from '../../db/models/index.js';
+import { PLATFORMS } from '../../config/constants.js';
 import type { ApiUserProfile, ApiConnectedPlatform, ApiSocialLinks, ApiProfileUpdatePayload, ApiPlatformStatsResponse } from '../../types/api.types.js';
 
 export async function getProfile(userId: string): Promise<ApiUserProfile | null> {
@@ -8,7 +9,7 @@ export async function getProfile(userId: string): Promise<ApiUserProfile | null>
   if (!user) return null;
 
   const profile = await UserProfile.findOne({ userId: new Types.ObjectId(userId) });
-
+  
   return {
     id: user._id.toString(),
     email: user.email,
@@ -19,6 +20,10 @@ export async function getProfile(userId: string): Promise<ApiUserProfile | null>
     timezone: user.timezone,
     joinedAt: user.joinedAt.toISOString(),
     lastActiveAt: user.lastActiveAt.toISOString(),
+    roleTitle: profile?.roleTitle || null,
+    targetRole: profile?.targetRole || null,
+    targetCompanies: profile?.targetCompanies || [],
+    techStack: profile?.techStack || [],
     socialLinks: {
       github: profile?.socialLinks?.github || null,
       linkedin: profile?.socialLinks?.linkedin || null,
@@ -26,6 +31,7 @@ export async function getProfile(userId: string): Promise<ApiUserProfile | null>
       portfolio: profile?.socialLinks?.portfolio || null,
       leetcode: profile?.socialLinks?.leetcode || null,
       codeforces: profile?.socialLinks?.codeforces || null,
+      codechef: profile?.socialLinks?.codechef || null,
     },
   };
 }
@@ -35,16 +41,22 @@ export async function updateProfile(userId: string, payload: ApiProfileUpdatePay
   if (!user) return null;
 
   // Update user fields
-  if (payload.displayName) user.displayName = payload.displayName;
+  if (payload.displayName !== undefined) user.displayName = payload.displayName;
   if (payload.bio !== undefined) user.bio = payload.bio;
-  if (payload.timezone) user.timezone = payload.timezone;
+  if (payload.timezone !== undefined) user.timezone = payload.timezone;
   await user.save();
 
   // Update profile fields
-  if (payload.socialLinks) {
+  const profileUpdate: any = {};
+  if (payload.roleTitle !== undefined) profileUpdate.roleTitle = payload.roleTitle;
+  if (payload.targetRole !== undefined) profileUpdate.targetRole = payload.targetRole;
+  if (payload.targetCompanies !== undefined) profileUpdate.targetCompanies = payload.targetCompanies;
+  if (payload.socialLinks !== undefined) profileUpdate.socialLinks = payload.socialLinks;
+
+  if (Object.keys(profileUpdate).length > 0) {
     await UserProfile.findOneAndUpdate(
       { userId: new Types.ObjectId(userId) },
-      { $set: { socialLinks: payload.socialLinks } },
+      { $set: profileUpdate },
       { upsert: true, new: true }
     );
   }
@@ -106,6 +118,49 @@ export async function addTechStack(userId: string, tag: string): Promise<string[
   );
 
   return profile?.techStack || [];
+}
+
+export async function connectPlatform(
+  userId: string,
+  platformName: string,
+  username: string
+): Promise<ApiConnectedPlatform> {
+  const platformKey = platformName.toUpperCase() as keyof typeof PLATFORMS;
+  const platformConfig = PLATFORMS[platformKey];
+
+  if (!platformConfig) {
+    throw new Error(`Invalid platform: ${platformName}`);
+  }
+
+  const profileUrl = platformConfig.profileUrl(username);
+
+  const platform = await ConnectedPlatform.findOneAndUpdate(
+    {
+      userId: new Types.ObjectId(userId),
+      platformName: platformName.toLowerCase() as any,
+    },
+    {
+      $set: {
+        username,
+        profileUrl,
+        isConnected: true,
+        syncStatus: 'idle',
+        syncError: null,
+      },
+    },
+    { upsert: true, new: true }
+  );
+
+  return {
+    id: platform._id.toString(),
+    platformName: platform.platformName,
+    username: platform.username,
+    profileUrl: platform.profileUrl,
+    isConnected: platform.isConnected,
+    lastSyncedAt: platform.lastSyncedAt?.toISOString() || null,
+    syncStatus: platform.syncStatus,
+    syncError: platform.syncError,
+  };
 }
 
 export async function removeTechStack(userId: string, tag: string): Promise<string[]> {

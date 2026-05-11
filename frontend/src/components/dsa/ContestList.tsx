@@ -13,82 +13,113 @@ const platformFromLabel = (platform: string) => {
   const lower = platform.toLowerCase();
   if (lower.includes('leet')) return 'leetcode';
   if (lower.includes('force')) return 'codeforces';
-  if (lower.includes('rank')) return 'hackerrank';
   return 'codechef';
 };
 
-function formatContestDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-}
+export const ContestList: React.FC<ContestListProps> = React.memo(({ contests, className }) => {
+  const [showAll, setShowAll] = React.useState(false);
 
-export const ContestList: React.FC<ContestListProps> = React.memo(({ title, contests, className }) => {
+  // Limit contests for compact view
+  const displayedContests = showAll ? contests : contests.slice(0, 5);
+  const hiddenCount = contests.length - displayedContests.length;
+
   if (contests.length === 0) {
     return (
-      <section className={['dt-card p-5', className].filter(Boolean).join(' ')}>
-        <h3 className="text-lg font-semibold tracking-tight text-dt-text">{title}</h3>
-        <div className="mt-6 flex flex-col items-center gap-2 py-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-            <Icon name="trophy" size={20} className="text-gray-400" />
-          </div>
-          <p className="text-sm text-dt-muted">No contest history yet</p>
-          <p className="text-xs text-gray-400">Participate in contests to track your progress</p>
+      <section className={['dt-card p-8 flex flex-col items-center justify-center text-center h-full group/contests', className].filter(Boolean).join(' ')}>
+        <div className="w-14 h-14 rounded-[24px] bg-dt-secondary/5 flex items-center justify-center border border-dt-secondary/10 mb-5 group-hover/contests:scale-110 transition-transform duration-700">
+          <Icon name="trophy" size={24} className="text-dt-secondary/20" />
         </div>
+        <p className="text-[14px] font-bold text-dt-textSecondary tracking-tight">No active contest log</p>
+        <p className="text-[11px] text-dt-textMuted mt-1 uppercase tracking-widest font-black opacity-50">Join events to benchmark skills</p>
       </section>
     );
   }
 
   return (
-    <section className={['dt-card p-5', className].filter(Boolean).join(' ')}>
-      <h3 className="text-lg font-semibold tracking-tight text-dt-text">{title}</h3>
+    <section className={['bg-white/80 backdrop-blur-3xl rounded-[32px] border border-dt-primary/10 shadow-[0_8px_40px_rgba(124,92,252,0.06)] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_16px_60px_rgba(124,92,252,0.12)] group/contests relative', className].filter(Boolean).join(' ')}>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(167,139,250,0.03),transparent_50%)] pointer-events-none" />
+      <div className="px-8 py-6 border-b border-dt-primary/10 bg-white/50 backdrop-blur-md flex items-center justify-between relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-[#A78BFA] shadow-[0_0_10px_rgba(167,139,250,0.8)]" />
+          <span className="text-[11px] font-black text-dt-textSecondary/80 uppercase tracking-[0.25em]">Competition Matrix</span>
+        </div>
+        <span className="text-[10px] font-black text-[#A78BFA] px-3 py-1.5 rounded-full bg-[#A78BFA]/10 border border-[#A78BFA]/20 group-hover/contests:border-[#A78BFA]/40 transition-colors uppercase tracking-widest shadow-inner">
+          {contests.length} Logged
+        </span>
+      </div>
 
-      <ul className="mt-4 space-y-3">
-        {contests.map((contest) => {
+      <div className="p-3 flex flex-col gap-2 relative z-10">
+        {displayedContests.map((contest, idx) => {
           const ratingChange = contest.ratingChange;
           const isPositive = ratingChange !== null && ratingChange > 0;
           const isNegative = ratingChange !== null && ratingChange < 0;
 
           return (
-            <li
+            <div
               key={contest.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-black/5 bg-white px-3 py-2.5 dt-pop hover:bg-[#F3F4F6]"
+              className="group/item relative flex items-center justify-between gap-4 p-4 rounded-[20px] bg-white/40 hover:bg-white/80 shadow-sm hover:shadow-[0_8px_30px_rgba(167,139,250,0.08)] border border-dt-primary/5 hover:border-[#A78BFA]/30 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
+              style={{ animation: `dtFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) ${idx * 40}ms both` }}
             >
-              <div className="min-w-0 flex items-center gap-2">
-                <div className="w-9 h-9 bg-white border border-black/5 rounded-md flex items-center justify-center shrink-0">
-                  <PlatformLogo platform={platformFromLabel(contest.platform)} iconSize={14} className="" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#A78BFA]/5 to-transparent -translate-x-full group-hover/item:animate-[shimmer_1.5s_infinite]" />
+              <div className="flex items-center gap-4 min-w-0 relative z-10">
+                <div className="w-10 h-10 rounded-[14px] bg-white border border-dt-primary/10 flex items-center justify-center shrink-0 shadow-sm group-hover/item:shadow-md group-hover/item:border-[#A78BFA]/40 transition-all duration-500 group-hover/item:-translate-y-0.5">
+                  <PlatformLogo platform={platformFromLabel(contest.platform)} iconSize={20} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-dt-text truncate">{contest.contestName}</p>
-                  <p className="text-xs text-dt-muted">
-                    {contest.platform} · {formatContestDate(contest.participatedAt)}
+                  <p className="text-[15px] font-black text-dt-text truncate leading-snug group-hover/item:text-[#A78BFA] transition-colors tracking-tight">
+                    {contest.contestName}
+                  </p>
+                  <p className="text-[10px] text-dt-textSecondary/70 font-black uppercase tracking-[0.2em] mt-1">
+                    {contest.platform} <span className="opacity-50 mx-1">•</span> {new Date(contest.participatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-3 shrink-0 relative z-10">
                 {contest.rank !== null && (
-                  <span className="text-xs font-medium text-gray-600 bg-gray-100 rounded-md px-2 py-1">
+                  <span className="text-[11px] font-black text-dt-textSecondary/80 bg-dt-bg px-3 py-1 rounded-xl border border-dt-primary/10 tabular-nums tracking-tighter shadow-inner">
                     #{contest.rank}
-                    {contest.totalParticipants ? ` / ${contest.totalParticipants}` : ''}
                   </span>
                 )}
                 {ratingChange !== null && (
-                  <span
-                    className={[
-                      'rounded-md px-2 py-1 text-xs font-semibold tabular-nums',
-                      isPositive ? 'bg-emerald-50 text-emerald-700' : '',
-                      isNegative ? 'bg-red-50 text-red-700' : '',
-                      !isPositive && !isNegative ? 'bg-gray-100 text-gray-500' : '',
-                    ].join(' ')}
-                  >
+                  <span className={[
+                    'text-[11px] font-black px-3 py-1 rounded-xl tabular-nums min-w-[48px] text-center transition-all duration-300 shadow-sm',
+                    isPositive ? 'text-[#10B981] bg-[#10B981]/10 border border-[#10B981]/20' :
+                      isNegative ? 'text-[#EF4444] bg-[#EF4444]/10 border border-[#EF4444]/20' :
+                        'text-dt-textSecondary bg-dt-bg border border-dt-primary/10',
+                  ].join(' ')}>
                     {isPositive ? '+' : ''}{ratingChange}
                   </span>
                 )}
               </div>
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
+
+      {hiddenCount > 0 && (
+        <div className="p-3 pt-1 border-t border-dt-primary/5">
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="w-full py-2.5 rounded-xl text-[10px] font-black text-dt-textSecondary/60 uppercase tracking-widest hover:bg-dt-secondary/5 hover:text-dt-secondary transition-all duration-300"
+          >
+            Show {hiddenCount} historical packets
+          </button>
+        </div>
+      )}
+
+      {showAll && (
+        <div className="p-3 pt-1 border-t border-dt-primary/5">
+          <button
+            type="button"
+            onClick={() => setShowAll(false)}
+            className="w-full py-2.5 rounded-xl text-[9px] font-black text-dt-textMuted uppercase tracking-widest hover:bg-dt-bg transition-all duration-300"
+          >
+            Collapse Log
+          </button>
+        </div>
+      )}
     </section>
   );
 });

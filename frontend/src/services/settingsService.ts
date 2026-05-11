@@ -1,199 +1,104 @@
 // ============================================================================
-// settingsService.ts — Settings API Service
+// settingsService.ts — API service for Settings
 // ============================================================================
-// HTTP-only. Returns raw API types. No transformations.
+// Uses centralized axiosClient for auth, error normalization, and token refresh.
 // ============================================================================
 
 import axiosClient from '../utils/axiosClient';
-import type {
-  ApiResponse,
-  ApiSettingsResponse,
-  ApiUserProfile,
-  ApiConnectedPlatform,
-  ApiNotificationPreferences,
-  ApiAppearanceSettings,
-  ApiPrivacySettings,
-  ApiProfileUpdatePayload,
-  ApiPasswordChangePayload,
-  ApiPlatformConnectPayload,
-  ApiNotificationUpdatePayload,
-  ApiAppearanceUpdatePayload,
-  ApiPrivacyUpdatePayload,
-  ApiMutationResponse,
-} from '../types/api.types';
+import type { ApiResponse } from '../types/api.types';
 
-const SETTINGS_BASE = '/settings';
+const SETTINGS_PATH = '/settings';
+const SYNC_PATH = '/platforms/sync';
 
-/**
- * Fetch the full settings payload.
- */
-export async function fetchSettings(): Promise<ApiResponse<ApiSettingsResponse>> {
-  const { data } = await axiosClient.get<ApiResponse<ApiSettingsResponse>>(
-    `${SETTINGS_BASE}`
-  );
-  return data;
+export interface PlatformConfig {
+  username?: string;
+  handle?: string;
+  lastSyncedAt?: string | null;
 }
 
-/**
- * Fetch user profile.
- */
-export async function fetchProfile(): Promise<ApiResponse<ApiUserProfile>> {
-  const { data } = await axiosClient.get<ApiResponse<ApiUserProfile>>(
-    `${SETTINGS_BASE}/profile`
-  );
-  return data;
+export interface NotificationSettings {
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  dailyDigest: boolean;
+  weeklyReport: boolean;
+  streakReminder: boolean;
+  missionAlerts: boolean;
+  projectUpdates: boolean;
 }
 
-/**
- * Update user profile.
- */
-export async function updateProfile(
-  payload: ApiProfileUpdatePayload
-): Promise<ApiResponse<ApiUserProfile>> {
-  const { data } = await axiosClient.patch<ApiResponse<ApiUserProfile>>(
-    `${SETTINGS_BASE}/profile`,
-    payload
-  );
-  return data;
+export interface AppearanceSettings {
+  theme: 'light' | 'dark' | 'system';
+  accentColor: string;
+  compactMode: boolean;
+  showHeatmap: boolean;
+  heatmapColor: string;
+  language: string;
 }
 
-/**
- * Update user avatar.
- */
-export async function updateAvatar(
-  file: File
-): Promise<ApiResponse<{ avatarUrl: string }>> {
-  const formData = new FormData();
-  formData.append('avatar', file);
-
-  const { data } = await axiosClient.post<ApiResponse<{ avatarUrl: string }>>(
-    `${SETTINGS_BASE}/profile/avatar`,
-    formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } }
-  );
-  return data;
+export interface PrivacySettings {
+  profileVisibility: 'public' | 'private' | 'friends_only';
+  showActivity: boolean;
+  showStreak: boolean;
+  showProjects: boolean;
+  showDsaProgress: boolean;
 }
 
-/**
- * Change password.
- */
-export async function changePassword(
-  payload: ApiPasswordChangePayload
-): Promise<ApiMutationResponse> {
-  const { data } = await axiosClient.post<ApiMutationResponse>(
-    `${SETTINGS_BASE}/password`,
-    payload
-  );
-  return data;
+export interface UserSettingsResponse {
+  id: string;
+  userId: string;
+  platforms: {
+    github: PlatformConfig;
+    codeforces: PlatformConfig;
+    leetcode: PlatformConfig;
+    codechef: PlatformConfig;
+  };
+  notifications: NotificationSettings;
+  appearance: AppearanceSettings;
+  privacy: PrivacySettings;
+  createdAt: string;
+  updatedAt: string;
 }
 
-/**
- * Fetch connected platforms.
- */
-export async function fetchConnectedPlatforms(): Promise<
-  ApiResponse<ApiConnectedPlatform[]>
-> {
-  const { data } = await axiosClient.get<ApiResponse<ApiConnectedPlatform[]>>(
-    `${SETTINGS_BASE}/platforms`
-  );
-  return data;
+export interface UpdateSettingsPayload {
+  platforms?: {
+    github?: PlatformConfig;
+    codeforces?: PlatformConfig;
+    leetcode?: PlatformConfig;
+    codechef?: PlatformConfig;
+  };
+  notifications?: Partial<NotificationSettings>;
+  appearance?: Partial<AppearanceSettings>;
+  privacy?: Partial<PrivacySettings>;
+  // For profile changes, usually goes to another endpoint, but let's assume it's here or we can just mock the UI first.
 }
 
-/**
- * Connect a new platform.
- */
-export async function connectPlatform(
-  payload: ApiPlatformConnectPayload
-): Promise<ApiResponse<ApiConnectedPlatform>> {
-  const { data } = await axiosClient.post<ApiResponse<ApiConnectedPlatform>>(
-    `${SETTINGS_BASE}/platforms/connect`,
-    payload
-  );
-  return data;
+export interface SyncGithubResponse {
+  platform: string;
+  success: boolean;
+  stats: {
+    totalSolved: number;
+    easySolved: number;
+    mediumSolved: number;
+    hardSolved: number;
+    rating: number | null;
+    rank: string | null;
+    totalContests: number;
+  } | null;
+  error: string | null;
+  lastSyncedAt: string;
 }
 
-/**
- * Disconnect a platform.
- */
-export async function disconnectPlatform(
-  platformId: string
-): Promise<ApiMutationResponse> {
-  const { data } = await axiosClient.post<ApiMutationResponse>(
-    `${SETTINGS_BASE}/platforms/${platformId}/disconnect`
-  );
-  return data;
+export async function getSettings(): Promise<UserSettingsResponse> {
+  const { data } = await axiosClient.get<ApiResponse<UserSettingsResponse>>(SETTINGS_PATH);
+  return data.data;
 }
 
-/**
- * Trigger platform sync.
- */
-export async function syncPlatform(
-  platformId: string
-): Promise<ApiMutationResponse> {
-  const { data } = await axiosClient.post<ApiMutationResponse>(
-    `${SETTINGS_BASE}/platforms/${platformId}/sync`
-  );
-  return data;
+export async function updateSettings(payload: UpdateSettingsPayload): Promise<UserSettingsResponse> {
+  const { data } = await axiosClient.put<ApiResponse<UserSettingsResponse>>(SETTINGS_PATH, payload);
+  return data.data;
 }
 
-/**
- * Update notification preferences.
- */
-export async function updateNotifications(
-  payload: ApiNotificationUpdatePayload
-): Promise<ApiResponse<ApiNotificationPreferences>> {
-  const { data } = await axiosClient.patch<ApiResponse<ApiNotificationPreferences>>(
-    `${SETTINGS_BASE}/notifications`,
-    payload
-  );
-  return data;
-}
-
-/**
- * Update appearance settings.
- */
-export async function updateAppearance(
-  payload: ApiAppearanceUpdatePayload
-): Promise<ApiResponse<ApiAppearanceSettings>> {
-  const { data } = await axiosClient.patch<ApiResponse<ApiAppearanceSettings>>(
-    `${SETTINGS_BASE}/appearance`,
-    payload
-  );
-  return data;
-}
-
-/**
- * Update privacy settings.
- */
-export async function updatePrivacy(
-  payload: ApiPrivacyUpdatePayload
-): Promise<ApiResponse<ApiPrivacySettings>> {
-  const { data } = await axiosClient.patch<ApiResponse<ApiPrivacySettings>>(
-    `${SETTINGS_BASE}/privacy`,
-    payload
-  );
-  return data;
-}
-
-/**
- * Delete user account.
- */
-export async function deleteAccount(
-  password: string
-): Promise<ApiMutationResponse> {
-  const { data } = await axiosClient.post<ApiMutationResponse>(
-    `${SETTINGS_BASE}/account/delete`,
-    { password }
-  );
-  return data;
-}
-
-/**
- * Export user data.
- */
-export async function exportUserData(): Promise<Blob> {
-  const { data } = await axiosClient.get(`${SETTINGS_BASE}/export`, {
-    responseType: 'blob',
-  });
-  return data;
+export async function syncGithub(): Promise<SyncGithubResponse> {
+  const { data } = await axiosClient.post<ApiResponse<SyncGithubResponse>>(`${SYNC_PATH}/github`);
+  return data.data;
 }

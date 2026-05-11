@@ -19,7 +19,7 @@ import {
   transformProjectsPage,
   transformProjectDetail,
 } from '../viewmodels/projectsVM';
-import { isStale, TTL } from '../utils/stale';
+
 import type {
   ProjectsPageVM,
   ProjectDetailVM,
@@ -73,7 +73,7 @@ export function useProjectsData(): HookReturn<ProjectsPageVM> & {
 
   const fetchData = useCallback(
     async (bypassCache: boolean = false) => {
-      if (!bypassCache && !isStale(lastFetchedAt, TTL.DEFAULT)) {
+      if (!bypassCache && lastFetchedAt && Date.now() - lastFetchedAt < 5 * 60 * 1000) {
         return;
       }
 
@@ -206,7 +206,7 @@ export function useProjectDetail(
         setActiveProject(projectId);
       }
 
-      if (!bypassCache && !isStale(lastFetchedAt, TTL.DEFAULT)) {
+      if (!bypassCache && lastFetchedAt && Date.now() - lastFetchedAt < 5 * 60 * 1000) {
         return;
       }
 

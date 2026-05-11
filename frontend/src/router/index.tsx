@@ -4,12 +4,9 @@ import { SkeletonCard } from '../components/skeletons/SkeletonCard';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
 
 const DashboardPage = lazy(
-  () => import('../components/dashboard/DashboardPage')
+  () => import('../pages/DashboardPage')
 );
 
-const ActivityPage = lazy(
-  () => import('../pages/ActivityPage')
-);
 
 const DsaPage = lazy(
   () => import('../pages/DsaPage')
@@ -45,16 +42,6 @@ export const AppRouter: React.FC = () => {
           <ErrorBoundary pageName="Dashboard">
             <Suspense fallback={<PageFallback />}>
               <DashboardPage />
-            </Suspense>
-          </ErrorBoundary>
-        }
-      />
-      <Route
-        path="/activity"
-        element={
-          <ErrorBoundary pageName="Activity">
-            <Suspense fallback={<PageFallback />}>
-              <ActivityPage />
             </Suspense>
           </ErrorBoundary>
         }

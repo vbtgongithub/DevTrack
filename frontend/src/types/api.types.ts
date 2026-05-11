@@ -112,7 +112,7 @@ export interface ApiStreakDay {
 
 export interface ApiPlatformStats {
   platformId: string;
-  platformName: 'leetcode' | 'codeforces' | 'github' | 'hackerrank' | 'codechef';
+  platformName: 'leetcode' | 'codeforces' | 'github' | 'codechef';
   username: string;
   totalSolved: number;
   easySolved: number;
@@ -153,67 +153,25 @@ export interface ApiDashboardRecentActivity {
   occurredAt: string; // ISO 8601
 }
 
+export interface ApiGithubDashboardStats {
+  repos: number;
+  followers: number;
+  following: number;
+  totalStars: number;
+  topLanguages: string[];
+  avatarUrl: string | null;
+  name: string | null;
+  bio: string | null;
+  lastSyncedAt: string;
+}
+
 export interface ApiDashboardResponse {
   stats: ApiDashboardStats;
   streak: ApiStreakData;
   platformStats: ApiPlatformStats[];
   missions: ApiMission[];
   recentActivity: ApiDashboardRecentActivity[];
-}
-
-// ---------------------------------------------------------------------------
-// 4. ACTIVITY / HEATMAP TYPES
-// ---------------------------------------------------------------------------
-
-export interface ApiActivityDay {
-  date: string;    // ISO 8601 date "2026-04-03"
-  count: number;
-  level: 0 | 1 | 2 | 3 | 4;
-  activities: ApiActivityEntry[];
-}
-
-export interface ApiActivityEntry {
-  id: string;
-  type: 'problem_solved' | 'commit_pushed' | 'pr_merged' | 'project_created' | 'project_updated' | 'project_deleted' | 'contest_participated' | 'streak_milestone' | 'note_added' | 'settings_updated';
-  title: string;
-  description: string;
-  platform: string;
-  url: string | null;
-  tags: string[];
-  metadata: Record<string, string | number | boolean>;
-  occurredAt: string; // ISO 8601
-}
-
-export interface ApiActivitySummary {
-  totalActivities: number;
-  totalActiveDays: number;
-  currentStreak: number;
-  longestStreak: number;
-  mostActiveDay: string;    // day of week
-  avgPerDay: number;
-  byPlatform: Record<string, number>;
-  byType: Record<string, number>;
-}
-
-export interface ApiActivityHeatmapResponse {
-  year: number;
-  days: ApiActivityDay[];
-  summary: ApiActivitySummary;
-}
-
-export interface ApiActivityFeedResponse {
-  activities: ApiActivityEntry[];
-  pagination: ApiPagination;
-}
-
-export interface ApiActivityFilters {
-  startDate?: string;
-  endDate?: string;
-  platform?: string;
-  type?: string;
-  tags?: string[];
-  page?: number;
-  pageSize?: number;
+  githubStats: ApiGithubDashboardStats | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -224,7 +182,7 @@ export interface ApiDsaProblem {
   id: string;
   externalId: string;
   title: string;
-  platform: 'leetcode' | 'codeforces' | 'hackerrank' | 'codechef' | 'other';
+  platform: 'leetcode' | 'codeforces' | 'codechef' | 'other';
   difficulty: 'easy' | 'medium' | 'hard';
   url: string;
   tags: string[];
@@ -301,7 +259,13 @@ export interface ApiDsaDashboardResponse {
   }>;
   contests: Array<{ name: string; platform: string; time: string }>;
   topics: Array<{ name: string; progress: number }>;
-  platformOverview: Array<{ platform: string; stat: string }>;
+  platformOverview: Array<{
+    platform: string;
+    stat: string;
+    totalSolved?: number;
+    rank?: string | number | null;
+    rating?: number | null;
+  }>;
 }
 
 export interface ApiDsaFilters {
@@ -605,13 +569,13 @@ export interface ApiPlatformConnectPayload {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ApiNotificationUpdatePayload extends Partial<ApiNotificationPreferences> {}
+export interface ApiNotificationUpdatePayload extends Partial<ApiNotificationPreferences> { }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ApiAppearanceUpdatePayload extends Partial<ApiAppearanceSettings> {}
+export interface ApiAppearanceUpdatePayload extends Partial<ApiAppearanceSettings> { }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ApiPrivacyUpdatePayload extends Partial<ApiPrivacySettings> {}
+export interface ApiPrivacyUpdatePayload extends Partial<ApiPrivacySettings> { }
 
 // ---------------------------------------------------------------------------
 // 8. GENERIC MUTATION RESPONSE
@@ -654,4 +618,28 @@ export interface ApiPlatformStatsResponse {
   totals: {
     totalSolvedAllPlatforms: number;
   };
+}
+
+// ---------------------------------------------------------------------------
+// 10. ACHIEVEMENTS TYPES
+// ---------------------------------------------------------------------------
+
+export interface ApiAchievement {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  unlockedAt: string | null;
+  progress: number;
+  target: number;
+  isUnlocked: boolean;
+  category: 'streak' | 'problems' | 'contest' | 'projects' | 'social';
+  xpReward: number;
+}
+
+export interface ApiAchievementsResponse {
+  achievements: ApiAchievement[];
+  totalUnlocked: number;
+  totalAchievements: number;
+  totalXp: number;
 }

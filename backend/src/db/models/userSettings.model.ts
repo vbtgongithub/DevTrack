@@ -13,7 +13,7 @@ export interface IUserSettings extends Document {
     github: IPlatform;
     codeforces: IPlatform;
     leetcode: IPlatform;
-    hackerrank: IPlatform;
+    codechef: IPlatform;
   };
   notifications: {
     emailNotifications: boolean;
@@ -62,7 +62,7 @@ const userSettingsSchema = new Schema<IUserSettings>(
       github: { type: platformSchema, default: () => ({}) },
       codeforces: { type: platformSchema, default: () => ({}) },
       leetcode: { type: platformSchema, default: () => ({}) },
-      hackerrank: { type: platformSchema, default: () => ({}) },
+      codechef: { type: platformSchema, default: () => ({}) },
     },
     notifications: {
       emailNotifications: { type: Boolean, default: true },

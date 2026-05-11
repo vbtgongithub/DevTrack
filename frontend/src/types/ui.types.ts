@@ -13,12 +13,6 @@ import type {
   MissionPanelVM,
   MissionCardVM,
   RecentActivityVM,
-  HeatmapDayVM,
-  ActivityHeatmapVM,
-  ActivityFeedVM,
-  ActivityFeedItemVM,
-  ActivitySummaryVM,
-  ActivityFilterOptionsVM,
   DsaStatsVM,
   DsaProblemTableVM,
   DsaProblemRowVM,
@@ -60,6 +54,7 @@ export interface SidebarProps {
     avatarUrl: string | null;
     subtitle?: string;
   };
+  streak?: number;
 }
 
 export interface TopbarProps {
@@ -123,43 +118,6 @@ export interface RecentActivityItemProps {
   data: RecentActivityVM;
 }
 
-// ---------------------------------------------------------------------------
-// 3. ACTIVITY COMPONENT PROPS
-// ---------------------------------------------------------------------------
-
-export interface ActivityHeatmapProps {
-  data: ActivityHeatmapVM;
-  onDayClick?: (date: string) => void;
-}
-
-export interface HeatmapCellProps {
-  data: HeatmapDayVM;
-  onClick?: () => void;
-}
-
-export interface ActivityFeedProps {
-  data: ActivityFeedVM;
-  onLoadMore?: () => void;
-}
-
-export interface ActivityFeedItemProps {
-  data: ActivityFeedItemVM;
-}
-
-export interface ActivitySummaryProps {
-  data: ActivitySummaryVM;
-}
-
-export interface ActivityFilterBarProps {
-  options: ActivityFilterOptionsVM;
-  selected: {
-    platform: string;
-    type: string;
-    dateRange: string;
-  };
-  onFilterChange: (key: string, value: string) => void;
-  onClear: () => void;
-}
 
 // ---------------------------------------------------------------------------
 // 4. DSA COMPONENT PROPS

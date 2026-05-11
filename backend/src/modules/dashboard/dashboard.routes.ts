@@ -12,5 +12,6 @@ router.get('/platforms', authMiddleware, asyncHandler(controller.getPlatformStat
 router.get('/missions', authMiddleware, asyncHandler(controller.getMissions));
 router.get('/github', authMiddleware, asyncHandler(controller.getGithubDashboardStats));
 router.get('/recent-activity', authMiddleware, asyncHandler(controller.getRecentActivity));
+router.get('/achievements', authMiddleware, asyncHandler(controller.getAchievements));
 
 export default router;

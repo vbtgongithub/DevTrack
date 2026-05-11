@@ -1,24 +1,20 @@
 // ============================================================================
 // useDsaData.ts — DSA Data Hook
 // ============================================================================
-// Derives DSA page data from the dashboard endpoint (GET /api/dashboard)
-// AND the detail endpoints (submissions, contests, topics).
+// Derives DSA page data from the DSA dashboard endpoint (GET /api/dsa/dashboard)
+// AND the detail endpoints (submissions, contests, topics, platform stats).
 // ============================================================================
 
 import { useMemo, useEffect, useState, useCallback, useRef } from 'react';
-import { useDashboardData } from './useDashboardData';
-import { fetchDsaSubmissions, fetchDsaContests, fetchDsaTopics } from '../services/dsaService';
-import type { DsaData, Platform, Submission, Contest, Topic } from '../types/dsa';
-
-// ---------------------------------------------------------------------------
-// Valid DSA platform names — used to safely narrow ApiPlatformStats.platformName
-// ---------------------------------------------------------------------------
+import { fetchDsaDashboard, fetchDsaSubmissions, fetchDsaContests, fetchDsaTopics } from '../services/dsaService';
+import { fetchPlatformStats } from '../services/dashboardService';
+import type { DsaData, Platform, Submission, Contest, Topic, DsaStat, PlatformOverviewItem } from '../types/dsa';
+import type { ApiPlatformStats } from '../types/api.types';
 
 const VALID_PLATFORMS: ReadonlySet<string> = new Set<Platform>([
   'leetcode',
   'codeforces',
   'codechef',
-  'hackerrank',
   'github',
 ]);
 
@@ -26,71 +22,112 @@ function isDsaPlatform(name: string): name is Platform {
   return VALID_PLATFORMS.has(name);
 }
 
-// ---------------------------------------------------------------------------
-// Hook — derives DsaData from dashboard + detail endpoints
-// ---------------------------------------------------------------------------
-
 export function useDsaData(): {
   data: DsaData | null;
   loading: boolean;
   error: string | null;
   refetch: () => void;
 } {
-  const { data: dashboard, loading: dashLoading, error: dashError, refetch: dashRefetch } = useDashboardData();
+  const [dsaDashboard, setDsaDashboard] = useState<{
+    stats: DsaStat[];
+    heatmap: number[];
+    platformOverview: PlatformOverviewItem[];
+  } | null>(null);
+  const [dsaDashLoading, setDsaDashLoading] = useState(true);
+  const [dsaDashError, setDsaDashError] = useState<string | null>(null);
 
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [contests, setContests] = useState<Contest[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
+  const [exactPlatformStats, setExactPlatformStats] = useState<ApiPlatformStats[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const fetchedRef = useRef(false);
+
+  const fetchDsaDash = useCallback(async () => {
+    setDsaDashLoading(true);
+    setDsaDashError(null);
+    try {
+      const res = await fetchDsaDashboard();
+      const d = res.data;
+
+      const stats: DsaStat[] = (d.stats ?? []).map((s) => ({
+        label: s.label,
+        value: s.value,
+        icon: s.icon,
+      }));
+
+      const heatmap: number[] = d.heatmap ?? [];
+
+      const platformOverview: PlatformOverviewItem[] = (d.platformOverview ?? [])
+        .filter((p) => isDsaPlatform(p.platform))
+        .map((p) => ({
+          platform: p.platform as Platform,
+          stat: p.stat,
+          totalSolved: p.totalSolved ?? 0,
+          rank: p.rank?.toString() || null,
+          rating: p.rating || null,
+        }));
+
+      setDsaDashboard({ stats, heatmap, platformOverview });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load DSA dashboard';
+      setDsaDashError(message);
+    } finally {
+      setDsaDashLoading(false);
+    }
+  }, []);
 
   const fetchDetails = useCallback(async () => {
     setDetailLoading(true);
     setDetailError(null);
     try {
-      const [subsRes, contestsRes, topicsRes] = await Promise.all([
-        fetchDsaSubmissions({ pageSize: 20 }),
+      const [subsRes, contestsRes, topicsRes, platformStatsRes] = await Promise.all([
+        fetchDsaSubmissions({ pageSize: 100 }),
         fetchDsaContests({ pageSize: 20 }),
         fetchDsaTopics(),
+        fetchPlatformStats(),
       ]);
 
-      // Map submissions API → local Submission type
-      const mappedSubs: Submission[] = subsRes.data.submissions.map((s) => ({
-        id: s.id,
-        status: s.status === 'accepted' ? 'accepted' : 'wrong',
-        problem: s.problemName,
-        topic: s.problemCategory ?? 'General',
-        platform: (isDsaPlatform(s.platform) ? s.platform : 'leetcode') as Platform,
-        language: s.language,
-        date: new Date(s.submittedAt).toLocaleDateString('en-US', {
-          month: 'short',
-          day: '2-digit',
-          year: 'numeric',
-        }),
-        difficulty: (s.problemDifficulty as 'easy' | 'medium' | 'hard') ?? undefined,
-      }));
+      const mappedSubs: Submission[] = subsRes.data.submissions
+        .filter((s) => isDsaPlatform(s.platform))
+        .map((s) => ({
+          id: s.id,
+          status: s.status === 'accepted' ? 'accepted' : 'wrong',
+          problem: s.problemName,
+          topic: s.problemCategory ?? 'General',
+          platform: s.platform as Platform,
+          language: s.language,
+          date: new Date(s.submittedAt).toLocaleDateString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric',
+          }),
+          difficulty: (s.problemDifficulty as 'easy' | 'medium' | 'hard') ?? undefined,
+        }));
       setSubmissions(mappedSubs);
 
-      // Map contests API → local Contest type
-      const mappedContests: Contest[] = contestsRes.data.contests.map((c) => ({
-        id: c.id,
-        contestName: c.contestName,
-        platform: c.platform,
-        rank: c.rank,
-        totalParticipants: c.totalParticipants,
-        problemsSolved: c.problemsSolved,
-        ratingChange: c.ratingChange,
-        participatedAt: c.participatedAt,
-      }));
+      const mappedContests: Contest[] = contestsRes.data.contests
+        .filter((c) => isDsaPlatform(c.platform))
+        .map((c) => ({
+          id: c.id,
+          contestName: c.contestName,
+          platform: c.platform as Platform,
+          rank: c.rank,
+          totalParticipants: c.totalParticipants,
+          problemsSolved: c.problemsSolved,
+          ratingChange: c.ratingChange,
+          participatedAt: c.participatedAt,
+        }));
       setContests(mappedContests);
 
-      // Map topics API → local Topic type
-      const mappedTopics: Topic[] = topicsRes.data.topics.map((t) => ({
-        name: t.topicName,
-        progress: t.solveRate,
-      }));
+      const mappedTopics: Topic[] = topicsRes.data.topics
+        .map((t) => ({
+          name: t.topicName,
+          progress: t.solveRate,
+        }));
       setTopics(mappedTopics);
+      setExactPlatformStats(platformStatsRes.data);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load DSA details';
       setDetailError(message);
@@ -100,70 +137,55 @@ export function useDsaData(): {
   }, []);
 
   useEffect(() => {
+    void fetchDsaDash();
     if (!fetchedRef.current) {
       fetchedRef.current = true;
       void fetchDetails();
     }
-  }, [fetchDetails]);
+  }, [fetchDsaDash, fetchDetails]);
 
   const data = useMemo<DsaData | null>(() => {
-    if (!dashboard) return null;
+    if (!dsaDashboard) return null;
 
-    const platformStats = dashboard.platformStats;
-    const dashStats = dashboard.stats;
-    const streakData = dashboard.streakData;
+    // Create a map of exact stats from the dashboard/platforms endpoint
+    const statsMap = new Map(exactPlatformStats.map(s => [s.platformName, s]));
 
-    // ── stats: summary items for the DSA page header ──────────────────
-    const totalSolved = platformStats.reduce((sum, p) => sum + p.totalSolved, 0);
-    const bestRating = platformStats.reduce((best, p) => {
-      const r = typeof p.rating === 'number' ? p.rating : 0;
-      return r > best ? r : best;
-    }, 0);
-
-    const dsaStats: DsaData['stats'] = [
-      { label: 'Problems Solved', value: String(totalSolved) },
-      { label: 'Current Rating', value: bestRating > 0 ? String(bestRating) : '—' },
-      { label: 'Current Streak', value: String(dashStats.currentStreak) },
-      { label: 'Max Streak', value: String(dashStats.longestStreak) },
-    ];
-
-    // ── heatmap: 365-day activity from streak history ─────────────────
-    const heatmap: number[] = streakData.streakHistory.map((d) => d.count);
-
-    // ── platformOverview: per-platform summary cards ──────────────────
-    const platformOverview: DsaData['platformOverview'] = platformStats
-      .filter((p) => isDsaPlatform(p.platformName))
-      .map((p) => ({
-        platform: p.platformName as Platform,
-        stat: p.totalSolved > 0 ? `${p.totalSolved} solved` : 'No data',
-        totalSolved: p.totalSolved,
-        easy: p.easySolved,
-        medium: p.mediumSolved,
-        hard: p.hardSolved,
-        rating: typeof p.rating === 'number' ? p.rating : null,
-        rank: p.rank,
-      }));
+    // Derived fallback logic: Priority 1: Exact Stats API, Priority 2: Submissions Stream, Priority 3: Dashboard Payload
+    const solveCountsFromSubs = submissions.reduce((acc, sub) => {
+      if (sub.status === 'accepted') {
+        acc[sub.platform] = (acc[sub.platform] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
 
     return {
-      stats: dsaStats,
-      heatmap,
+      stats: dsaDashboard.stats,
+      heatmap: dsaDashboard.heatmap,
       submissions,
       contests,
       topics,
-      platformOverview,
+      platformOverview: dsaDashboard.platformOverview.map(p => {
+        const exact = statsMap.get(p.platform);
+        return {
+          ...p,
+          totalSolved: exact ? exact.totalSolved : (solveCountsFromSubs[p.platform] || p.totalSolved || 0),
+          rank: exact?.rank?.toString() || p.rank,
+          rating: exact?.rating || p.rating
+        };
+      }),
     };
-  }, [dashboard, submissions, contests, topics]);
+  }, [dsaDashboard, submissions, contests, topics, exactPlatformStats]);
 
   const refetch = useCallback(() => {
-    dashRefetch();
+    void fetchDsaDash();
     fetchedRef.current = false;
     void fetchDetails();
-  }, [dashRefetch, fetchDetails]);
+  }, [fetchDsaDash, fetchDetails]);
 
   return {
     data,
-    loading: dashLoading || detailLoading,
-    error: dashError || detailError,
+    loading: dsaDashLoading || detailLoading,
+    error: dsaDashError || detailError,
     refetch,
   };
 }

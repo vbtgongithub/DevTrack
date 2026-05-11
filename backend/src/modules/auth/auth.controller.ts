@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import * as authService from './auth.service.js';
 import { successResponse } from '../../shared/response.js';
 import type { AuthenticatedRequest } from '../../middleware/auth.js';
+import { logger } from '../../shared/logger.js';
 
 export async function register(req: Request, res: Response): Promise<void> {
   const result = await authService.register(req.body);
@@ -10,7 +11,10 @@ export async function register(req: Request, res: Response): Promise<void> {
 }
 
 export async function login(req: Request, res: Response): Promise<void> {
+  const { emailOrUsername } = req.body;
+  logger.info(`[AUTH] Login attempt received for: ${emailOrUsername}`);
   const result = await authService.login(req.body);
+  logger.info(`[AUTH] Login successful for: ${emailOrUsername}`);
   successResponse(res, result, 'Login successful');
 }
 

@@ -116,11 +116,9 @@ export const useUserStore = create<UserState>((set, get) => ({
 
     // Clear all per-user data stores to prevent stale data leaking to next user
     const { useDashboardStore } = await import('./dashboardStore');
-    const { useActivityStore } = await import('./activityStore');
     const { useDsaStore } = await import('./dsaStore');
     const { useProjectsStore } = await import('./projectsStore');
     useDashboardStore.getState().reset();
-    useActivityStore.getState().reset();
     useDsaStore.getState().reset();
     useProjectsStore.getState().reset();
 

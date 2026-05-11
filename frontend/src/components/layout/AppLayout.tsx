@@ -49,7 +49,7 @@ export const AppLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-dt-bg text-dt-text">
+    <div className="flex h-screen w-full overflow-hidden text-dt-text p-3 sm:p-4 gap-2 sm:gap-4">
       <Sidebar
         navItems={navItems}
         isCollapsed={false}
@@ -62,14 +62,14 @@ export const AppLayout: React.FC = () => {
           subtitle: 'Premium workspace',
         }}
       />
-      <div className="flex-1 overflow-hidden bg-dt-bg">
+      <div className="flex-1 overflow-hidden bg-white/70 backdrop-blur-[40px] rounded-[32px] sm:rounded-[40px] border border-white/80 shadow-[0_8px_40px_rgba(124,92,252,0.06)] flex flex-col relative z-10 ring-1 ring-black/[0.02]">
         <Topbar
           data={topbarData}
-          onNotificationsClick={() => {}}
+          onNotificationsClick={() => { }}
           onProfileClick={() => navigate('/settings')}
-          onSearchClick={() => {}}
+          onSearchClick={() => { }}
         />
-        <main className="h-[calc(100vh-64px)] overflow-y-auto bg-dt-bg px-6 py-6">
+        <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 sm:py-8 scroll-smooth">
           <div className="mx-auto w-full max-w-[1280px]">
             <Outlet />
           </div>

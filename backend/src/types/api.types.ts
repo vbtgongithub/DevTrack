@@ -107,7 +107,7 @@ export interface ApiStreakDay {
 
 export interface ApiPlatformStats {
   platformId: string;
-  platformName: 'leetcode' | 'codeforces' | 'github' | 'hackerrank' | 'codechef';
+  platformName: 'leetcode' | 'codeforces' | 'github' | 'codechef';
   username: string;
   totalSolved: number;
   easySolved: number;
@@ -147,12 +147,25 @@ export interface ApiDashboardRecentActivity {
   occurredAt: string;
 }
 
+export interface ApiGithubDashboardStats {
+  repos: number;
+  followers: number;
+  following: number;
+  totalStars: number;
+  topLanguages: string[];
+  avatarUrl: string | null;
+  name: string | null;
+  bio: string | null;
+  lastSyncedAt: string;
+}
+
 export interface ApiDashboardResponse {
   stats: ApiDashboardStats;
   streak: ApiStreakData;
   platformStats: ApiPlatformStats[];
   missions: ApiMission[];
   recentActivity: ApiDashboardRecentActivity[];
+  githubStats: ApiGithubDashboardStats | null;
 }
 
 // Activity Types
@@ -212,7 +225,7 @@ export interface ApiDsaProblem {
   id: string;
   externalId: string;
   title: string;
-  platform: 'leetcode' | 'codeforces' | 'hackerrank' | 'codechef' | 'other';
+  platform: 'leetcode' | 'codeforces';
   difficulty: 'easy' | 'medium' | 'hard';
   url: string;
   tags: string[];
@@ -368,6 +381,20 @@ export interface ApiDsaDashboardResponse {
   contests: ApiDsaContest[];
   topics: ApiDsaTopic[];
   platformOverview: ApiDsaPlatformOverviewItem[];
+}
+
+// Heatmap response (Phase 7: generated from DsaSubmission)
+export interface ApiDsaHeatmapEntry {
+  date: string;
+  count: number;
+}
+
+export interface ApiDsaHeatmapResponse {
+  heatmap: ApiDsaHeatmapEntry[];
+  totalSubmissions: number;
+  activeDays: number;
+  currentStreak: number;
+  longestStreak: number;
 }
 
 export interface ApiDsaFilters {
@@ -526,6 +553,10 @@ export interface ApiUserProfile {
   timezone: string;
   joinedAt: string;
   lastActiveAt: string;
+  roleTitle: string | null;
+  targetRole: string | null;
+  targetCompanies: string[];
+  techStack: string[];
   socialLinks: ApiSocialLinks;
 }
 
@@ -536,6 +567,7 @@ export interface ApiSocialLinks {
   portfolio: string | null;
   leetcode: string | null;
   codeforces: string | null;
+  codechef: string | null;
 }
 
 export interface ApiConnectedPlatform {
@@ -588,6 +620,9 @@ export interface ApiProfileUpdatePayload {
   displayName?: string;
   bio?: string;
   timezone?: string;
+  roleTitle?: string | null;
+  targetRole?: string | null;
+  targetCompanies?: string[];
   socialLinks?: Partial<ApiSocialLinks>;
 }
 
@@ -621,4 +656,25 @@ export interface ApiPlatformStatsResponse {
   totals: {
     totalSolvedAllPlatforms: number;
   };
+}
+
+// Achievement Types
+export interface ApiAchievement {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  unlockedAt: string | null;
+  progress: number;
+  target: number;
+  isUnlocked: boolean;
+  category: 'streak' | 'problems' | 'contest' | 'projects' | 'social';
+  xpReward: number;
+}
+
+export interface ApiAchievementsResponse {
+  achievements: ApiAchievement[];
+  totalUnlocked: number;
+  totalAchievements: number;
+  totalXp: number;
 }

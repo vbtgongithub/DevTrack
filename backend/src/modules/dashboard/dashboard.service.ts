@@ -16,14 +16,18 @@ import type {
   ApiPlatformStats,
   ApiMission,
   ApiDashboardRecentActivity,
+  ApiAchievement,
+  ApiAchievementsResponse,
 } from '../../types/api.types.js';
-import { getStartOfDay, formatISODate, getLast365Days, isSameDay } from '../../shared/date.js';
+import { getStartOfDay, formatISODate, isSameDay } from '../../shared/date.js';
 
 // GitHub-specific dashboard stats (separate from DSA metrics)
 export interface GithubDashboardStatsData {
   repos: number;
   followers: number;
   following: number;
+  totalStars: number;
+  topLanguages: string[];
   avatarUrl: string | null;
   name: string | null;
   bio: string | null;
@@ -33,13 +37,15 @@ export interface GithubDashboardStatsData {
 
 
 export async function getDashboard(userId: string): Promise<ApiDashboardResponse> {
-  const [stats, streak, platformStats, missions, recentActivity] = await Promise.all([
-    getDashboardStats(userId),
-    getStreakData(userId),
+  const [platformStats, streak, missions, recentActivity, githubStats] = await Promise.all([
     getPlatformStats(userId),
+    getStreakData(userId),
     getMissions(userId),
     getRecentActivity(userId, 10),
+    getGithubDashboardStats(userId),
   ]);
+
+  const stats = await getDashboardStats(userId, platformStats);
 
   return {
     stats,
@@ -47,10 +53,13 @@ export async function getDashboard(userId: string): Promise<ApiDashboardResponse
     platformStats,
     missions,
     recentActivity,
+    githubStats,
   };
 }
 
-export async function getDashboardStats(userId: string): Promise<ApiDashboardStats> {
+export async function getDashboardStats(userId: string, platformStats?: ApiPlatformStats[]): Promise<ApiDashboardStats> {
+  const resolvedPlatformStats = platformStats || await getPlatformStats(userId);
+  
   const [problemStats, projectStats, activityStats] = await Promise.all([
     DsaProblem.aggregate([
       { $match: { userId: new Types.ObjectId(userId) } },
@@ -89,11 +98,14 @@ export async function getDashboardStats(userId: string): Promise<ApiDashboardSta
   const projects = projectStats[0] || { totalProjects: 0, totalCommits: 0, totalPullRequests: 0 };
   const activity = activityStats[0] || { totalActiveDays: 0 };
 
+  // Calculate total problems from all platforms
+  const totalPlatformProblems = resolvedPlatformStats.reduce((sum, p) => sum + p.totalSolved, 0);
+
   // Calculate streak
   const streakData = await calculateStreak(userId);
 
   return {
-    totalProblems: problems.totalProblems,
+    totalProblems: totalPlatformProblems || problems.totalProblems,
     totalSubmissions: problems.totalSubmissions,
     totalActiveDays: activity.totalActiveDays,
     currentStreak: streakData.currentStreak,
@@ -133,21 +145,27 @@ async function calculateStreak(userId: string): Promise<Omit<ApiStreakData, 'str
     isActiveToday = isSameDay(activities[0].date, today);
 
     // Calculate current streak
-    let checkDate = new Date(today);
-    if (!isActiveToday) {
-      checkDate = new Date(activities[0].date);
-    }
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
-    for (const activity of activities) {
-      const activityDate = getStartOfDay(activity.date);
-      const expectedDate = getStartOfDay(checkDate);
+    const isStreakAlive = isActiveToday || isSameDay(activities[0].date, yesterday);
 
-      if (formatISODate(activityDate) === formatISODate(expectedDate)) {
-        currentStreak++;
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
+    if (isStreakAlive) {
+      let checkDate = isActiveToday ? new Date(today) : new Date(activities[0].date);
+
+      for (const activity of activities) {
+        const activityDate = getStartOfDay(activity.date);
+        const expectedDate = getStartOfDay(checkDate);
+
+        if (formatISODate(activityDate) === formatISODate(expectedDate)) {
+          currentStreak++;
+          checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+          break;
+        }
       }
+    } else {
+      currentStreak = 0;
     }
 
     // Calculate longest streak
@@ -186,13 +204,24 @@ async function calculateStreak(userId: string): Promise<Omit<ApiStreakData, 'str
 }
 
 async function getStreakHistory(userId: string): Promise<ApiStreakData['streakHistory']> {
-  const days = getLast365Days();
+  const currentYear = new Date().getFullYear();
+  const yearStart = new Date(currentYear, 0, 1, 0, 0, 0, 0);
+  const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
   const activities = await DailyActivity.find({
     userId: new Types.ObjectId(userId),
-    date: { $gte: days[0] },
-  });
+    date: { $gte: yearStart, $lte: yearEnd },
+  }).sort({ date: 1 });
 
   const activityMap = new Map(activities.map((a) => [formatISODate(a.date), a.count]));
+
+  // Build all days in the calendar year (Jan 1 – Dec 31)
+  const days: Date[] = [];
+  const current = new Date(yearStart);
+  while (current <= yearEnd) {
+    days.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
 
   return days.map((day) => {
     const count = activityMap.get(formatISODate(day)) || 0;
@@ -210,10 +239,13 @@ async function getStreakHistory(userId: string): Promise<ApiStreakData['streakHi
   });
 }
 
+const VALID_PLATFORMS = ['leetcode', 'codeforces', 'github', 'codechef'] as const;
+
 export async function getPlatformStats(userId: string): Promise<ApiPlatformStats[]> {
   const platforms = await ConnectedPlatform.find({
     userId: new Types.ObjectId(userId),
     isConnected: true,
+    platformName: { $in: VALID_PLATFORMS },
   });
 
   const statsPromises = platforms.map(async (platform) => {
@@ -222,23 +254,25 @@ export async function getPlatformStats(userId: string): Promise<ApiPlatformStats
       platformName: platform.platformName,
     });
 
-    // TASK 3: GitHub repos are NOT "solved problems" — zero out DSA metrics for GitHub
+    // GitHub repos are counted towards totalSolved for consistency,
+    // but we can distinguish them by platformId if needed.
     const isGithub = platform.platformName === 'github';
 
     return {
       platformId: platform.platformName,
-      platformName: platform.platformName,
+      platformName: platform.platformName as 'leetcode' | 'codeforces' | 'github',
       username: platform.username,
-      totalSolved: isGithub ? 0 : (stats?.totalSolved || 0),
-      easySolved: isGithub ? 0 : (stats?.easySolved || 0),
-      mediumSolved: isGithub ? 0 : (stats?.mediumSolved || 0),
-      hardSolved: isGithub ? 0 : (stats?.hardSolved || 0),
-      rating: isGithub ? null : (stats?.rating ?? null),
-      rank: isGithub ? null : (stats?.rank ?? null),
-      totalContests: isGithub ? 0 : (stats?.totalContests || 0),
+      totalSolved: stats?.totalSolved || 0,
+      easySolved: stats?.easySolved || 0,
+      mediumSolved: stats?.mediumSolved || 0,
+      hardSolved: stats?.hardSolved || 0,
+      rating: stats?.rating ?? null,
+      rank: stats?.rank ?? null,
+      totalContests: stats?.totalContests || 0,
       lastSyncedAt: platform.lastSyncedAt?.toISOString() || new Date().toISOString(),
       profileUrl: platform.profileUrl,
       isConnected: platform.isConnected,
+      rawData: stats?.rawData || {},
     };
   });
 
@@ -269,6 +303,8 @@ export async function getGithubDashboardStats(userId: string): Promise<GithubDas
     repos: (raw.public_repos as number) ?? 0,
     followers: (raw.followers as number) ?? 0,
     following: (raw.following as number) ?? 0,
+    totalStars: (raw.total_stars as number) ?? 0,
+    topLanguages: (raw.top_languages as string[]) ?? [],
     avatarUrl: (raw.avatar_url as string) ?? null,
     name: (raw.name as string) ?? null,
     bio: (raw.bio as string) ?? null,
@@ -316,4 +352,223 @@ export async function getRecentActivity(userId: string, limit: number): Promise<
     metadata: activity.metadata || {},
     occurredAt: activity.occurredAt.toISOString(),
   }));
+}
+
+// Achievement definitions - derived from user stats
+interface AchievementDefinition {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  category: ApiAchievement['category'];
+  xpReward: number;
+  targets: { threshold: number; label: string }[];
+}
+
+const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
+  {
+    id: 'streak_3',
+    icon: '🔥',
+    title: 'Hot Streak',
+    description: 'Maintain a 3-day coding streak',
+    category: 'streak',
+    xpReward: 50,
+    targets: [{ threshold: 3, label: '3 days' }],
+  },
+  {
+    id: 'streak_7',
+    icon: '🔥',
+    title: 'Week Warrior',
+    description: 'Maintain a 7-day coding streak',
+    category: 'streak',
+    xpReward: 100,
+    targets: [{ threshold: 7, label: '7 days' }],
+  },
+  {
+    id: 'streak_30',
+    icon: '🔥',
+    title: 'Monthly Master',
+    description: 'Maintain a 30-day coding streak',
+    category: 'streak',
+    xpReward: 500,
+    targets: [{ threshold: 30, label: '30 days' }],
+  },
+  {
+    id: 'problems_10',
+    icon: '💯',
+    title: 'Century',
+    description: 'Solve 10 problems',
+    category: 'problems',
+    xpReward: 50,
+    targets: [{ threshold: 10, label: '10 problems' }],
+  },
+  {
+    id: 'problems_50',
+    icon: '💯',
+    title: 'Half Century',
+    description: 'Solve 50 problems',
+    category: 'problems',
+    xpReward: 200,
+    targets: [{ threshold: 50, label: '50 problems' }],
+  },
+  {
+    id: 'problems_100',
+    icon: '💯',
+    title: 'Centurion',
+    description: 'Solve 100 problems',
+    category: 'problems',
+    xpReward: 500,
+    targets: [{ threshold: 100, label: '100 problems' }],
+  },
+  {
+    id: 'problems_500',
+    icon: '💯',
+    title: 'Grand Master',
+    description: 'Solve 500 problems',
+    category: 'problems',
+    xpReward: 1000,
+    targets: [{ threshold: 500, label: '500 problems' }],
+  },
+  {
+    id: 'contest_1',
+    icon: '🏆',
+    title: 'Contest Debut',
+    description: 'Participate in your first contest',
+    category: 'contest',
+    xpReward: 50,
+    targets: [{ threshold: 1, label: '1 contest' }],
+  },
+  {
+    id: 'contest_10',
+    icon: '🏆',
+    title: 'Contest Regular',
+    description: 'Participate in 10 contests',
+    category: 'contest',
+    xpReward: 200,
+    targets: [{ threshold: 10, label: '10 contests' }],
+  },
+  {
+    id: 'contest_50',
+    icon: '🏆',
+    title: 'Contest Champion',
+    description: 'Participate in 50 contests',
+    category: 'contest',
+    xpReward: 500,
+    targets: [{ threshold: 50, label: '50 contests' }],
+  },
+  {
+    id: 'projects_1',
+    icon: '🎯',
+    title: 'Project Starter',
+    description: 'Create your first project',
+    category: 'projects',
+    xpReward: 50,
+    targets: [{ threshold: 1, label: '1 project' }],
+  },
+  {
+    id: 'projects_5',
+    icon: '🎯',
+    title: 'Product Builder',
+    description: 'Create 5 projects',
+    category: 'projects',
+    xpReward: 200,
+    targets: [{ threshold: 5, label: '5 projects' }],
+  },
+  {
+    id: 'projects_10',
+    icon: '🎯',
+    title: 'Project Architect',
+    description: 'Create 10 projects',
+    category: 'projects',
+    xpReward: 500,
+    targets: [{ threshold: 10, label: '10 projects' }],
+  },
+  {
+    id: 'hard_10',
+    icon: '⚡',
+    title: 'Hardcore',
+    description: 'Solve 10 hard problems',
+    category: 'problems',
+    xpReward: 150,
+    targets: [{ threshold: 10, label: '10 hard problems' }],
+  },
+  {
+    id: 'hard_50',
+    icon: '⚡',
+    title: 'Hard Master',
+    description: 'Solve 50 hard problems',
+    category: 'problems',
+    xpReward: 500,
+    targets: [{ threshold: 50, label: '50 hard problems' }],
+  },
+];
+
+export async function getAchievements(userId: string): Promise<ApiAchievementsResponse> {
+  // Get user stats to derive achievements
+  const [dashboardStats, platformStats] = await Promise.all([
+    getDashboardStats(userId),
+    getPlatformStats(userId),
+  ]);
+
+  const totalProblems = platformStats.reduce((sum, p) => sum + p.totalSolved, 0);
+  const totalHard = platformStats.reduce((sum, p) => sum + p.hardSolved, 0);
+  const totalContests = platformStats.reduce((sum, p) => sum + p.totalContests, 0);
+  const currentStreak = dashboardStats.currentStreak;
+  const totalProjects = dashboardStats.totalProjects;
+
+  // Calculate achievements based on stats
+  const achievements: ApiAchievement[] = ACHIEVEMENT_DEFINITIONS.map((def) => {
+    let progress = 0;
+    let target = def.targets[0].threshold;
+    let isUnlocked = false;
+
+    switch (def.category) {
+      case 'streak':
+        progress = Math.min(currentStreak, target);
+        isUnlocked = currentStreak >= target;
+        break;
+      case 'problems':
+        if (def.id.includes('hard')) {
+          progress = Math.min(totalHard, target);
+          isUnlocked = totalHard >= target;
+        } else {
+          progress = Math.min(totalProblems, target);
+          isUnlocked = totalProblems >= target;
+        }
+        break;
+      case 'contest':
+        progress = Math.min(totalContests, target);
+        isUnlocked = totalContests >= target;
+        break;
+      case 'projects':
+        progress = Math.min(totalProjects, target);
+        isUnlocked = totalProjects >= target;
+        break;
+      default:
+        break;
+    }
+
+    return {
+      id: def.id,
+      icon: def.icon,
+      title: def.title,
+      description: def.description,
+      unlockedAt: isUnlocked ? new Date().toISOString() : null,
+      progress,
+      target,
+      isUnlocked,
+      category: def.category,
+      xpReward: def.xpReward,
+    };
+  });
+
+  const totalUnlocked = achievements.filter((a) => a.isUnlocked).length;
+  const totalXp = achievements.filter((a) => a.isUnlocked).reduce((sum, a) => sum + a.xpReward, 0);
+
+  return {
+    achievements,
+    totalUnlocked,
+    totalAchievements: achievements.length,
+    totalXp,
+  };
 }

@@ -3,6 +3,7 @@ import { Schema, model, type Document } from 'mongoose';
 
 export interface IUserProfile extends Document {
   userId: Schema.Types.ObjectId;
+  roleTitle: string | null;
   targetRole: string | null;
   targetCompanies: string[];
   techStack: string[];
@@ -13,6 +14,7 @@ export interface IUserProfile extends Document {
     portfolio: string | null;
     leetcode: string | null;
     codeforces: string | null;
+    codechef: string | null;
   };
   updatedAt: Date;
 }
@@ -25,6 +27,10 @@ const userProfileSchema = new Schema<IUserProfile>(
       required: true,
       unique: true,
       index: true,
+    },
+    roleTitle: {
+      type: String,
+      default: null,
     },
     targetRole: {
       type: String,
@@ -45,6 +51,7 @@ const userProfileSchema = new Schema<IUserProfile>(
       portfolio: { type: String, default: null },
       leetcode: { type: String, default: null },
       codeforces: { type: String, default: null },
+      codechef: { type: String, default: null },
     },
   },
   {

@@ -250,7 +250,6 @@ export const PLATFORM_COLORS: Record<string, string> = {
   leetcode: '#FFA116',
   codeforces: '#1F8ACB',
   github: '#238636',
-  hackerrank: '#00EA64',
   codechef: '#5B4638',
 };
 
@@ -325,7 +324,6 @@ export const PLATFORM_ICONS: Record<string, string> = {
   leetcode: 'code-bracket',
   codeforces: 'trophy',
   github: 'git-branch',
-  hackerrank: 'terminal',
   codechef: 'fire',
 };
 

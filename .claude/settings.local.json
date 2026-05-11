@@ -6,7 +6,10 @@
       "Bash(npx tsc *)",
       "Bash(npm i *)",
       "Bash(npm test *)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(pnpm build *)",
+      "Bash(git stash *)",
+      "Bash(pnpm run *)"
     ]
   }
 }

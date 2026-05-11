@@ -1,11 +1,13 @@
 // src/db/models/dsaProblem.model.ts
 import { Schema, model, type Document } from 'mongoose';
 
+export type DsaPlatform = 'leetcode' | 'codeforces';
+
 export interface IDsaProblem extends Document {
   userId: Schema.Types.ObjectId;
   externalId: string;
   title: string;
-  platform: 'leetcode' | 'codeforces' | 'hackerrank' | 'codechef' | 'other';
+  platform: DsaPlatform;
   difficulty: 'easy' | 'medium' | 'hard';
   url: string;
   tags: string[];
@@ -40,7 +42,7 @@ const dsaProblemSchema = new Schema<IDsaProblem>(
     },
     platform: {
       type: String,
-      enum: ['leetcode', 'codeforces', 'hackerrank', 'codechef', 'other'],
+      enum: ['leetcode', 'codeforces'],
       required: true,
       index: true,
     },
@@ -115,5 +117,7 @@ dsaProblemSchema.index({ userId: 1, status: 1, difficulty: 1, platform: 1, categ
 dsaProblemSchema.index({ userId: 1, title: 'text', tags: 'text' });
 dsaProblemSchema.index({ userId: 1, lastSubmittedAt: -1 });
 dsaProblemSchema.index({ userId: 1, isFavorite: 1 });
+// Unique index for deduplication
+dsaProblemSchema.index({ userId: 1, platform: 1, externalId: 1 }, { unique: true });
 
 export const DsaProblem = model<IDsaProblem>('DsaProblem', dsaProblemSchema);

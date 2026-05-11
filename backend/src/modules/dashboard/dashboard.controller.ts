@@ -39,3 +39,8 @@ export async function getGithubDashboardStats(req: AuthenticatedRequest, res: Re
   const data = await service.getGithubDashboardStats(req.user!.id);
   successResponse(res, data, 'GitHub dashboard stats retrieved successfully');
 }
+
+export async function getAchievements(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const data = await service.getAchievements(req.user!.id);
+  successResponse(res, data, 'Achievements retrieved successfully');
+}

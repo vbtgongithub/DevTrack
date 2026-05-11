@@ -3,7 +3,7 @@ import { Schema, model, type Document } from 'mongoose';
 
 export interface ISyncJob extends Document {
   userId: Schema.Types.ObjectId;
-  platformName: 'leetcode' | 'codeforces' | 'github' | 'hackerrank' | 'codechef';
+  platformName: 'leetcode' | 'codeforces' | 'github' | 'codechef';
   status: 'pending' | 'running' | 'completed' | 'failed';
   startedAt: Date;
   completedAt: Date | null;
@@ -23,7 +23,7 @@ const syncJobSchema = new Schema<ISyncJob>(
     },
     platformName: {
       type: String,
-      enum: ['leetcode', 'codeforces', 'github', 'hackerrank', 'codechef'],
+      enum: ['leetcode', 'codeforces', 'github', 'codechef'],
       required: true,
       index: true,
     },

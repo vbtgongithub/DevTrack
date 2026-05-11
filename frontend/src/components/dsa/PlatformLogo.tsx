@@ -5,7 +5,6 @@ import type { Platform } from '../../types/dsa';
 import leetcodeLogo from '@/assets/logos/LeetCode.png';
 import codeforcesLogo from '@/assets/logos/Codeforces.png';
 import codechefLogo from '@/assets/logos/CodeChef.png';
-import hackerrankLogo from '@/assets/logos/HackerRank.png';
 import githubLogo from '@/assets/logos/github.png';
 
 export type PlatformLogoProps = {
@@ -19,7 +18,6 @@ const iconName: Record<Platform, string> = {
   leetcode: 'code-bracket',
   codeforces: 'chart-bar',
   codechef: 'academic-cap',
-  hackerrank: 'academic-cap',
   github: 'code-bracket',
 };
 
@@ -27,7 +25,6 @@ const label: Record<Platform, string> = {
   leetcode: 'LeetCode',
   codeforces: 'Codeforces',
   codechef: 'CodeChef',
-  hackerrank: 'HackerRank',
   github: 'GitHub',
 };
 
@@ -35,7 +32,6 @@ const platformLogos: Record<Platform, string> = {
   leetcode: leetcodeLogo,
   codeforces: codeforcesLogo,
   codechef: codechefLogo,
-  hackerrank: hackerrankLogo,
   github: githubLogo,
 };
 

@@ -161,18 +161,20 @@ export async function getActivitiesByDate(userId: string, date: string): Promise
 
 export async function createActivity(
   userId: string,
-  payload: Omit<ApiActivityEntry, 'id' | 'occurredAt'>
+  payload: Omit<ApiActivityEntry, 'id' | 'occurredAt'> & { occurredAt?: string | Date }
 ): Promise<ApiActivityEntry> {
+  const occurredAt = payload.occurredAt ? new Date(payload.occurredAt) : new Date();
+
   const activity = await ActivityEvent.create({
     userId: new Types.ObjectId(userId),
     ...payload,
-    occurredAt: new Date(),
+    occurredAt,
   });
 
   // Update daily activity
-  const today = getStartOfDay();
+  const dateKey = getStartOfDay(occurredAt);
   await DailyActivity.findOneAndUpdate(
-    { userId: new Types.ObjectId(userId), date: today },
+    { userId: new Types.ObjectId(userId), date: dateKey },
     {
       $inc: { count: 1 },
       $push: { activities: { type: payload.type, count: 1 } },
@@ -191,6 +193,26 @@ export async function createActivity(
     metadata: activity.metadata || {},
     occurredAt: activity.occurredAt.toISOString(),
   };
+}
+
+/**
+ * Increments the activity count for a specific date without creating an ActivityEvent.
+ * Useful for bulk ingestion (e.g. sync) where individual events might be too noisy.
+ */
+export async function incrementDailyActivity(
+  userId: string,
+  date: Date,
+  type: string = 'submission'
+): Promise<void> {
+  const dateKey = getStartOfDay(date);
+  await DailyActivity.findOneAndUpdate(
+    { userId: new Types.ObjectId(userId), date: dateKey },
+    {
+      $inc: { count: 1 },
+      $push: { activities: { type, count: 1 } },
+    },
+    { upsert: true, new: true }
+  );
 }
 
 export async function deleteActivity(userId: string, activityId: string): Promise<boolean> {

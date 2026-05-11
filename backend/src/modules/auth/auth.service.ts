@@ -28,7 +28,10 @@ export interface TokenPayload {
 }
 
 function generateAccessToken(payload: TokenPayload): string {
-  const options: SignOptions = { expiresIn: env.JWT_ACCESS_EXPIRY as SignOptions['expiresIn'] };
+  const options: SignOptions = {
+    expiresIn: env.JWT_ACCESS_EXPIRY as SignOptions['expiresIn'],
+    algorithm: 'HS256', // Explicitly specify algorithm to prevent algorithm confusion
+  };
   return jwt.sign(payload, env.JWT_ACCESS_SECRET, options);
 }
 

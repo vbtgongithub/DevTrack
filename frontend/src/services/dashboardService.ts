@@ -13,12 +13,15 @@ import type {
   ApiPlatformStats,
   ApiMission,
   ApiDashboardRecentActivity,
+  ApiAchievementsResponse,
 } from '../types/api.types';
 
 export interface GithubDashboardStats {
   repos: number;
   followers: number;
   following: number;
+  totalStars: number;
+  topLanguages: string[];
   avatarUrl: string | null;
   name: string | null;
   bio: string | null;
@@ -96,6 +99,16 @@ export async function fetchRecentActivity(
 export async function fetchGithubDashboardStats(): Promise<ApiResponse<GithubDashboardStats>> {
   const { data } = await axiosClient.get<ApiResponse<GithubDashboardStats>>(
     `${DASHBOARD_BASE}/github`
+  );
+  return data;
+}
+
+/**
+ * Fetch user achievements/badges.
+ */
+export async function fetchAchievements(): Promise<ApiResponse<ApiAchievementsResponse>> {
+  const { data } = await axiosClient.get<ApiResponse<ApiAchievementsResponse>>(
+    `${DASHBOARD_BASE}/achievements`
   );
   return data;
 }

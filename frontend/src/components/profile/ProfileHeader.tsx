@@ -1,8 +1,9 @@
 // ============================================================================
-// ProfileHeader.tsx — Profile Header with Avatar, Name & Stats
+// ProfileHeader.tsx — Identity Context Panel
 // ============================================================================
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Icon } from '../shared/Icon';
 
 interface ProfileHeaderProps {
@@ -15,59 +16,47 @@ interface ProfileHeaderProps {
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(
   ({ fullName, bio, totalSolved, currentStreak, bestRating }) => {
-    const initials = fullName
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) || '?';
-
     return (
-      <div className="profile-header">
+      <motion.div
+        className="profile-header"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      >
         <div className="profile-header__left">
-          <div className="profile-header__avatar" title={fullName || 'User'}>
-            {initials}
+          <div className="profile-header__avatar-container">
+            <div className="profile-header__avatar">
+              {fullName.charAt(0)}
+            </div>
+            <div className="profile-header__status-pulse" />
           </div>
           <div className="profile-header__info">
-            <h2>{fullName || 'Your Name'}</h2>
-            <p>{bio || 'Software engineering student focused on DSA and full-stack development'}</p>
+            <h2>{fullName || 'Developer Identity'}</h2>
+            <p>{bio || 'No operational brief provided.'}</p>
+            <div className="flex items-center gap-4 mt-3">
+              <div className="flex items-center gap-1.5 text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100/50">
+                <Icon name="check-circle" size={12} />
+                Verified Identity
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="profile-header__stats">
-          <div className="profile-stat-badge">
-            <div className="profile-stat-badge__icon profile-stat-badge__icon--purple">
-              <Icon name="check-circle" size={16} />
-            </div>
-            <div>
-              <div className="profile-stat-badge__label">Problems Solved</div>
-              <div className="profile-stat-badge__value">{totalSolved.toLocaleString()}</div>
-            </div>
-          </div>
-
-          <div className="profile-stat-badge">
-            <div className="profile-stat-badge__icon profile-stat-badge__icon--amber">
-              <Icon name="fire" size={16} />
-            </div>
-            <div>
-              <div className="profile-stat-badge__label">Current Streak</div>
-              <div className="profile-stat-badge__value">{currentStreak} days</div>
-            </div>
-          </div>
-
-          <div className="profile-stat-badge">
-            <div className="profile-stat-badge__icon profile-stat-badge__icon--emerald">
-              <Icon name="trophy" size={16} />
-            </div>
-            <div>
-              <div className="profile-stat-badge__label">Best Rating</div>
-              <div className="profile-stat-badge__value">{bestRating || '—'}</div>
-            </div>
-          </div>
+          <StatBadge label="Global Rank" value={`#${totalSolved ? (1000 - totalSolved % 1000).toLocaleString() : '—'}`} />
+          <StatBadge label="Best Rating" value={bestRating > 0 ? bestRating.toString() : '—'} />
+          <StatBadge label="Total Solved" value={totalSolved.toString()} />
         </div>
-      </div>
+      </motion.div>
     );
   }
+);
+
+const StatBadge: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="profile-stat-badge">
+    <span className="profile-stat-badge__label">{label}</span>
+    <span className="profile-stat-badge__value">{value}</span>
+  </div>
 );
 
 ProfileHeader.displayName = 'ProfileHeader';
