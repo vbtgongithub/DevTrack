@@ -36,23 +36,25 @@ export const TopicProgress: React.FC<TopicProgressProps> = React.memo(({ title, 
   return (
     <section
       className={[
-        'dt-card p-4 sm:p-5 shadow-dt-card overflow-hidden relative group/topics',
-        'hover:shadow-dt-floating hover:-translate-y-0.5 transition-all duration-500',
+        'bg-white/80 backdrop-blur-3xl rounded-[32px] border border-dt-primary/10 shadow-[0_8px_40px_rgba(124,92,252,0.06)] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_16px_60px_rgba(124,92,252,0.12)] group/topics relative p-8 lg:p-10',
         className,
       ].filter(Boolean).join(' ')}
     >
-      {/* Dynamic Mesh Atmosphere */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-dt-primary/5 rounded-full blur-[50px] -translate-y-1/2 translate-x-1/2 pointer-events-none opacity-50 group-hover/topics:scale-110 transition-transform duration-700" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.03),transparent_50%)] pointer-events-none" />
 
-      <div className="flex items-start justify-between gap-3 mb-4 relative z-10">
-        <div>
-          <h3 className="text-[15px] font-black tracking-tighter text-dt-text">{title}</h3>
-          <p className="text-[9px] font-black text-dt-textSecondary/50 tracking-[0.15em] uppercase mt-0.5">
-            {totalSolved} solutions • {topics.length} vectors
-          </p>
+      {/* Dynamic Mesh Atmosphere */}
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-[#10B981]/10 to-dt-primary/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4 pointer-events-none group-hover/topics:scale-[1.5] transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+
+      <div className="flex flex-col gap-2 mb-8 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
+          <span className="text-[11px] font-black text-dt-textSecondary/80 uppercase tracking-[0.25em]">Algorithm Intelligence Matrix</span>
         </div>
-        <div className="w-8 h-8 rounded-xl bg-dt-primary/5 border border-dt-primary/10 flex items-center justify-center text-dt-primary shadow-sm">
-          <Icon name="chart-bar" size={16} />
+        <div className="flex items-end justify-between">
+          <h3 className="text-2xl font-black tracking-tighter text-dt-text">{title}</h3>
+          <p className="text-[11px] font-bold text-dt-textSecondary/80 tracking-widest uppercase mb-1">
+            {totalSolved} solutions <span className="opacity-50 mx-1">•</span> {topics.length} vectors
+          </p>
         </div>
       </div>
 
@@ -71,23 +73,25 @@ export const TopicProgress: React.FC<TopicProgressProps> = React.memo(({ title, 
           const rank = RANK_LABELS[topic.name] || 'Top 40%';
 
           return (
-            <li key={topic.name} className="group/item" style={{ animation: `dtFadeIn 800ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 60}ms both` }}>
-              <div className="mb-2.5 flex items-end justify-between">
+            <li key={topic.name} className="group/item relative bg-white/40 hover:bg-white/80 p-4 rounded-[20px] border border-dt-primary/5 hover:border-[#10B981]/30 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_8px_30px_rgba(16,185,129,0.08)] overflow-hidden" style={{ animation: `dtFadeIn 800ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 60}ms both` }}>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#10B981]/5 to-transparent -translate-x-full group-hover/item:animate-[shimmer_1.5s_infinite]" />
+              <div className="mb-3 flex items-end justify-between relative z-10">
                 <div className="flex flex-col">
-                  <span className="text-[14px] font-bold text-dt-text tracking-tight leading-none group-hover/item:text-dt-primary transition-colors">{topic.name}</span>
-                  <span className="text-[9px] text-dt-textSecondary font-black tracking-widest uppercase mt-1.5 opacity-30 group-hover/item:opacity-60 transition-opacity">
+                  <span className="text-[15px] font-black text-dt-text tracking-tight leading-none group-hover/item:text-[#10B981] transition-colors">{topic.name}</span>
+                  <span className="text-[10px] text-dt-textSecondary/80 font-black tracking-[0.2em] uppercase mt-2 opacity-60 group-hover/item:opacity-100 transition-opacity">
                     {rank} Tier
                   </span>
                 </div>
-                <span className="text-[12px] font-black text-dt-text tabular-nums leading-none tracking-tighter">{topic.progress}%</span>
+                <span className="text-[14px] font-black text-dt-text tabular-nums leading-none tracking-tight">{topic.progress}%</span>
               </div>
-              <div className={['h-[5px] w-full rounded-full overflow-hidden transition-colors duration-500', barBg].join(' ')}>
+              <div className={['h-2 w-full rounded-full overflow-hidden transition-colors duration-500 shadow-inner relative z-10', barBg].join(' ')}>
                 <div
                   className={['h-full rounded-full bg-gradient-to-r transition-all duration-1000', barColor].join(' ')}
                   style={{
                     width: mounted ? `${topic.progress}%` : '0%',
                     transitionDelay: `${index * 60}ms`,
-                    transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)'
+                    transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                    boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3)'
                   }}
                 />
               </div>
@@ -98,15 +102,16 @@ export const TopicProgress: React.FC<TopicProgressProps> = React.memo(({ title, 
 
       {/* Actionable Focus Area */}
       {weakest && (
-        <div className="mt-9 relative overflow-hidden p-5 rounded-[22px] bg-amber-500/5 border border-amber-500/10 flex items-start gap-4 group/focus hover:bg-amber-500/10 transition-colors duration-500">
-          <div className="w-10 h-10 rounded-xl bg-white border border-amber-500/10 flex items-center justify-center shrink-0 shadow-sm relative z-10 group-hover/focus:scale-105 transition-transform duration-500">
-            <Icon name="target" size={18} className="text-amber-500" />
+        <div className="mt-8 relative overflow-hidden p-6 rounded-[24px] bg-amber-500/5 border border-amber-500/10 flex items-start gap-5 group/focus hover:bg-amber-500/10 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_8px_30px_rgba(245,158,11,0.08)]">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-[30px] -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover/focus:scale-[1.5] transition-transform duration-700" />
+          <div className="w-12 h-12 rounded-[16px] bg-white border border-amber-500/20 flex items-center justify-center shrink-0 shadow-sm relative z-10 group-hover/focus:scale-110 transition-transform duration-500">
+            <Icon name="target" size={20} className="text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]" />
           </div>
           <div className="relative z-10 min-w-0">
-            <div className="text-[9px] font-black text-amber-600/60 tracking-widest uppercase mb-1">Primary Target</div>
-            <div className="text-[14px] font-bold text-dt-text tracking-tight truncate">{weakest.name} Mastery</div>
-            <div className="text-[11px] font-medium text-dt-textSecondary mt-1 leading-relaxed opacity-80">
-              Optimize your algorithmic baseline by solving 3 high-impact problems.
+            <div className="text-[10px] font-black text-amber-600/80 tracking-[0.2em] uppercase mb-1.5">Primary Target Vector</div>
+            <div className="text-[16px] font-black text-dt-text tracking-tight truncate">{weakest.name} Mastery</div>
+            <div className="text-[12px] font-bold text-dt-textSecondary/80 mt-1.5 leading-relaxed">
+              Optimize your algorithmic baseline by solving 3 high-impact problems in this vector space.
             </div>
           </div>
         </div>

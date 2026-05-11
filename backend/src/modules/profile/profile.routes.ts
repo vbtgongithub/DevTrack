@@ -10,6 +10,9 @@ const profileUpdateSchema = z.object({
   displayName: z.string().min(1).max(100).optional(),
   bio: z.string().max(500).optional(),
   timezone: z.string().optional(),
+  roleTitle: z.string().max(100).nullable().optional(),
+  targetRole: z.string().max(100).nullable().optional(),
+  targetCompanies: z.array(z.string()).optional(),
   socialLinks: z.object({
     github: z.string().nullable().optional(),
     linkedin: z.string().nullable().optional(),
@@ -17,6 +20,7 @@ const profileUpdateSchema = z.object({
     portfolio: z.string().nullable().optional(),
     leetcode: z.string().nullable().optional(),
     codeforces: z.string().nullable().optional(),
+    codechef: z.string().nullable().optional(),
   }).optional(),
 });
 
@@ -27,6 +31,10 @@ const techStackSchema = z.object({
 router.get('/', authMiddleware, asyncHandler(controller.getProfile));
 router.patch('/', authMiddleware, validateBody(profileUpdateSchema), asyncHandler(controller.updateProfile));
 router.get('/platforms', authMiddleware, asyncHandler(controller.getConnectedPlatforms));
+router.post('/platforms/connect', authMiddleware, validateBody(z.object({
+  platformName: z.string().min(1),
+  username: z.string().min(1),
+})), asyncHandler(controller.connectPlatform));
 router.get('/platforms/stats', authMiddleware, asyncHandler(controller.getPlatformStats));
 router.post('/tech-stack', authMiddleware, validateBody(techStackSchema), asyncHandler(controller.addTechStack));
 router.delete('/tech-stack/:tag', authMiddleware, asyncHandler(controller.removeTechStack));

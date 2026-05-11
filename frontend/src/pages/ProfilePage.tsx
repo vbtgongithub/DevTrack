@@ -14,6 +14,7 @@ import { PersonalInfoCard } from '../components/profile/PersonalInfoCard';
 import { CareerGoalsCard } from '../components/profile/CareerGoalsCard';
 import { CPProfilesCard } from '../components/profile/CPProfilesCard';
 import { LeetCodeStatsCard, CodeforcesStatsCard, CodeChefStatsCard, GithubStatsCard } from '../components/profile/PlatformStatsCard';
+import { ProfileAchievementsCard } from '../components/profile/ProfileAchievementsCard';
 import { SocialProfilesCard } from '../components/profile/SocialProfilesCard';
 import { useProfileStore } from '../store/profileStore';
 import { useUserStore } from '../store/userStore';
@@ -35,8 +36,9 @@ const ProfilePage: React.FC = () => {
     lastSyncedAt,
     isDirty,
     isSaving,
-    loadFromStorage,
-    saveToStorage,
+    isLoading: isProfileLoading,
+    fetchProfile,
+    saveProfile,
     updateField,
     addTechStack,
     removeTechStack,
@@ -49,11 +51,11 @@ const ProfilePage: React.FC = () => {
 
   const [mounted, setMounted] = React.useState(false);
 
-  // Load profile editing data from localStorage on mount
+  // Load profile editing data from API on mount
   React.useEffect(() => {
-    loadFromStorage();
+    fetchProfile();
     setMounted(true);
-  }, [loadFromStorage]);
+  }, [fetchProfile]);
 
   // Populate profile platform stats from dashboard data (single source)
   React.useEffect(() => {
@@ -81,11 +83,11 @@ const ProfilePage: React.FC = () => {
   }, [leetcode.data, codeforces.data, codechef.data]);
 
   const handleCancel = () => {
-    loadFromStorage(); // Reset to saved state
+    fetchProfile(); // Reset to saved state
   };
 
   const hasAnyStats = leetcode.data || codeforces.data || codechef.data || github.data;
-  const isLoading = dashLoading || leetcode.loading || codeforces.loading || codechef.loading || github.loading;
+  const isLoading = dashLoading || leetcode.loading || codeforces.loading || codechef.loading || github.loading || isProfileLoading;
 
   return (
     <div className={['transition-opacity duration-300', mounted ? 'opacity-100' : 'opacity-0'].join(' ')}>
@@ -106,7 +108,10 @@ const ProfilePage: React.FC = () => {
             bestRating={bestRating}
           />
 
-          {/* ─── 2. Personal Info + Career Goals Row ─────────────────── */}
+          {/* ─── 2. Achievements Showcase ────────────────────────────── */}
+          <ProfileAchievementsCard />
+
+          {/* ─── 3. Personal Info + Career Goals Row ─────────────────── */}
           <div className="profile-grid">
             <PersonalInfoCard profile={profile} onUpdate={updateField} />
             <CareerGoalsCard
@@ -117,7 +122,7 @@ const ProfilePage: React.FC = () => {
             />
           </div>
 
-          {/* ─── 3. CP Profiles + Social ─────────────────────────────── */}
+          {/* ─── 4. CP Profiles + Social ─────────────────────────────── */}
           <div className="profile-grid">
             <CPProfilesCard
               profile={profile}
@@ -133,7 +138,7 @@ const ProfilePage: React.FC = () => {
             <SocialProfilesCard profile={profile} onUpdate={updateField} />
           </div>
 
-          {/* ─── 4. Platform Stats ───────────────────────────────────── */}
+          {/* ─── 5. Platform Stats ───────────────────────────────────── */}
           {(hasAnyStats || isLoading) && (
             <div>
               <h3 className="text-lg font-bold tracking-tight text-dt-text mb-4 flex items-center gap-2">
@@ -149,7 +154,7 @@ const ProfilePage: React.FC = () => {
             </div>
           )}
 
-          {/* ─── 5. Empty State ───────────────────────────────────────── */}
+          {/* ─── 6. Empty State ───────────────────────────────────────── */}
           {!hasAnyStats && !isLoading && (
             <div style={{ textAlign: 'center', padding: '2rem 1rem', fontSize: '0.875rem' }} className="text-dt-textSecondary">
               <Icon name="chart-bar" size={24} />
@@ -157,7 +162,7 @@ const ProfilePage: React.FC = () => {
             </div>
           )}
 
-          {/* ─── 6. Actions ────────────────────────────────────── */}
+          {/* ─── 7. Actions ────────────────────────────────────── */}
           <div className="flex justify-between items-center w-full mt-4 pb-8">
             <button
               type="button"
@@ -175,14 +180,14 @@ const ProfilePage: React.FC = () => {
                 type="button"
                 className="profile-cancel-btn"
                 onClick={handleCancel}
-                disabled={!isDirty}
+                disabled={!isDirty || isSaving}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 className="profile-save-btn"
-                onClick={saveToStorage}
+                onClick={saveProfile}
                 disabled={!isDirty || isSaving}
               >
                 {isSaving ? 'Saving...' : 'Save Changes'}

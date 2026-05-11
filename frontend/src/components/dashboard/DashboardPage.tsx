@@ -1,5 +1,6 @@
 import React from 'react';
 import { useDashboardData } from '../../hooks/useDashboardData';
+import { fetchDsaContests } from '../../services/dsaService';
 import { DashboardHeader } from './DashboardHeader';
 import { StatsGrid } from './StatsGrid';
 import { TodaySummaryBar } from './TodaySummaryBar';
@@ -13,6 +14,32 @@ import { GithubOverviewCard } from './GithubOverviewCard';
 
 const DashboardPage: React.FC = () => {
   const { data, loading, error } = useDashboardData();
+  const [contests, setContests] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const loadContests = async () => {
+      try {
+        const response = await fetchDsaContests({ pageSize: 10 });
+        if (response.success) {
+          const allContests = response.data.contests;
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+          const recent = allContests
+            .filter((c: any) => new Date(c.participatedAt) >= sevenDaysAgo)
+            .map((c: any) => ({
+              name: c.contestName,
+              platform: c.platform,
+              time: new Date(c.participatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            }));
+          setContests(recent);
+        }
+      } catch (err) {
+        console.error('Failed to fetch contests:', err);
+      }
+    };
+    loadContests();
+  }, []);
 
   if (loading) {
     return (
@@ -59,16 +86,19 @@ const DashboardPage: React.FC = () => {
       <section className="flex flex-col gap-6 relative z-10">
         <DashboardHeader />
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-stretch">
-          <div className="xl:col-span-2 flex flex-col gap-6">
-            <div className="bg-white/40 backdrop-blur-2xl p-8 flex flex-col gap-8 shadow-[0_8px_40px_rgba(124,92,252,0.05)] border border-dt-primary/10 rounded-[32px]">
+        {/* Top-Level KPIs (Full Width) */}
+        <div className="w-full">
+          <StatsGrid stats={data?.stats ?? null} platformStats={data?.platformStats ?? null} />
+        </div>
+
+        {/* Productivity & Gamification Core */}
+        <div className="grid grid-cols-1 gap-6 items-stretch mt-2">
+          <div className="flex flex-col gap-6">
+            <div className="bg-white/40 backdrop-blur-3xl p-8 lg:p-10 flex flex-col gap-8 shadow-[0_8px_40px_rgba(124,92,252,0.06)] border border-dt-primary/10 rounded-[36px]">
               <TodaySummaryBar streakData={data?.streakData} missions={data?.missions ?? []} />
-              <div className="h-px bg-gradient-to-r from-transparent via-dt-primary/10 to-transparent w-full opacity-50" />
+              <div className="h-px bg-gradient-to-r from-transparent via-dt-primary/15 to-transparent w-full opacity-60" />
               <GamificationPanel streakData={data?.streakData} missions={data?.missions ?? []} />
             </div>
-          </div>
-          <div className="xl:col-span-1 h-full">
-            <StatsGrid stats={data?.stats ?? null} platformStats={data?.platformStats ?? null} />
           </div>
         </div>
       </section>
@@ -115,8 +145,8 @@ const DashboardPage: React.FC = () => {
             <span className="text-xl">🐙</span>
           </div>
           <div>
-            <h2 className="text-2xl font-black text-dt-text tracking-tighter">Code Architecture</h2>
-            <p className="text-[13px] text-dt-textSecondary font-medium">GitHub contribution ecosystem</p>
+            <h2 className="text-2xl font-black text-dt-text tracking-tighter">Developer Identity System</h2>
+            <p className="text-[13px] text-dt-textSecondary font-medium">Global open-source ecosystem</p>
           </div>
         </div>
         <GithubOverviewCard data={data} />
@@ -138,7 +168,7 @@ const DashboardPage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
           <MissionCard missions={data?.missions ?? []} />
-          <AnnouncementSection />
+          <AnnouncementSection contests={contests} />
           <ActionsPanel />
         </div>
       </section>

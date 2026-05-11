@@ -121,46 +121,53 @@ export const InsightsCard: React.FC<InsightsCardProps> = React.memo(
     return (
       <section
         className={[
-          'relative overflow-hidden bg-white/40 backdrop-blur-2xl border border-dt-primary/10 rounded-2xl p-4 sm:p-5 shadow-dt-card group/insights',
-          'hover:shadow-dt-floating hover:-translate-y-0.5 transition-all duration-500',
+          'bg-white/80 backdrop-blur-3xl rounded-[32px] border border-dt-primary/10 shadow-[0_8px_40px_rgba(124,92,252,0.06)] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_16px_60px_rgba(124,92,252,0.12)] group/insights relative p-8 lg:p-10',
           className,
         ]
           .filter(Boolean)
           .join(' ')}
       >
-        {/* Intelligence Mesh Glow - Smaller */}
-        <div className="absolute -top-16 -right-16 w-40 h-40 bg-dt-primary/8 rounded-full blur-[50px] pointer-events-none group-hover/insights:scale-125 transition-transform duration-700 ease-out opacity-50" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,92,252,0.03),transparent_50%)] pointer-events-none" />
 
-        <div className="relative z-10 flex items-center justify-between mb-4">
-          <div className="flex flex-col">
-            <h3 className="text-[15px] font-black tracking-tighter text-dt-text">{title}</h3>
-            <p className="text-[9px] font-black text-dt-textSecondary/50 tracking-widest uppercase mt-0.5">Neural Synthesis</p>
-          </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-dt-primary/5 border border-dt-primary/10 text-dt-primary text-[8px] font-black uppercase tracking-widest group-hover/insights:border-dt-primary/30 transition-colors">
-            <div className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-dt-primary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-dt-primary"></span>
+        {/* Intelligence Mesh Glow - Smaller */}
+        <div className="absolute -top-16 -right-16 w-64 h-64 bg-dt-primary/10 rounded-full blur-[60px] pointer-events-none group-hover/insights:scale-[1.5] transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] opacity-60" />
+
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-dt-primary shadow-[0_0_8px_rgba(124,92,252,0.8)] animate-pulse" />
+              <p className="text-[10px] font-black text-dt-primary uppercase tracking-[0.2em]">Neural Synthesis Engine</p>
             </div>
-            Live
+            <h3 className="text-2xl font-black tracking-tighter text-dt-text">{title}</h3>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-dt-primary/10 border border-dt-primary/20 text-dt-primary text-[10px] font-black uppercase tracking-widest group-hover/insights:border-dt-primary/40 transition-colors shadow-inner w-fit">
+            <div className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-dt-primary opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-dt-primary"></span>
+            </div>
+            Live AI Processing
           </div>
         </div>
 
         {/* Intelligence Metrics */}
-        <div className="grid grid-cols-3 gap-4 mb-10 relative z-10">
-          <div className="bg-white/50 backdrop-blur-md p-4 rounded-[20px] border border-dt-primary/5 group-hover/insights:border-dt-primary/10 transition-colors">
-            <p className="text-[9px] font-black uppercase tracking-[0.1em] text-dt-textSecondary/50 mb-1.5">Acceptance</p>
-            <p className="text-2xl font-black tracking-tighter text-dt-text leading-none">{acceptanceRate}%</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 relative z-10">
+          <div className="bg-white/60 backdrop-blur-md p-5 rounded-[20px] border border-dt-primary/10 group-hover/insights:border-dt-primary/20 transition-colors shadow-sm hover:shadow-[0_8px_30px_rgba(124,92,252,0.06)] hover:-translate-y-0.5 duration-300 relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-16 h-16 bg-dt-primary/5 rounded-full blur-[20px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-dt-textSecondary/60 mb-2">Acceptance</p>
+            <p className="text-3xl font-black tracking-tighter text-dt-text leading-none">{acceptanceRate}%</p>
           </div>
-          <div className="bg-white/50 backdrop-blur-md p-4 rounded-[20px] border border-dt-primary/5 group-hover/insights:border-dt-primary/10 transition-colors">
-            <p className="text-[9px] font-black uppercase tracking-[0.1em] text-dt-textSecondary/50 mb-1.5">Active Hub</p>
-            <div className="flex items-center gap-1.5 mt-1">
-              <PlatformLogo platform={mostActivePlatform} iconSize={14} className="" />
-              <p className="text-lg font-black tracking-tighter text-dt-text truncate leading-none">{platformLabel[mostActivePlatform]}</p>
+          <div className="bg-white/60 backdrop-blur-md p-5 rounded-[20px] border border-dt-primary/10 group-hover/insights:border-dt-primary/20 transition-colors shadow-sm hover:shadow-[0_8px_30px_rgba(124,92,252,0.06)] hover:-translate-y-0.5 duration-300 relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-16 h-16 bg-dt-primary/5 rounded-full blur-[20px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-dt-textSecondary/60 mb-2">Active Hub</p>
+            <div className="flex items-center gap-2 mt-1">
+              <PlatformLogo platform={mostActivePlatform} iconSize={18} />
+              <p className="text-xl font-black tracking-tighter text-dt-text truncate leading-none">{platformLabel[mostActivePlatform]}</p>
             </div>
           </div>
-          <div className="bg-white/50 backdrop-blur-md p-4 rounded-[20px] border border-dt-primary/5 group-hover/insights:border-dt-primary/10 transition-colors">
-            <p className="text-[9px] font-black uppercase tracking-[0.1em] text-dt-textSecondary/50 mb-1.5">Prime Vector</p>
-            <p className="text-lg font-black tracking-tighter text-dt-text truncate leading-none mt-1">{topTopic?.name ?? '—'}</p>
+          <div className="bg-white/60 backdrop-blur-md p-5 rounded-[20px] border border-dt-primary/10 group-hover/insights:border-dt-primary/20 transition-colors shadow-sm hover:shadow-[0_8px_30px_rgba(124,92,252,0.06)] hover:-translate-y-0.5 duration-300 relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-16 h-16 bg-dt-primary/5 rounded-full blur-[20px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-dt-textSecondary/60 mb-2">Prime Vector</p>
+            <p className="text-xl font-black tracking-tighter text-dt-text truncate leading-none mt-1">{topTopic?.name ?? '—'}</p>
           </div>
         </div>
 
@@ -220,26 +227,28 @@ export const InsightsCard: React.FC<InsightsCardProps> = React.memo(
           </div>
 
           {/* AI Synthesis */}
-          <div className="flex-1 flex flex-col gap-5">
-            <div className="flex-1 bg-white/40 backdrop-blur-2xl rounded-[24px] p-6 border border-dt-primary/10 shadow-sm relative group/ai">
-              <div className="absolute top-0 left-0 w-1 h-full bg-dt-primary/20 rounded-full" />
-              <ul className="space-y-5">
+          <div className="flex-1 flex flex-col gap-5 relative z-10">
+            <div className="flex-1 bg-white/60 backdrop-blur-3xl rounded-[24px] p-6 border border-dt-primary/15 shadow-inner relative group/ai overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-dt-primary/10 rounded-full blur-[30px] -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover/ai:scale-150 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-dt-primary/30 rounded-full" />
+              <ul className="space-y-6">
                 {insights.map((text, i) => (
                   <li key={`ins-${i}`} className="flex items-start gap-4 group/item">
-                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-dt-primary shrink-0 shadow-[0_0_8px_rgba(124,92,252,0.6)] group-hover/item:scale-125 transition-transform duration-300" />
-                    <span className="text-[14px] font-bold text-dt-text leading-tight tracking-tight opacity-80 group-hover/item:opacity-100 transition-opacity">{text}</span>
+                    <div className="mt-1.5 w-2 h-2 rounded-full bg-dt-primary shrink-0 shadow-[0_0_10px_rgba(124,92,252,0.8)] group-hover/item:scale-[1.5] transition-transform duration-300" />
+                    <span className="text-[15px] font-black text-dt-text leading-snug tracking-tight opacity-90 group-hover/item:opacity-100 transition-opacity">{text}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="rounded-[20px] bg-dt-primary/5 p-5 border border-dt-primary/10 flex items-start gap-4 hover:bg-dt-primary/10 transition-all duration-500 group/rec">
-              <div className="w-10 h-10 rounded-xl bg-white border border-dt-primary/10 flex items-center justify-center shrink-0 shadow-sm group-hover/rec:scale-105 transition-transform duration-500">
+            <div className="rounded-[24px] bg-dt-primary/10 p-6 border border-dt-primary/20 flex items-start gap-5 hover:bg-dt-primary/15 transition-all duration-500 group/rec relative overflow-hidden">
+              <div className="absolute -top-4 -right-4 w-20 h-20 bg-dt-primary/20 rounded-full blur-[20px] pointer-events-none group-hover/rec:scale-[2] transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+              <div className="w-12 h-12 rounded-[16px] bg-white border border-dt-primary/20 flex items-center justify-center shrink-0 shadow-sm group-hover/rec:scale-110 group-hover/rec:shadow-[0_8px_30px_rgba(124,92,252,0.2)] transition-all duration-500 relative z-10">
                 <Icon name="bolt" size={20} className="text-dt-primary" />
               </div>
-              <div>
-                <p className="text-[9px] font-black text-dt-primary uppercase tracking-[0.2em] mb-1">ROI Focus</p>
-                <p className="text-[14px] font-bold text-dt-text leading-tight tracking-tight">
+              <div className="relative z-10">
+                <p className="text-[10px] font-black text-dt-primary uppercase tracking-[0.2em] mb-1.5">Intelligence ROI Focus</p>
+                <p className="text-[16px] font-black text-dt-text leading-tight tracking-tight">
                   {weakestTopic ? `Review ${weakestTopic.name} patterns.` : 'Push boundaries on hard problems.'}
                 </p>
               </div>

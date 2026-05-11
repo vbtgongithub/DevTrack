@@ -82,6 +82,8 @@ async function fetchLeetCodeRealStats(username: string): Promise<FetchedPlatform
       userContestRanking(username: $username) {
         attendedContestsCount
         rating
+        globalRanking
+        topPercentage
       }
     }
   `;
@@ -303,6 +305,25 @@ async function fetchCodeChefRealStats(username: string): Promise<FetchedPlatform
     }
   }
 
+  // Final Regex Fallback (Robust Parsing)
+  // ALWAYS prefer "Total Problems Solved" text if present, as it's the authoritative metric
+  const solvedMatch = html.match(/Total Problems Solved\s*:?\s*([\d,]+)/i);
+  if (solvedMatch) {
+    const parsed = parseInt(solvedMatch[1].replace(/,/g, ''), 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      totalSolved = parsed;
+    }
+  }
+
+  if (!globalRank || globalRank === '0' || globalRank === '') {
+    const globalMatch = html.match(/Global Rank:\s*(\d+)/i);
+    if (globalMatch) globalRank = globalMatch[1];
+  }
+
+  let countryRank: string | null = null;
+  const countryMatch = html.match(/Country Rank:\s*(\d+)/i);
+  if (countryMatch) countryRank = countryMatch[1];
+
   // Parse stars (e.g., 1★, 2★)
   let stars: string | null = null;
   const starsEl = $('.rating-star').first();
@@ -337,6 +358,7 @@ async function fetchCodeChefRealStats(username: string): Promise<FetchedPlatform
       rating,
       highestRating,
       globalRank,
+      countryRank,
       stars,
       totalSolved,
       scrapedAt: new Date().toISOString(),
@@ -593,6 +615,13 @@ export async function syncPlatform(userId: string, platformName: string): Promis
       },
       { upsert: true, new: true }
     );
+
+    // Track sync as an active day
+    try {
+      await incrementDailyActivity(userId, new Date(), 'sync');
+    } catch (actErr) {
+      // Non-fatal
+    }
 
     // TASK 2: Run DSA ingestion pipeline for non-GitHub/non-CodeChef platforms
     if (platformName !== 'github' && platformName !== 'codechef') {

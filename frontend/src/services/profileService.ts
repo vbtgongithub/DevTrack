@@ -26,3 +26,19 @@ export async function connectPlatform(platformName: string, username: string): P
 export async function syncAllPlatforms(): Promise<AxiosResponse> {
   return axiosClient.post('/platforms/sync-all');
 }
+
+/**
+ * Get user profile data.
+ * GET /profile
+ */
+export async function getProfile(): Promise<AxiosResponse> {
+  return axiosClient.get(PROFILE_BASE);
+}
+
+/**
+ * Update user profile data.
+ * PATCH /profile
+ */
+export async function updateProfile(payload: any): Promise<AxiosResponse> {
+  return axiosClient.patch(PROFILE_BASE, payload);
+}

@@ -9,6 +9,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
   onNavigate,
   profile,
+  streak,
 }) => {
   return (
     <aside className="w-[260px] xl:w-[280px] flex-col hidden lg:flex relative z-40 py-6 px-4 border-r border-dt-primary/[0.04] bg-white/40 backdrop-blur-[30px]">
@@ -55,10 +56,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                 <div
                   className={[
-                    'h-9 w-9 rounded-[14px] flex items-center justify-center transition-all duration-500 shrink-0 relative overflow-hidden',
+                    'h-9 w-9 rounded-[14px] flex items-center justify-center transition-all duration-500 shrink-0 relative overflow-hidden group-hover:shadow-[0_0_15px_rgba(124,92,252,0.15)]',
                     item.isActive
-                      ? 'bg-dt-primary/10 text-dt-primary'
-                      : 'bg-transparent text-dt-textMuted group-hover:bg-white group-hover:shadow-sm group-hover:text-dt-textSecondary',
+                      ? 'bg-dt-primary/10 text-dt-primary shadow-[inset_0_1px_2px_rgba(124,92,252,0.2)]'
+                      : 'bg-transparent text-dt-textMuted group-hover:bg-dt-primary/5 group-hover:text-dt-primary',
                   ].join(' ')}
                 >
                   <Icon
@@ -75,7 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {item.isActive && (
                   <motion.div
                     layoutId="active-dot"
-                    className="ml-auto w-1.5 h-1.5 rounded-full bg-dt-primary shadow-[0_0_10px_rgba(124,92,252,0.8)]"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-dt-primary shadow-[0_0_12px_rgba(124,92,252,0.8)]"
                   />
                 )}
               </button>
@@ -92,8 +93,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Icon name="flame" size={16} />
               </div>
               <div className="flex flex-col">
-                <div className="text-[14px] font-black text-dt-text tracking-tight">12 Day Streak</div>
-                <div className="text-[9px] font-black text-amber-600/60 uppercase tracking-widest">Momentum High</div>
+                <div className="text-[14px] font-black text-dt-text tracking-tight">{streak ?? 0} Day Streak</div>
+                <div className="text-[9px] font-black text-amber-600/60 uppercase tracking-widest">
+                  {streak && streak > 0 ? 'Momentum High' : 'Start Your Journey'}
+                </div>
               </div>
             </div>
             <div className="h-1.5 w-full bg-amber-200/20 rounded-full overflow-hidden">
@@ -139,11 +142,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 flex flex-col justify-center">
             <div className="text-[14px] font-black text-dt-text truncate tracking-tight group-hover:text-dt-primary transition-colors">{profile?.displayName ?? 'Varshith Reddy'}</div>
-            <div className="text-[10px] font-bold text-dt-textSecondary/40 truncate tracking-[0.1em] uppercase">Architecture Lead</div>
+            <div className="text-[10px] font-bold text-dt-textSecondary/40 truncate tracking-[0.2em] uppercase mt-0.5">Architecture Lead</div>
           </div>
-          <Icon name="settings" size={16} className="text-dt-textMuted/40 group-hover:rotate-90 transition-transform duration-500" />
+          <div className="w-8 h-8 rounded-full bg-dt-bg flex items-center justify-center group-hover:bg-dt-primary/10 transition-colors">
+             <Icon name="chevron-right" size={16} className="text-dt-textMuted/40 group-hover:text-dt-primary transition-colors duration-500 group-hover:translate-x-0.5" />
+          </div>
         </button>
       </div>
 

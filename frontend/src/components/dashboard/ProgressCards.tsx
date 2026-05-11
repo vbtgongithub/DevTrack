@@ -25,30 +25,44 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ title, progress, insight, i
 
   return (
     <div
-      className="dt-card bg-gradient-to-br from-white to-dt-bg/50 border-dt-primary/10 p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 ease-out flex flex-col gap-4 relative overflow-hidden group"
-      style={{ animation: `dtFadeIn 520ms ease-out ${index * 80}ms both` }}
+      className="dt-card bg-white/80 backdrop-blur-3xl border border-dt-primary/10 p-6 rounded-[28px] shadow-[0_8px_30px_rgba(124,92,252,0.06)] hover:shadow-[0_12px_40px_rgba(124,92,252,0.1)] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col gap-5 relative overflow-hidden group"
+      style={{ animation: `dtFadeIn 600ms cubic-bezier(0.16,1,0.3,1) ${index * 80}ms both` }}
     >
+      <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(124,92,252,0.03),transparent_60%)] pointer-events-none" />
+
       {/* Top accent line */}
-      <div className={`absolute top-0 left-0 right-0 h-1.5 ${accentColor} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+      <div className={`absolute top-0 left-0 right-0 h-1.5 ${accentColor} opacity-70 group-hover:opacity-100 transition-opacity duration-500`} />
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className={['w-10 h-10 rounded-xl flex items-center justify-center border border-transparent shadow-sm', iconBg, progress >= 50 && progress < 80 ? 'border-dt-primary/10' : ''].join(' ')}>
-            <Icon name={icon} size={18} className={iconColor} />
+      <div className="flex items-center justify-between relative z-10">
+        <div className="flex items-center gap-4">
+          <div className={['w-12 h-12 rounded-[20px] flex items-center justify-center border transition-transform duration-500 group-hover:scale-105 shadow-inner', iconBg, progress >= 50 && progress < 80 ? 'border-dt-primary/20' : 'border-transparent'].join(' ')}>
+            <Icon name={icon} size={22} className={[iconColor, 'drop-shadow-sm'].join(' ')} />
           </div>
-          <span className="text-[15px] font-bold text-dt-text tracking-tight">{title}</span>
+          <div>
+            <span className="text-[10px] font-black text-dt-textSecondary/60 uppercase tracking-[0.2em] mb-0.5 block">Telemetry</span>
+            <span className="text-[16px] font-black text-dt-text tracking-tighter">{title}</span>
+          </div>
         </div>
-        <span className="text-xl font-extrabold text-dt-text tabular-nums">{progress}%</span>
+        <div className="flex items-baseline gap-1">
+          <span className="text-3xl font-black text-dt-text tabular-nums tracking-tighter drop-shadow-sm">{progress}</span>
+          <span className="text-sm font-bold text-dt-textSecondary/50">%</span>
+        </div>
       </div>
 
-      <div className={['h-2.5 w-full rounded-full overflow-hidden shadow-inner', progressBg].join(' ')}>
+      <div className={['h-3 w-full rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)] relative z-10', progressBg].join(' ')}>
         <div
-          className={['h-full rounded-full bg-gradient-to-r transition-all duration-700 ease-out shadow-sm', progressColor].join(' ')}
+          className={['h-full rounded-full bg-gradient-to-r transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] relative', progressColor].join(' ')}
           style={{ width: mounted ? `${progress}%` : '0%' }}
-        />
+        >
+          <div className="absolute top-0 right-0 bottom-0 w-10 bg-gradient-to-r from-transparent to-white/30 animate-[shimmer_2s_infinite]" />
+        </div>
       </div>
 
-      <p className="text-[13px] font-medium text-dt-textSecondary leading-relaxed">{insight}</p>
+      <div className="flex items-center justify-between relative z-10 pt-2 border-t border-dt-primary/5">
+        <p className="text-[12px] font-bold text-dt-textSecondary/80 tracking-wide">{insight}</p>
+        <Icon name="trend-up" size={14} className={iconColor} />
+      </div>
     </div>
   );
 };
@@ -105,25 +119,30 @@ export const ProgressCards: React.FC<ProgressCardsProps> = ({ platformStats }) =
         ].map((item, index) => (
           <div
             key={item.title}
-            className="bg-white/40 backdrop-blur-2xl border border-dt-primary/10 p-7 rounded-[24px] shadow-[0_8px_30px_rgba(124,92,252,0.05)] hover:shadow-[0_12px_40px_rgba(124,92,252,0.08)] hover:-translate-y-1 transition-all duration-500 cubic-bezier(0.22, 1, 0.36, 1) flex flex-col gap-5 relative overflow-hidden group"
-            style={{ animation: `dtFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 80}ms both` }}
+            className="bg-white/60 backdrop-blur-3xl border border-dt-primary/10 p-7 rounded-[28px] shadow-[0_8px_30px_rgba(124,92,252,0.05)] hover:shadow-[0_12px_40px_rgba(124,92,252,0.08)] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col gap-5 relative overflow-hidden group"
+            style={{ animation: `dtFadeIn 600ms cubic-bezier(0.16,1,0.3,1) ${index * 80}ms both` }}
           >
-            <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none transform translate-x-4 -translate-y-4 group-hover:scale-[1.3] group-hover:rotate-12 transition-transform duration-700">
-              <Icon name={item.icon} size={80} className="text-dt-text" />
+            <div className="absolute top-0 right-0 p-4 opacity-[0.02] pointer-events-none transform translate-x-4 -translate-y-4 group-hover:scale-[1.3] group-hover:rotate-12 transition-transform duration-1000">
+              <Icon name={item.icon} size={100} className="text-dt-text" />
             </div>
             <div className="flex items-center justify-between relative z-10">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-[16px] flex items-center justify-center bg-white/60 border border-dt-primary/10 shadow-sm group-hover:scale-110 transition-transform duration-500">
-                  <Icon name={item.icon} size={22} className="text-dt-textMuted" />
+                <div className="w-14 h-14 rounded-[20px] flex items-center justify-center bg-white border border-dt-primary/10 shadow-[0_4px_20px_rgba(124,92,252,0.05)] group-hover:scale-105 transition-transform duration-500">
+                  <Icon name={item.icon} size={24} className="text-dt-textMuted" />
                 </div>
-                <span className="text-[15px] font-black text-dt-text tracking-tight leading-snug">{item.title}</span>
+                <div>
+                   <span className="text-[10px] font-black text-dt-textSecondary/50 uppercase tracking-[0.2em] mb-0.5 block">Telemetry</span>
+                   <span className="text-[16px] font-black text-dt-text tracking-tighter leading-snug">{item.title}</span>
+                </div>
               </div>
-              <span className="text-2xl font-extrabold text-dt-textDisabled tabular-nums">—</span>
+              <span className="text-3xl font-black text-dt-textDisabled tabular-nums">—</span>
             </div>
-            <div className="h-2 w-full bg-dt-primary/5 rounded-full overflow-hidden shadow-inner relative z-10">
+            <div className="h-3 w-full bg-dt-primary/5 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)] relative z-10">
               <div className="h-full bg-transparent" style={{ width: '0%' }} />
             </div>
-            <p className="text-[13px] text-dt-textSecondary leading-relaxed font-bold tracking-tight relative z-10">Connect platforms to track progress</p>
+            <div className="pt-2 border-t border-dt-primary/5 relative z-10">
+               <p className="text-[12px] text-dt-textSecondary/70 leading-relaxed font-bold tracking-wide">Awaiting signals</p>
+            </div>
           </div>
         ))}
       </div>

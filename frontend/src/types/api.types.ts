@@ -563,13 +563,13 @@ export interface ApiPlatformConnectPayload {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ApiNotificationUpdatePayload extends Partial<ApiNotificationPreferences> {}
+export interface ApiNotificationUpdatePayload extends Partial<ApiNotificationPreferences> { }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ApiAppearanceUpdatePayload extends Partial<ApiAppearanceSettings> {}
+export interface ApiAppearanceUpdatePayload extends Partial<ApiAppearanceSettings> { }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface ApiPrivacyUpdatePayload extends Partial<ApiPrivacySettings> {}
+export interface ApiPrivacyUpdatePayload extends Partial<ApiPrivacySettings> { }
 
 // ---------------------------------------------------------------------------
 // 8. GENERIC MUTATION RESPONSE

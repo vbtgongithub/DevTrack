@@ -38,15 +38,15 @@ export const DsaHero: React.FC<DsaHeroProps> = ({ heatmap, stats }) => {
             <span className="text-[9px] font-black text-dt-textSecondary tracking-widest uppercase">Neural Link: Active</span>
           </div>
 
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5 relative z-10">
             <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-dt-text leading-[1.15]">
               Welcome back to the <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-dt-primary via-dt-secondary to-indigo-500">
-                Coding Dojo.
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-dt-primary via-[#A78BFA] to-[#FF8B94] animate-gradient-x drop-shadow-sm">
+                AI Coding Command Center.
               </span>
             </h1>
-            <p className="text-[13px] font-medium text-dt-textSecondary leading-relaxed max-w-lg mt-0.5">
-              Your architecture is improving. You've engineered <strong className="font-bold text-dt-text">{totalSolved} solutions</strong>, maintaining deep focus for {activeDays} days.
+            <p className="text-[14px] font-bold text-dt-textSecondary/80 leading-relaxed max-w-lg mt-1 tracking-wide">
+              Your intelligence architecture is synchronizing. You've engineered <strong className="font-black text-dt-text drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]">{totalSolved} solutions</strong>, maintaining high-velocity focus for {activeDays} days.
             </p>
           </div>
 
@@ -82,24 +82,25 @@ export const DsaHero: React.FC<DsaHeroProps> = ({ heatmap, stats }) => {
         </div>
 
         {/* Compressed AI Recommendation Panel */}
-        <div className="flex-shrink-0 lg:w-56">
-          <div className="group/ai relative bg-white/60 backdrop-blur-xl p-4 rounded-xl border border-dt-primary/10 shadow-dt-card hover:shadow-dt-floating hover:-translate-y-0.5 transition-all duration-400 overflow-hidden">
-            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-dt-primary/20 to-transparent rounded-full blur-[15px] -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover/ai:scale-125 transition-transform duration-700" />
+        <div className="flex-shrink-0 lg:w-64 relative z-10">
+          <div className="group/ai relative bg-white/80 backdrop-blur-3xl p-5 rounded-[20px] border border-dt-primary/20 shadow-[0_8px_30px_rgba(124,92,252,0.12)] hover:shadow-[0_12px_40px_rgba(124,92,252,0.2)] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-dt-primary/30 to-transparent rounded-full blur-[20px] -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover/ai:scale-[1.5] transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(124,92,252,0.05),transparent_60%)] pointer-events-none" />
 
-            <div className="flex items-center gap-2 mb-2.5 relative z-10">
-              <div className="w-6 h-6 rounded-md bg-gradient-to-br from-dt-primary/10 to-dt-secondary/10 border border-dt-primary/20 flex items-center justify-center group-hover/ai:scale-105 transition-transform duration-300">
-                <Icon name="bolt" size={12} className="text-dt-primary" />
+            <div className="flex items-center gap-3 mb-3 relative z-10">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-dt-primary/10 to-dt-secondary/10 border border-dt-primary/30 flex items-center justify-center shadow-inner group-hover/ai:scale-110 transition-transform duration-500">
+                <Icon name="sparkles" size={16} className="text-dt-primary drop-shadow-[0_0_8px_rgba(124,92,252,0.6)]" />
               </div>
               <div>
-                <p className="text-[9px] font-black text-dt-primary uppercase tracking-widest">Next Move</p>
+                <p className="text-[10px] font-black text-dt-primary uppercase tracking-[0.2em]">Neural Engine</p>
               </div>
             </div>
 
-            <p className="text-[13px] font-bold text-dt-text leading-snug relative z-10">
+            <p className="text-[14px] font-black text-dt-text leading-snug relative z-10 tracking-tight">
               Review DP bottom-up patterns.
             </p>
-            <p className="text-[11px] font-medium text-dt-textSecondary mt-1 relative z-10 opacity-70 group-hover/ai:opacity-100 transition-opacity">
-              High impact expected based on Codeforces activity.
+            <p className="text-[11px] font-bold text-dt-textSecondary/80 mt-1.5 relative z-10 opacity-70 group-hover/ai:opacity-100 transition-opacity tracking-wide leading-relaxed">
+              High impact expected based on Codeforces algorithmic vectors.
             </p>
           </div>
         </div>

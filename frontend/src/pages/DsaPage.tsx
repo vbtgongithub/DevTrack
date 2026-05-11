@@ -137,7 +137,7 @@ const DsaPage: React.FC = () => {
                      <Icon name="chart-bar" size={16} />
                   </div>
                   <div>
-                    <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Topic DNA</h2>
+                    <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Algorithm Intelligence Matrix</h2>
                     <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">Algorithmic vectors</p>
                   </div>
                 </div>
@@ -150,8 +150,8 @@ const DsaPage: React.FC = () => {
                      <Icon name="cpu-chip" size={16} />
                   </div>
                   <div>
-                    <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Neural Synthesis</h2>
-                    <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">AI-driven ROI analysis</p>
+                    <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">AI Engineering Brain</h2>
+                    <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">Live neural analysis</p>
                   </div>
                 </div>
                 <InsightsCard title="Growth Insights" submissions={safeData.submissions} topics={safeData.topics} />
@@ -165,7 +165,7 @@ const DsaPage: React.FC = () => {
                    <Icon name="globe-alt" size={16} />
                 </div>
                 <div>
-                  <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Global Node Distribution</h2>
+                  <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Platform Intelligence Network</h2>
                   <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">Ecosystem contribution density</p>
                 </div>
               </div>

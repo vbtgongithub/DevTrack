@@ -36,18 +36,19 @@ export const ContestList: React.FC<ContestListProps> = React.memo(({ contests, c
   }
 
   return (
-    <section className={['dt-card flex flex-col transition-all duration-700 cubic-bezier(0.22, 1, 0.36, 1) hover:shadow-dt-floating group/contests', className].filter(Boolean).join(' ')}>
-      <div className="px-6 py-4 border-b border-dt-primary/5 bg-white/30 backdrop-blur-xl flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-1 h-1 rounded-full bg-dt-secondary shadow-[0_0_8px_rgba(167,139,250,0.8)]" />
-          <span className="text-[10px] font-black text-dt-textSecondary uppercase tracking-widest opacity-80">Competition Matrix</span>
+    <section className={['bg-white/80 backdrop-blur-3xl rounded-[32px] border border-dt-primary/10 shadow-[0_8px_40px_rgba(124,92,252,0.06)] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_16px_60px_rgba(124,92,252,0.12)] group/contests relative', className].filter(Boolean).join(' ')}>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(167,139,250,0.03),transparent_50%)] pointer-events-none" />
+      <div className="px-8 py-6 border-b border-dt-primary/10 bg-white/50 backdrop-blur-md flex items-center justify-between relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-[#A78BFA] shadow-[0_0_10px_rgba(167,139,250,0.8)]" />
+          <span className="text-[11px] font-black text-dt-textSecondary/80 uppercase tracking-[0.25em]">Competition Matrix</span>
         </div>
-        <span className="text-[9px] font-black text-dt-secondary px-2.5 py-1 rounded-full bg-dt-secondary/5 border border-dt-secondary/10 group-hover/contests:border-dt-secondary/30 transition-colors uppercase tracking-widest">
+        <span className="text-[10px] font-black text-[#A78BFA] px-3 py-1.5 rounded-full bg-[#A78BFA]/10 border border-[#A78BFA]/20 group-hover/contests:border-[#A78BFA]/40 transition-colors uppercase tracking-widest shadow-inner">
           {contests.length} Logged
         </span>
       </div>
 
-      <div className="p-2 sm:p-3 flex flex-col gap-1">
+      <div className="p-3 flex flex-col gap-2 relative z-10">
         {displayedContests.map((contest, idx) => {
           const ratingChange = contest.ratingChange;
           const isPositive = ratingChange !== null && ratingChange > 0;
@@ -56,35 +57,36 @@ export const ContestList: React.FC<ContestListProps> = React.memo(({ contests, c
           return (
             <div
               key={contest.id}
-              className="group/item flex items-center justify-between gap-3 p-3 rounded-[14px] hover:bg-white/60 hover:shadow-sm border border-transparent hover:border-dt-secondary/10 transition-all duration-500 cubic-bezier(0.22, 1, 0.36, 1)"
+              className="group/item relative flex items-center justify-between gap-4 p-4 rounded-[20px] bg-white/40 hover:bg-white/80 shadow-sm hover:shadow-[0_8px_30px_rgba(167,139,250,0.08)] border border-dt-primary/5 hover:border-[#A78BFA]/30 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
               style={{ animation: `dtFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) ${idx * 40}ms both` }}
             >
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-white/80 border border-dt-primary/5 flex items-center justify-center shrink-0 shadow-sm group-hover/item:shadow-dt-card group-hover/item:border-dt-secondary/20 transition-all duration-500">
-                  <PlatformLogo platform={platformFromLabel(contest.platform)} iconSize={16} />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#A78BFA]/5 to-transparent -translate-x-full group-hover/item:animate-[shimmer_1.5s_infinite]" />
+              <div className="flex items-center gap-4 min-w-0 relative z-10">
+                <div className="w-10 h-10 rounded-[14px] bg-white border border-dt-primary/10 flex items-center justify-center shrink-0 shadow-sm group-hover/item:shadow-md group-hover/item:border-[#A78BFA]/40 transition-all duration-500 group-hover/item:-translate-y-0.5">
+                  <PlatformLogo platform={platformFromLabel(contest.platform)} iconSize={20} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[14px] font-bold text-dt-text truncate leading-snug group-hover/item:text-dt-secondary transition-colors tracking-tight">
+                  <p className="text-[15px] font-black text-dt-text truncate leading-snug group-hover/item:text-[#A78BFA] transition-colors tracking-tight">
                     {contest.contestName}
                   </p>
-                  <p className="text-[9px] text-dt-textSecondary font-black uppercase tracking-widest opacity-40">
-                    {contest.platform} • {new Date(contest.participatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  <p className="text-[10px] text-dt-textSecondary/70 font-black uppercase tracking-[0.2em] mt-1">
+                    {contest.platform} <span className="opacity-50 mx-1">•</span> {new Date(contest.participatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-3 shrink-0 relative z-10">
                 {contest.rank !== null && (
-                  <span className="text-[10px] font-black text-dt-textSecondary bg-dt-bg px-2 py-0.5 rounded-lg border border-dt-primary/5 tabular-nums tracking-tighter">
+                  <span className="text-[11px] font-black text-dt-textSecondary/80 bg-dt-bg px-3 py-1 rounded-xl border border-dt-primary/10 tabular-nums tracking-tighter shadow-inner">
                     #{contest.rank}
                   </span>
                 )}
                 {ratingChange !== null && (
                   <span className={[
-                    'text-[10px] font-black px-2 py-0.5 rounded-lg tabular-nums min-w-[40px] text-center transition-all duration-300',
-                    isPositive ? 'text-dt-success bg-dt-success/5 border border-dt-success/10' :
-                      isNegative ? 'text-[#F06A6A] bg-[#F06A6A]/5 border border-[#F06A6A]/10' :
-                        'text-dt-textMuted bg-dt-bg border border-dt-primary/5',
+                    'text-[11px] font-black px-3 py-1 rounded-xl tabular-nums min-w-[48px] text-center transition-all duration-300 shadow-sm',
+                    isPositive ? 'text-[#10B981] bg-[#10B981]/10 border border-[#10B981]/20' :
+                      isNegative ? 'text-[#EF4444] bg-[#EF4444]/10 border border-[#EF4444]/20' :
+                        'text-dt-textSecondary bg-dt-bg border border-dt-primary/10',
                   ].join(' ')}>
                     {isPositive ? '+' : ''}{ratingChange}
                   </span>

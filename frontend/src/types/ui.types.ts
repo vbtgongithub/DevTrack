@@ -54,6 +54,7 @@ export interface SidebarProps {
     avatarUrl: string | null;
     subtitle?: string;
   };
+  streak?: number;
 }
 
 export interface TopbarProps {

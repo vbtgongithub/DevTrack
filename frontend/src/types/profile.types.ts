@@ -51,6 +51,7 @@ export const DEFAULT_PROFILE: ProfileData = {
 // ---------------------------------------------------------------------------
 
 export interface LeetCodeStats {
+  username: string;
   solvedProblem: number;
   easySolved: number;
   mediumSolved: number;
@@ -71,6 +72,7 @@ export interface LeetCodeStats {
 }
 
 export const EMPTY_LEETCODE_STATS: LeetCodeStats = {
+  username: '',
   solvedProblem: 0,
   easySolved: 0,
   mediumSolved: 0,

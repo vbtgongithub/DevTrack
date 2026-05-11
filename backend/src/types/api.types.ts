@@ -107,7 +107,7 @@ export interface ApiStreakDay {
 
 export interface ApiPlatformStats {
   platformId: string;
-  platformName: 'leetcode' | 'codeforces' | 'github';
+  platformName: 'leetcode' | 'codeforces' | 'github' | 'codechef';
   username: string;
   totalSolved: number;
   easySolved: number;
@@ -553,6 +553,10 @@ export interface ApiUserProfile {
   timezone: string;
   joinedAt: string;
   lastActiveAt: string;
+  roleTitle: string | null;
+  targetRole: string | null;
+  targetCompanies: string[];
+  techStack: string[];
   socialLinks: ApiSocialLinks;
 }
 
@@ -563,6 +567,7 @@ export interface ApiSocialLinks {
   portfolio: string | null;
   leetcode: string | null;
   codeforces: string | null;
+  codechef: string | null;
 }
 
 export interface ApiConnectedPlatform {
@@ -615,6 +620,9 @@ export interface ApiProfileUpdatePayload {
   displayName?: string;
   bio?: string;
   timezone?: string;
+  roleTitle?: string | null;
+  targetRole?: string | null;
+  targetCompanies?: string[];
   socialLinks?: Partial<ApiSocialLinks>;
 }
 

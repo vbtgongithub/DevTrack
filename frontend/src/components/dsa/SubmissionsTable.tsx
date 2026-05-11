@@ -101,16 +101,17 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
     }, [submissions]);
 
     return (
-      <section className={['dt-card overflow-hidden transition-all duration-700 cubic-bezier(0.22, 1, 0.36, 1) hover:shadow-dt-floating group/table', className].filter(Boolean).join(' ')}>
+      <section className={['bg-white/80 backdrop-blur-3xl rounded-[32px] border border-dt-primary/10 shadow-[0_8px_40px_rgba(124,92,252,0.06)] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_16px_60px_rgba(124,92,252,0.12)] group/table relative', className].filter(Boolean).join(' ')}>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,92,252,0.03),transparent_50%)] pointer-events-none" />
         {/* Intelligence Header */}
-        <div className="px-6 py-4 border-b border-dt-primary/5 bg-white/30 backdrop-blur-xl flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-1 rounded-full bg-dt-primary animate-pulse shadow-[0_0_8px_rgba(124,92,252,0.8)]" />
-            <span className="text-[10px] font-black text-dt-textSecondary uppercase tracking-widest opacity-80">Live Telemetry Feed</span>
+        <div className="px-8 py-6 border-b border-dt-primary/10 bg-white/50 backdrop-blur-md flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
+            <span className="text-[11px] font-black text-dt-textSecondary/80 uppercase tracking-[0.25em]">Live Intelligence Feed</span>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/5 border border-orange-500/10 group-hover/table:border-orange-500/20 transition-colors">
-            <Icon name="fire" size={10} className="text-orange-500" />
-            <span className="text-[9px] font-black text-orange-600 uppercase tracking-tight">{streak} Day Momentum</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 group-hover/table:border-orange-500/30 transition-colors shadow-inner">
+            <Icon name="fire" size={12} className="text-orange-500" />
+            <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest">{streak} Day Momentum</span>
           </div>
         </div>
 
@@ -128,36 +129,37 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
                   </div>
 
                   {/* Submission Items */}
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-2">
                     {group.submissions.map((submission, idx) => (
                       <div
                         key={submission.id}
-                        className="group/item flex items-center justify-between gap-3 p-3 rounded-[14px] hover:bg-white/60 hover:shadow-sm border border-transparent hover:border-dt-primary/10 transition-all duration-500 cubic-bezier(0.22, 1, 0.36, 1)"
+                        className="group/item relative flex items-center justify-between gap-4 p-4 rounded-[20px] bg-white/40 hover:bg-white/80 shadow-sm hover:shadow-[0_8px_30px_rgba(124,92,252,0.08)] border border-dt-primary/5 hover:border-dt-primary/20 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
                         style={{ animation: `dtFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) ${(groupIndex * 80 + idx * 40)}ms both` }}
                       >
-                        <div className="flex items-center gap-3.5 min-w-0">
-                          <div className={['w-1.5 h-1.5 rounded-full shrink-0 group-hover/item:scale-125 transition-transform duration-500', statusGlow(submission.status)].join(' ')} />
-                          <div className="w-8 h-8 rounded-xl bg-white/80 border border-dt-primary/5 flex items-center justify-center shrink-0 shadow-sm group-hover/item:shadow-dt-card group-hover/item:border-dt-primary/20 transition-all duration-500">
-                            <PlatformLogo platform={submission.platform} iconSize={16} />
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-dt-primary/5 to-transparent -translate-x-full group-hover/item:animate-[shimmer_1.5s_infinite]" />
+                        <div className="flex items-center gap-4 min-w-0 relative z-10">
+                          <div className={['w-2 h-2 rounded-full shrink-0 group-hover/item:scale-[1.5] transition-transform duration-500', statusGlow(submission.status)].join(' ')} />
+                          <div className="w-10 h-10 rounded-[14px] bg-white border border-dt-primary/10 flex items-center justify-center shrink-0 shadow-sm group-hover/item:shadow-md group-hover/item:border-dt-primary/30 transition-all duration-500 group-hover/item:-translate-y-0.5">
+                            <PlatformLogo platform={submission.platform} iconSize={20} />
                           </div>
                           <div className="min-w-0">
-                            <span className="text-[14px] font-bold text-dt-text group-hover/item:text-dt-primary transition-colors truncate block tracking-tight">
+                            <span className="text-[15px] font-black text-dt-text group-hover/item:text-dt-primary transition-colors truncate block tracking-tight">
                               {submission.problem}
                             </span>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[9px] text-dt-textSecondary font-black uppercase tracking-widest opacity-40">{submission.topic}</span>
-                              <span className="w-0.5 h-0.5 rounded-full bg-dt-textSecondary/20" />
-                              <span className="text-[9px] text-dt-textSecondary font-black uppercase tracking-widest opacity-40">{submission.platform}</span>
+                            <div className="flex items-center gap-2.5 mt-1">
+                              <span className="text-[10px] text-dt-textSecondary/70 font-black uppercase tracking-[0.2em]">{submission.topic}</span>
+                              <span className="w-1 h-1 rounded-full bg-dt-textSecondary/30" />
+                              <span className="text-[10px] text-dt-textSecondary/70 font-black uppercase tracking-[0.2em]">{submission.platform}</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0 opacity-40 group-hover/item:opacity-100 transition-opacity duration-500">
-                          <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-lg bg-dt-bg text-dt-textSecondary border border-dt-primary/5 group-hover/item:bg-white transition-colors">
+                        <div className="flex items-center gap-3 shrink-0 opacity-60 group-hover/item:opacity-100 transition-opacity duration-500 relative z-10">
+                          <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-xl bg-dt-bg text-dt-textSecondary border border-dt-primary/10 group-hover/item:bg-white group-hover/item:text-dt-primary group-hover/item:shadow-sm transition-all duration-300">
                             {submission.difficulty || '—'}
                           </span>
-                          <button className="w-7 h-7 rounded-lg bg-dt-bg flex items-center justify-center border border-dt-primary/5 hover:bg-dt-primary hover:text-white hover:border-dt-primary transition-all duration-300">
-                            <Icon name="arrow-up-right" size={12} />
+                          <button className="w-8 h-8 rounded-xl bg-dt-bg flex items-center justify-center border border-dt-primary/10 hover:bg-dt-primary hover:text-white hover:border-dt-primary hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+                            <Icon name="arrow-up-right" size={14} />
                           </button>
                         </div>
                       </div>

@@ -4,6 +4,7 @@ import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
 import { ToastContainer } from './components/shared/ToastContainer';
 import { useUserStore } from './store/userStore';
+import { useDashboardData } from './hooks/useDashboardData';
 import { LoginPage } from './pages/LoginPage';
 import { LandingPage } from './pages/LandingPage';
 import { AppRouter } from './router';
@@ -45,6 +46,7 @@ const AppShell: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const user = useUserStore((s) => s.user);
+  const { data: dashboardData } = useDashboardData();
 
   const navItems: SidebarNavItemVM[] = NAV_ITEMS.map((item) => ({
     ...item,
@@ -74,6 +76,7 @@ const AppShell: React.FC = () => {
         onToggleCollapse={() => undefined}
         currentPath={location.pathname}
         onNavigate={(path) => navigate(path)}
+        streak={dashboardData?.streakData?.currentStreak ?? 0}
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">

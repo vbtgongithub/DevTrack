@@ -75,12 +75,16 @@ export const RecentActivityList: React.FC<RecentActivityListProps> = ({
       </div>
 
       {activities.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-10 flex-1 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-dt-primary/5 border border-dt-primary/10 flex items-center justify-center mb-4">
-            <Icon name="clock" size={28} className="text-dt-textMuted" />
+        <div className="flex flex-col items-center justify-center py-10 flex-1 text-center relative z-10 bg-gradient-to-b from-transparent to-dt-primary/[0.02] rounded-[24px] border border-dt-primary/5 mt-2 overflow-hidden">
+           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
+          <div className="relative mb-6 group-hover:-translate-y-1 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
+            <div className="w-20 h-20 rounded-full bg-white/60 backdrop-blur-xl border border-dt-primary/10 flex items-center justify-center shadow-[0_8px_30px_rgba(124,92,252,0.08)] relative z-10">
+              <div className="absolute inset-1 rounded-full border border-dashed border-dt-primary/20 animate-[spin_30s_linear_infinite]" />
+              <Icon name="clock" size={28} className="text-dt-primary/50" />
+            </div>
           </div>
-          <p className="text-[15px] font-bold text-dt-text">No recent activity yet.</p>
-          <p className="text-[13px] font-medium text-dt-textSecondary mt-1">Connect your platforms and start coding!</p>
+          <p className="text-[17px] font-black text-dt-text tracking-tight drop-shadow-sm mb-1.5">Awaiting Activity Telemetry</p>
+          <p className="text-[13px] font-bold text-dt-textSecondary/70 max-w-[220px] leading-relaxed tracking-wide">Connect your coding ecosystem to initialize event tracking.</p>
         </div>
       )}
     </div>
