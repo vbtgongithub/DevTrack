@@ -12,6 +12,7 @@ import axios, {
 } from 'axios';
 import type { ApiError } from '../types/api.types';
 import { envConfig } from './envCheck';
+import { useUIStore } from '../store/uiStore';
 
 const BASE_URL = envConfig.VITE_API_BASE_URL;
 const TIMEOUT = 15_000; // 15 seconds
@@ -114,6 +115,17 @@ axiosClient.interceptors.response.use(
       timestamp: new Date().toISOString(),
       details: error.response?.data?.details,
     };
+
+    // Global Toast Notification (except for 401 which has custom logic)
+    if (normalized.statusCode !== 401) {
+      const { addToast } = useUIStore.getState();
+      addToast({
+        type: 'error',
+        title: 'System Connectivity Issue',
+        message: normalized.message,
+        duration: 6000
+      });
+    }
 
     return Promise.reject(normalized);
   }

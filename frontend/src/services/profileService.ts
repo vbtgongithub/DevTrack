@@ -39,6 +39,6 @@ export async function getProfile(): Promise<AxiosResponse> {
  * Update user profile data.
  * PATCH /profile
  */
-export async function updateProfile(payload: any): Promise<AxiosResponse> {
+export async function updateProfile(payload: Record<string, unknown>): Promise<AxiosResponse> {
   return axiosClient.patch(PROFILE_BASE, payload);
 }

@@ -80,8 +80,8 @@ export async function getDashboard(req: AuthenticatedRequest, res: Response): Pr
 }
 
 export async function getHeatmap(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const days = req.query.days ? parseInt(req.query.days as string, 10) : undefined;
-  const data = await service.getHeatmap(req.user!.id, days);
+  const year = req.query.year ? parseInt(req.query.year as string, 10) : undefined;
+  const data = await service.getHeatmap(req.user!.id, year);
   successResponse(res, data, 'Heatmap data retrieved successfully');
 }
 

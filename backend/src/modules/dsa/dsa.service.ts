@@ -27,77 +27,175 @@ import { parsePaginationParams, createPagination, getSkipCount, buildSortOptions
 const ALLOWED_SORT_FIELDS = ['title', 'difficulty', 'lastSubmittedAt', 'solvedAt', 'timeTaken'];
 
 // ---------------------------------------------------------------------------
-// Inline Aggregation Service (Replacing deleted ingestion module)
+// Rolling 365-day DSA Aggregation Service
+// Combines LeetCode submission calendar + Codeforces DsaSubmission counts.
+// Excludes GitHub activity from DSA heatmap and streak calculations.
 // ---------------------------------------------------------------------------
-const aggregationService = {
-  generateHeatmap: async (userId: string, days: number) => {
-    const start = new Date();
-    start.setDate(start.getDate() - days);
-    start.setHours(0, 0, 0, 0);
 
-    const submissions = await DsaSubmission.aggregate([
-      { $match: { userId: new Types.ObjectId(userId), submittedAt: { $gte: start } } },
-      { $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$submittedAt' } },
-          count: { $sum: 1 }
-      }}
-    ]);
+/**
+ * Parse a LeetCode submission calendar from PlatformStats.rawData.
+ * Returns Record<YYYY-MM-DD, number>.
+ */
+export function parseLeetCodeCalendar(rawData: Record<string, unknown>): Record<string, number> {
+  const calendar: Record<string, number> = {};
+  try {
+    const normalized = rawData?.submissionCalendar;
+    if (normalized && typeof normalized === 'object' && !Array.isArray(normalized)) {
+      for (const [key, value] of Object.entries(normalized as Record<string, unknown>)) {
+        if (typeof value !== 'number' || value <= 0) continue;
 
-    const heatmap = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      const found = submissions.find(s => s._id === dateStr);
-      heatmap.push({ date: dateStr, count: found ? found.count : 0 });
+        // Preferred normalized format: YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(key)) {
+          calendar[key] = (calendar[key] ?? 0) + value;
+          continue;
+        }
+
+        // Legacy-but-possible format: unix timestamp seconds as string keys
+        if (/^\d+$/.test(key)) {
+          const d = new Date(parseInt(key, 10) * 1000);
+          if (Number.isNaN(d.getTime())) continue;
+          const dateStr = d.toISOString().split('T')[0];
+          calendar[dateStr] = (calendar[dateStr] ?? 0) + value;
+        }
+      }
+      return calendar;
     }
-    return heatmap;
-  },
 
-  calculateStreaks: async (userId: string, days: number) => {
-    const heatmap = await aggregationService.generateHeatmap(userId, days);
-    let current = 0;
-    let longest = 0;
-    let tempStreak = 0;
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const rawCalendarStr =
+      (typeof rawData?.submissionCalendar === 'string' ? rawData.submissionCalendar : null) ||
+      (typeof rawData?.matchedUser === 'object' && rawData.matchedUser && !Array.isArray(rawData.matchedUser)
+        ? (rawData.matchedUser as Record<string, unknown>).submissionCalendar
+        : null);
 
-    for (let i = 0; i < heatmap.length; i++) {
-      if (heatmap[i].count > 0) {
-        tempStreak++;
-        if (tempStreak > longest) longest = tempStreak;
-      } else {
-        tempStreak = 0;
+    const rawCalendarJson = typeof rawCalendarStr === 'string' ? rawCalendarStr : null;
+
+    if (rawCalendarJson) {
+      const parsed = JSON.parse(rawCalendarJson) as Record<string, unknown>;
+      for (const [ts, count] of Object.entries(parsed)) {
+        if (typeof count !== 'number' || count <= 0) continue;
+        const d = new Date(parseInt(ts, 10) * 1000);
+        if (Number.isNaN(d.getTime())) continue;
+        const dateStr = d.toISOString().split('T')[0];
+        calendar[dateStr] = (calendar[dateStr] ?? 0) + count;
       }
     }
-
-    const todayCount = heatmap.find(h => h.date === today)?.count || 0;
-    const yesterdayCount = heatmap.find(h => h.date === yesterdayStr)?.count || 0;
-
-    if (todayCount > 0) {
-      current = tempStreak; // Because the loop ended with today
-    } else if (yesterdayCount > 0) {
-      // Loop ended with today (0), so yesterday was the last day of tempStreak before it reset
-      // We need to recalculate current streak properly
-      let c = 0;
-      for (let i = heatmap.length - 2; i >= 0; i--) {
-        if (heatmap[i].count > 0) c++;
-        else break;
-      }
-      current = c;
-    }
-
-    return { current, longest };
+  } catch {
+    /* graceful fallback */
   }
-};
+  return calendar;
+}
+
+/**
+ * Generate a rolling 365-day heatmap (today-364 through today).
+ * Per day = LeetCode calendar count + Codeforces DsaSubmission count.
+ */
+export async function generateRollingHeatmap(
+  userId: string
+): Promise<Array<{ date: string; count: number }>> {
+  const userObjId = new Types.ObjectId(userId);
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+  const start = new Date(today);
+  start.setDate(start.getDate() - 364);
+  start.setHours(0, 0, 0, 0);
+
+  // 1. Get Codeforces submissions grouped by day (from DsaSubmission)
+  const cfSubmissions = await DsaSubmission.aggregate([
+    {
+      $match: {
+        userId: userObjId,
+        platform: 'codeforces',
+        submittedAt: { $gte: start, $lte: today },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$submittedAt' } },
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const cfMap = new Map<string, number>();
+  for (const s of cfSubmissions) {
+    cfMap.set(s._id as string, s.count as number);
+  }
+
+  // 2. Get LeetCode submission calendar from PlatformStats.rawData
+  const leetcodeStats = await PlatformStats.findOne({
+    userId: userObjId,
+    platformName: 'leetcode',
+  })
+    .select({ rawData: 1 })
+    .lean();
+
+  const lcCalendar = leetcodeStats?.rawData
+    ? parseLeetCodeCalendar(leetcodeStats.rawData)
+    : {};
+
+  // 3. Build rolling 365-day array
+  const heatmap: Array<{ date: string; count: number }> = [];
+  const cursor = new Date(start);
+  while (cursor <= today) {
+    const dateStr = cursor.toISOString().split('T')[0];
+    const cfCount = cfMap.get(dateStr) ?? 0;
+    const lcCount = lcCalendar[dateStr] ?? 0;
+    heatmap.push({ date: dateStr, count: cfCount + lcCount });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return heatmap;
+}
+
+/**
+ * Calculate current and longest streaks from a rolling heatmap array.
+ */
+export function calculateStreaksFromHeatmap(
+  heatmap: Array<{ date: string; count: number }>
+): { current: number; longest: number } {
+  let longest = 0;
+  let tempStreak = 0;
+
+  // Longest streak over entire window
+  for (const day of heatmap) {
+    if (day.count > 0) {
+      tempStreak++;
+      if (tempStreak > longest) longest = tempStreak;
+    } else {
+      tempStreak = 0;
+    }
+  }
+
+  // Current streak — walk backwards from today (or yesterday)
+  const todayStr = new Date().toISOString().split('T')[0];
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+  let current = 0;
+  const todayIdx = heatmap.findIndex(h => h.date === todayStr);
+  const yesterdayIdx = heatmap.findIndex(h => h.date === yesterdayStr);
+
+  if (todayIdx >= 0 && heatmap[todayIdx].count > 0) {
+    for (let i = todayIdx; i >= 0; i--) {
+      if (heatmap[i].count > 0) current++;
+      else break;
+    }
+  } else if (yesterdayIdx >= 0 && heatmap[yesterdayIdx].count > 0) {
+    for (let i = yesterdayIdx; i >= 0; i--) {
+      if (heatmap[i].count > 0) current++;
+      else break;
+    }
+  }
+
+  return { current, longest };
+}
 
 export async function getDashboard(userId: string): Promise<ApiDsaDashboardResponse> {
   const userObjId = new Types.ObjectId(userId);
 
-  // Phase 8: Backend owns ALL aggregation - use aggregation service
-  const [problemStats, topicProgress, recentSubmissions, platformStatsArr, heatmapData, streaks] = await Promise.all([
+  // Rolling 365-day DSA-only heatmap (LeetCode + Codeforces)
+  const [problemStats, topicProgress, recentSubmissions, platformStatsArr, heatmapData] = await Promise.all([
     DsaProblem.aggregate([
       { $match: { userId: userObjId } },
       {
@@ -113,36 +211,28 @@ export async function getDashboard(userId: string): Promise<ApiDsaDashboardRespo
       .limit(20)
       .populate('problemId', 'title category difficulty')
       .lean(),
-    PlatformStats.find({ userId: userObjId }).lean(),
-    aggregationService.generateHeatmap(userId, 365),
-    aggregationService.calculateStreaks(userId, 365),
+    PlatformStats.find({ userId: userObjId })
+      .select({ platformName: 1, totalSolved: 1, rating: 1 })
+      .lean(),
+    generateRollingHeatmap(userId),
   ]);
 
-  // Build heatmap array (for backward compatibility)
-  const heatmap: number[] = [];
-  const activityMap = new Map<string, number>();
-  for (const day of heatmapData) {
-    activityMap.set(day.date, day.count);
-  }
+  // Streaks derived from the DSA-only rolling heatmap
+  const streaks = calculateStreaksFromHeatmap(heatmapData);
 
-  const now = new Date();
-  for (let i = 364; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().split('T')[0];
-    heatmap.push(activityMap.get(key) ?? 0);
-  }
+  // Build heatmap count array (rolling 365 days)
+  const heatmap: number[] = heatmapData.map((day) => day.count);
 
-  // Use aggregation service results
   const currentStreak = streaks.current;
   const maxStreak = streaks.longest;
 
   const localSolved = (problemStats[0]?.totalSolved as number) ?? 0;
-  // Use sum of platform solved counts when user hasn't manually tracked problems
-  const platformTotalSolved = platformStatsArr.reduce((sum: number, p: any) => sum + (p.totalSolved ?? 0), 0);
+  // Use sum of DSA platform solved counts (exclude GitHub)
+  const dsaPlatforms = platformStatsArr.filter((p: any) => p.platformName !== 'github');
+  const platformTotalSolved = dsaPlatforms.reduce((sum: number, p: any) => sum + (p.totalSolved ?? 0), 0);
   const totalSolved = localSolved > 0 ? localSolved : platformTotalSolved;
 
-  const bestRating = platformStatsArr.reduce((max: number, p: any) => Math.max(max, p.rating ?? 0), 0);
+  const bestRating = dsaPlatforms.reduce((max: number, p: any) => Math.max(max, p.rating ?? 0), 0);
 
   const stats: ApiDsaSummaryItem[] = [
     { label: 'Problems Solved', value: String(totalSolved), icon: 'check-circle' },
@@ -664,15 +754,16 @@ function mapProblemToApi(problem: Record<string, unknown> & { _id: { toString():
 }
 
 // ---------------------------------------------------------------------------
-// HEATMAP - Phase 7: Generate from DsaSubmission (not DailyActivity)
+// HEATMAP - Rolling 365-day DSA-only heatmap (LeetCode + Codeforces)
 // ---------------------------------------------------------------------------
 
-export async function getHeatmap(userId: string, days?: number): Promise<ApiDsaHeatmapResponse> {
-  const heatmapData = await aggregationService.generateHeatmap(userId, days ?? 365);
-  const streaks = await aggregationService.calculateStreaks(userId, days ?? 365);
+export async function getHeatmap(userId: string, _year?: number): Promise<ApiDsaHeatmapResponse> {
+  // Always use rolling 365-day window regardless of year param
+  const heatmapData = await generateRollingHeatmap(userId);
+  const streaks = calculateStreaksFromHeatmap(heatmapData);
 
-  const totalSubmissions = heatmapData.reduce((sum: number, day: any) => sum + day.count, 0);
-  const activeDays = heatmapData.filter((day: any) => day.count > 0).length;
+  const totalSubmissions = heatmapData.reduce((sum: number, day: { count: number }) => sum + day.count, 0);
+  const activeDays = heatmapData.filter((day: { count: number }) => day.count > 0).length;
 
   return {
     heatmap: heatmapData,

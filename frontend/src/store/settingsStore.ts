@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { getSettings, updateSettings } from '../services/settingsApi';
-import type { UserSettingsResponse, UpdateSettingsPayload } from '../services/settingsApi';
+import { getSettings, updateSettings } from '../services/settingsService';
+import type { UserSettingsResponse, UpdateSettingsPayload } from '../services/settingsService';
 import type { ApiError } from '../types/api.types';
 
 interface SettingsState {

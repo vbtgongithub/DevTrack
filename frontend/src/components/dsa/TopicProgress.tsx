@@ -16,7 +16,6 @@ const RANK_LABELS: Record<string, string> = {
   'Strings': 'Top 25%',
   'Binary Search': 'Top 10%',
   'Linked Lists': 'Top 20%',
-  'Stacks': 'Top 20%',
   'Sorting': 'Top 15%',
 };
 

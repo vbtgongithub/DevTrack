@@ -1,12 +1,3 @@
-// ============================================================================
-// profileStore.ts — Profile Zustand Store
-// ============================================================================
-// Manages profile editing data and sync lifecycle.
-// Platform stats are derived from the dashboard response (GET /api/dashboard)
-// via useDashboardData — the ONLY data endpoint used by the frontend.
-// Profile editing fields are persisted in localStorage.
-// ============================================================================
-
 import { create } from 'zustand';
 import type {
   ProfileData,
@@ -24,6 +15,15 @@ import {
   updateProfile as updateProfileApi
 } from '../services/profileService';
 import type { ApiPlatformStats, ApiUserProfile } from '../types/api.types';
+import { type GithubDashboardStats } from '../services/dashboardService';
+
+// ─── Extended API Profile Interface ────────────────────────────────────────
+interface ExtendedApiUserProfile extends ApiUserProfile {
+  roleTitle?: string;
+  targetRole?: string;
+  targetCompanies?: string[];
+  techStack?: string[];
+}
 
 // ---------------------------------------------------------------------------
 // STORE INTERFACE
@@ -63,7 +63,7 @@ interface ProfileStore {
   clearSyncMessage: () => void;
 
   // Actions: Populate stats from dashboard data (called by ProfilePage)
-  populateFromDashboard: (platforms: ApiPlatformStats[], githubStats?: any) => void;
+  populateFromDashboard: (platforms: ApiPlatformStats[], githubStats?: GithubDashboardStats | null) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -71,7 +71,7 @@ interface ProfileStore {
 // ---------------------------------------------------------------------------
 
 function mapApiToProfileData(api: ApiUserProfile): ProfileData {
-  const a = api as any;
+  const a = api as ExtendedApiUserProfile;
   return {
     fullName: api.displayName,
     email: api.email,
@@ -85,7 +85,7 @@ function mapApiToProfileData(api: ApiUserProfile): ProfileData {
     portfolioUrl: api.socialLinks.portfolio || '',
     leetcodeUsername: api.socialLinks.leetcode || '',
     codeforcesUsername: api.socialLinks.codeforces || '',
-    codechefUsername: (api.socialLinks as any).codechef || '',
+    codechefUsername: api.socialLinks.codechef || '',
   };
 }
 
@@ -196,7 +196,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   clearSyncMessage: () => set({ syncMessage: null }),
 
   // ─── Populate platform stats from dashboard data ────────────────────
-  populateFromDashboard: (platforms: ApiPlatformStats[], githubStats?: any) => {
+  populateFromDashboard: (platforms: ApiPlatformStats[], githubStats?: GithubDashboardStats | null) => {
     const now = Date.now();
 
     // Reset all first
@@ -268,11 +268,9 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       }));
 
     try {
-      await Promise.all(connectPromises);
-    } catch (err) {
-      // We still want to try syncing other platforms even if one connection fails?
-      // The requirement says "Do not swallow errors" and "Aggregate failures into existing syncMessage".
-      // Promise.all will reject if any one fails. Promise.allSettled is better for aggregation.
+      await Promise.allSettled(connectPromises);
+    } catch {
+      // Handled by allSettled below
     }
 
     // Actually, let's use allSettled to aggregate.
@@ -339,7 +337,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
 // ---------------------------------------------------------------------------
 
 function mapToLeetCodeStats(p: ApiPlatformStats): LeetCodeStats {
-  const contestData = (p.rawData?.userContestRanking as any) || {};
+  const contestData = (p.rawData?.userContestRanking as Record<string, unknown>) || {};
   return {
     username: p.username,
     solvedProblem: p.totalSolved,

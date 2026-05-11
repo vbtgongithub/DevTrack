@@ -259,7 +259,13 @@ export interface ApiDsaDashboardResponse {
   }>;
   contests: Array<{ name: string; platform: string; time: string }>;
   topics: Array<{ name: string; progress: number }>;
-  platformOverview: Array<{ platform: string; stat: string }>;
+  platformOverview: Array<{
+    platform: string;
+    stat: string;
+    totalSolved?: number;
+    rank?: string | number | null;
+    rating?: number | null;
+  }>;
 }
 
 export interface ApiDsaFilters {

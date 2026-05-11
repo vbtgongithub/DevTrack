@@ -19,7 +19,7 @@ import type {
   ApiAchievement,
   ApiAchievementsResponse,
 } from '../../types/api.types.js';
-import { getStartOfDay, formatISODate, getLast365Days, isSameDay } from '../../shared/date.js';
+import { getStartOfDay, formatISODate, isSameDay } from '../../shared/date.js';
 
 // GitHub-specific dashboard stats (separate from DSA metrics)
 export interface GithubDashboardStatsData {
@@ -37,14 +37,15 @@ export interface GithubDashboardStatsData {
 
 
 export async function getDashboard(userId: string): Promise<ApiDashboardResponse> {
-  const [stats, streak, platformStats, missions, recentActivity, githubStats] = await Promise.all([
-    getDashboardStats(userId),
-    getStreakData(userId),
+  const [platformStats, streak, missions, recentActivity, githubStats] = await Promise.all([
     getPlatformStats(userId),
+    getStreakData(userId),
     getMissions(userId),
     getRecentActivity(userId, 10),
     getGithubDashboardStats(userId),
   ]);
+
+  const stats = await getDashboardStats(userId, platformStats);
 
   return {
     stats,
@@ -56,8 +57,10 @@ export async function getDashboard(userId: string): Promise<ApiDashboardResponse
   };
 }
 
-export async function getDashboardStats(userId: string): Promise<ApiDashboardStats> {
-  const [problemStats, projectStats, activityStats, platformStats] = await Promise.all([
+export async function getDashboardStats(userId: string, platformStats?: ApiPlatformStats[]): Promise<ApiDashboardStats> {
+  const resolvedPlatformStats = platformStats || await getPlatformStats(userId);
+  
+  const [problemStats, projectStats, activityStats] = await Promise.all([
     DsaProblem.aggregate([
       { $match: { userId: new Types.ObjectId(userId) } },
       {
@@ -89,7 +92,6 @@ export async function getDashboardStats(userId: string): Promise<ApiDashboardSta
         },
       },
     ]),
-    getPlatformStats(userId),
   ]);
 
   const problems = problemStats[0] || { totalProblems: 0, totalSubmissions: 0, currentStreak: 0 };
@@ -97,7 +99,7 @@ export async function getDashboardStats(userId: string): Promise<ApiDashboardSta
   const activity = activityStats[0] || { totalActiveDays: 0 };
 
   // Calculate total problems from all platforms
-  const totalPlatformProblems = platformStats.reduce((sum, p) => sum + p.totalSolved, 0);
+  const totalPlatformProblems = resolvedPlatformStats.reduce((sum, p) => sum + p.totalSolved, 0);
 
   // Calculate streak
   const streakData = await calculateStreak(userId);
@@ -202,13 +204,24 @@ async function calculateStreak(userId: string): Promise<Omit<ApiStreakData, 'str
 }
 
 async function getStreakHistory(userId: string): Promise<ApiStreakData['streakHistory']> {
-  const days = getLast365Days();
+  const currentYear = new Date().getFullYear();
+  const yearStart = new Date(currentYear, 0, 1, 0, 0, 0, 0);
+  const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59, 999);
+
   const activities = await DailyActivity.find({
     userId: new Types.ObjectId(userId),
-    date: { $gte: days[0] },
+    date: { $gte: yearStart, $lte: yearEnd },
   }).sort({ date: 1 });
 
   const activityMap = new Map(activities.map((a) => [formatISODate(a.date), a.count]));
+
+  // Build all days in the calendar year (Jan 1 – Dec 31)
+  const days: Date[] = [];
+  const current = new Date(yearStart);
+  while (current <= yearEnd) {
+    days.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
 
   return days.map((day) => {
     const count = activityMap.get(formatISODate(day)) || 0;

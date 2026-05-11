@@ -10,21 +10,24 @@ import { ContestList } from '../components/dsa/ContestList';
 import { InsightsCard } from '../components/dsa/InsightsCard';
 import { Icon } from '../components/shared/Icon';
 import type { DsaData } from '../types/dsa';
+import { motion, useScroll, useTransform } from 'framer-motion';
 
 const DsaPage: React.FC = () => {
   const { data, loading, error } = useDsaData();
   const [mounted, setMounted] = React.useState(false);
+  const { scrollYProgress } = useScroll();
+
+  // Scroll-linked background transformations
+  const orb1Y = useTransform(scrollYProgress, [0, 1], [0, -150]);
+  const orb2Y = useTransform(scrollYProgress, [0, 1], [0, 150]);
+  const orb3Y = useTransform(scrollYProgress, [0, 1], [0, -80]);
 
   // No mock fallback — show empty defaults when backend returns no data
   const emptyData: DsaData = { stats: [], heatmap: [], submissions: [], contests: [], topics: [], platformOverview: [] };
   const safeData: DsaData = data ?? emptyData;
 
-  const heatmap365 = React.useMemo(() => {
-    const arr = safeData.heatmap ?? [];
-    const last = arr.slice(-365);
-    if (last.length >= 365) return last;
-    return [...Array.from({ length: 365 - last.length }, () => 0), ...last];
-  }, [safeData.heatmap]);
+  // Calendar-year heatmap — data comes pre-aligned from backend (Jan 1 – Dec 31)
+  const heatmapCells = React.useMemo(() => safeData.heatmap ?? [], [safeData.heatmap]);
 
   React.useEffect(() => {
     setMounted(true);
@@ -88,20 +91,32 @@ const DsaPage: React.FC = () => {
 
           {/* Elite Atmospheric System - Tighter & More Focused */}
           <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-            <div className="absolute top-[8%] left-[5%] w-[600px] h-[600px] bg-dt-primary/3 rounded-full blur-[100px] opacity-50" />
-            <div className="absolute top-[50%] right-[0%] w-[400px] h-[500px] bg-dt-secondary/2 rounded-full blur-[80px] opacity-40" />
-            <div className="absolute bottom-[20%] left-[10%] w-[500px] h-[400px] bg-indigo-500/2 rounded-full blur-[90px] opacity-20" />
+            <motion.div style={{ y: orb1Y }} className="absolute top-[8%] left-[5%] w-[600px] h-[600px] bg-dt-primary/3 rounded-full blur-[100px] opacity-50" />
+            <motion.div style={{ y: orb2Y }} className="absolute top-[50%] right-[0%] w-[400px] h-[500px] bg-dt-secondary/2 rounded-full blur-[80px] opacity-40" />
+            <motion.div style={{ y: orb3Y }} className="absolute bottom-[20%] left-[10%] w-[500px] h-[400px] bg-indigo-500/2 rounded-full blur-[90px] opacity-20" />
           </div>
 
           <div className="relative z-10 flex flex-col gap-6">
             {/* Command Surface: Hero + Heatmap - Compressed */}
-            <div className="flex flex-col gap-4">
-              <DsaHero heatmap={heatmap365} stats={safeData.stats} />
-              <HeatmapCard title="Velocity Matrix" cells={heatmap365} />
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col gap-4"
+            >
+              <DsaHero heatmap={heatmapCells} stats={safeData.stats} />
+              <HeatmapCard title="Velocity Matrix" cells={heatmapCells} />
+            </motion.div>
 
             {/* Core Operation Layer - Tighter Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start"
+            >
               <div className="lg:col-span-7 flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-dt-primary/5 flex items-center justify-center text-dt-primary border border-dt-primary/10">
@@ -127,10 +142,16 @@ const DsaPage: React.FC = () => {
                 </div>
                 <ContestList title="Contests" contests={safeData.contests} />
               </div>
-            </div>
+            </motion.div>
 
             {/* Neural Analytics Layer - Tighter */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start"
+            >
               <div className="lg:col-span-5 flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-emerald-500/5 flex items-center justify-center text-emerald-600 border border-emerald-500/10">
@@ -156,10 +177,16 @@ const DsaPage: React.FC = () => {
                 </div>
                 <InsightsCard title="Growth Insights" submissions={safeData.submissions} topics={safeData.topics} />
               </div>
-            </div>
+            </motion.div>
 
             {/* Infrastructure Layer - Compressed */}
-            <div className="flex flex-col gap-4">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-50px' }}
+              transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col gap-4"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-dt-text/5 flex items-center justify-center text-dt-text border border-dt-text/10">
                    <Icon name="globe-alt" size={16} />
@@ -169,8 +196,8 @@ const DsaPage: React.FC = () => {
                   <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">Ecosystem contribution density</p>
                 </div>
               </div>
-              <PlatformOverview title="Ecosystem Metrics" items={safeData.platformOverview} submissions={safeData.submissions} />
-            </div>
+              <PlatformOverview title="Ecosystem Metrics" items={safeData.platformOverview} />
+            </motion.div>
           </div>
         </div>
       </PageShell>

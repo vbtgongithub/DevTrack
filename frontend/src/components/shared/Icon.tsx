@@ -87,10 +87,14 @@ import {
   Upload,
   Info,
   AlertCircle,
+  Rocket,
+  Sparkles,
 } from 'lucide-react';
 
+export type IconName = keyof typeof LUCIDE | keyof typeof ICONS;
+
 interface IconProps {
-  name: string;
+  name: IconName;
   size?: number;
   color?: string;
   className?: string;
@@ -179,6 +183,8 @@ const LUCIDE: Record<string, React.ComponentType<{ size?: number; color?: string
   info: Info,
   'information-circle': Info,
   'alert-circle': AlertCircle,
+  rocket: Rocket,
+  sparkles: Sparkles,
 };
 
 const ICONS: Record<string, string> = {

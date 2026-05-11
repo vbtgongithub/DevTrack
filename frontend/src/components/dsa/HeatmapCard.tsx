@@ -3,6 +3,7 @@ import React from 'react';
 export type HeatmapCardProps = {
   title: string;
   cells: number[];
+  year?: number;
   className?: string;
 };
 
@@ -29,19 +30,27 @@ const CELL = 12;
 const GAP = 4;
 const RADIUS = 4;
 
+const isLeapYear = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+
 export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cells, className }) => {
+  const totalDays = 365;
+
   const normalized = React.useMemo(() => {
-    const last365 = cells.slice(-365);
-    if (last365.length >= 365) return last365;
-    return [...Array.from({ length: 365 - last365.length }, () => 0), ...last365];
-  }, [cells]);
+    if (cells.length >= totalDays) return cells.slice(cells.length - totalDays);
+    return [...Array.from({ length: totalDays - cells.length }, () => 0), ...cells];
+  }, [cells, totalDays]);
 
   const yearDays = React.useMemo<HeatDay[]>(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const start = addDays(today, -364);
-    return Array.from({ length: 365 }, (_, i) => ({ date: addDays(start, i), value: normalized[i] ?? 0 }));
-  }, [normalized]);
+    const start = new Date(today);
+    start.setDate(start.getDate() - (totalDays - 1));
+
+    return Array.from({ length: totalDays }, (_, i) => ({ 
+      date: addDays(start, i), 
+      value: normalized[i] ?? 0 
+    }));
+  }, [normalized, totalDays]);
 
   const leadingEmpty = React.useMemo(() => yearDays[0]?.date.getDay() ?? 0, [yearDays]);
 
@@ -68,7 +77,8 @@ export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cell
         return;
       }
       const month = first.date.getMonth();
-      const shouldShow = (first.date.getDate() <= 7) && month !== lastMonth;
+      const isStartOfMonth = first.date.getDate() <= 7;
+      const shouldShow = isStartOfMonth && month !== lastMonth;
       labels.push(shouldShow ? fmtMonth.format(first.date) : null);
       if (shouldShow) lastMonth = month;
     });
@@ -112,17 +122,17 @@ export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cell
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-[#34D399]/10 to-[#059669]/10 rounded-full blur-[80px] pointer-events-none -translate-y-1/2 translate-x-1/4 group-hover/heatmap:scale-[1.5] transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(16,185,129,0.03),transparent_60%)] pointer-events-none" />
 
-      {/* Header stats - Compressed */}
+      {/* Header stats - Rolling 365-day UI */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8 relative z-10">
         <div>
            <div className="flex items-center gap-2 mb-1.5">
              <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse" />
-             <span className="text-[10px] font-black text-[#10B981] uppercase tracking-[0.2em]">Live Telemetry</span>
+             <span className="text-[10px] font-black text-[#10B981] uppercase tracking-[0.2em]">Rolling 365-Day Matrix</span>
            </div>
            <h3 className="text-2xl font-black tracking-tighter text-dt-text">{title}</h3>
         </div>
         <div className="text-left sm:text-right flex flex-row sm:flex-col gap-2 sm:gap-1">
-          <div className="text-[14px] font-black text-dt-text"><span className="text-[#10B981] text-xl drop-shadow-sm">{total}</span> submissions past year</div>
+          <div className="text-[14px] font-black text-dt-text"><span className="text-[#10B981] text-xl drop-shadow-sm">{total}</span> submissions in the last 365 days</div>
           <div className="text-[11px] font-bold text-dt-textSecondary/80 tracking-wide uppercase">{activeDays} active days • Max streak: <span className="font-black text-[#10B981]">{maxStreak}</span></div>
         </div>
       </div>

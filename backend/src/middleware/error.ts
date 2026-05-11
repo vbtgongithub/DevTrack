@@ -2,7 +2,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { errorResponse, commonErrors } from '../shared/response.js';
-import { logger } from '../shared/logger.js';
+import { reportError } from '../shared/monitoring.js';
 
 export interface AppError extends Error {
   statusCode?: number;
@@ -12,16 +12,18 @@ export interface AppError extends Error {
 
 export function errorHandler(
   err: AppError,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ): void {
-  // Log the error
-  logger.error('Error caught by middleware', err, {
-    name: err.name,
-    message: err.message,
-    code: err.code,
-    statusCode: err.statusCode,
+  // Report to monitoring
+  reportError(err, {
+    path: req.path,
+    method: req.method,
+    metadata: {
+      code: err.code,
+      statusCode: err.statusCode,
+    },
   });
 
   // Handle Zod validation errors

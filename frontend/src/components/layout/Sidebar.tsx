@@ -39,7 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 type="button"
                 onClick={() => onNavigate(item.path)}
                 className={[
-                  'group w-full flex items-center gap-4 px-4 py-3 rounded-[20px] text-left transition-all duration-500 relative overflow-hidden',
+                  'group w-full flex items-center gap-4 px-4 py-3 rounded-[20px] text-left transition-all duration-500 relative overflow-hidden focus-visible:ring-2 focus-visible:ring-dt-primary focus-visible:ring-offset-2 outline-none',
                   item.isActive
                     ? 'bg-white shadow-dt-card border border-dt-primary/5 text-dt-primary'
                     : 'text-dt-textSecondary/60 hover:bg-white/50 hover:text-dt-text',

@@ -1,5 +1,5 @@
 // ============================================================================
-// settingsApi.ts — API service for Settings
+// settingsService.ts — API service for Settings
 // ============================================================================
 // Uses centralized axiosClient for auth, error normalization, and token refresh.
 // ============================================================================

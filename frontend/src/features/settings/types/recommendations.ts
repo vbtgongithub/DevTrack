@@ -13,7 +13,7 @@ export interface Recommendation {
   action?: {
     label: string;
     settingId: string;
-    value: any;
+    value: unknown;
   };
   context?: string;
   icon: string;
@@ -21,8 +21,8 @@ export interface Recommendation {
 
 export interface RecentChange {
   settingId: string;
-  previousValue: any;
-  newValue: any;
+  previousValue: unknown;
+  newValue: unknown;
   timestamp: Date;
 }
 
@@ -36,9 +36,8 @@ interface UserActivityContext {
 
 // Recommendation rules engine
 export function generateRecommendations(
-  settings: Record<string, any>,
-  userActivity?: UserActivityContext,
-  _recentChanges?: RecentChange[]
+  settings: Record<string, unknown>,
+  userActivity?: UserActivityContext
 ): Recommendation[] {
   const recommendations: Recommendation[] = [];
 
@@ -198,8 +197,8 @@ export function generateRecommendations(
 }
 
 // Get contextual helper hint for a setting
-export function getSettingHint(settingId: string, currentValue: any): string | null {
-  const hints: Record<string, { condition: (v: any) => boolean; hint: string }> = {
+export function getSettingHint(settingId: string, currentValue: unknown): string | null {
+  const hints: Record<string, { condition: (v: unknown) => boolean; hint: string }> = {
     'appearance.theme': {
       condition: (v) => v === 'dark',
       hint: 'Dark theme is easier on the eyes during night coding sessions.',

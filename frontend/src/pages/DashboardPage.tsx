@@ -1,20 +1,21 @@
 import React from 'react';
-import { useDashboardData } from '../../hooks/useDashboardData';
-import { fetchDsaContests } from '../../services/dsaService';
-import { DashboardHeader } from './DashboardHeader';
-import { StatsGrid } from './StatsGrid';
-import { TodaySummaryBar } from './TodaySummaryBar';
-import { EnhancedInsightsCard } from './EnhancedInsightsCard';
-import { ProgressCards } from './ProgressCards';
-import { GamificationPanel } from './GamificationPanel';
-import { AnnouncementSection } from './AnnouncementSection';
-import { ActionsPanel } from './ActionsPanel';
-import { MissionCard } from './MissionCard';
-import { GithubOverviewCard } from './GithubOverviewCard';
+import { useDashboardData } from '../hooks/useDashboardData';
+import { fetchDsaContests } from '../services/dsaService';
+import { type ApiDsaContestEntry } from '../types/api.types';
+import { DashboardHeader } from '../components/dashboard/DashboardHeader';
+import { StatsGrid } from '../components/dashboard/StatsGrid';
+import { TodaySummaryBar } from '../components/dashboard/TodaySummaryBar';
+import { EnhancedInsightsCard } from '../components/dashboard/EnhancedInsightsCard';
+import { ProgressCards } from '../components/dashboard/ProgressCards';
+import { GamificationPanel } from '../components/dashboard/GamificationPanel';
+import { AnnouncementSection } from '../components/dashboard/AnnouncementSection';
+import { ActionsPanel } from '../components/dashboard/ActionsPanel';
+import { MissionCard } from '../components/dashboard/MissionCard';
+import { GithubOverviewCard } from '../components/dashboard/GithubOverviewCard';
 
 const DashboardPage: React.FC = () => {
   const { data, loading, error } = useDashboardData();
-  const [contests, setContests] = React.useState<any[]>([]);
+  const [contests, setContests] = React.useState<{ name: string; platform: string; time: string }[]>([]);
 
   React.useEffect(() => {
     const loadContests = async () => {
@@ -26,8 +27,8 @@ const DashboardPage: React.FC = () => {
           sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
           const recent = allContests
-            .filter((c: any) => new Date(c.participatedAt) >= sevenDaysAgo)
-            .map((c: any) => ({
+            .filter((c: ApiDsaContestEntry) => new Date(c.participatedAt) >= sevenDaysAgo)
+            .map((c: ApiDsaContestEntry) => ({
               name: c.contestName,
               platform: c.platform,
               time: new Date(c.participatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })

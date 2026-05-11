@@ -4,7 +4,7 @@ import { SkeletonCard } from '../components/skeletons/SkeletonCard';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
 
 const DashboardPage = lazy(
-  () => import('../components/dashboard/DashboardPage')
+  () => import('../pages/DashboardPage')
 );
 
 
