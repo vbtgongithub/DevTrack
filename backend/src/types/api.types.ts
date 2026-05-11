@@ -649,3 +649,24 @@ export interface ApiPlatformStatsResponse {
     totalSolvedAllPlatforms: number;
   };
 }
+
+// Achievement Types
+export interface ApiAchievement {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  unlockedAt: string | null;
+  progress: number;
+  target: number;
+  isUnlocked: boolean;
+  category: 'streak' | 'problems' | 'contest' | 'projects' | 'social';
+  xpReward: number;
+}
+
+export interface ApiAchievementsResponse {
+  achievements: ApiAchievement[];
+  totalUnlocked: number;
+  totalAchievements: number;
+  totalXp: number;
+}

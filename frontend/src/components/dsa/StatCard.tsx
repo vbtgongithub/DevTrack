@@ -21,7 +21,7 @@ export const StatCard: React.FC<StatCardProps> = React.memo(({ data, className }
   return (
     <article
       className={[
-        'dt-card p-5',
+        'dt-card bg-gradient-to-br from-white to-dt-bg/50 border border-dt-primary/10 p-5',
         'flex items-center gap-4',
         className,
       ]

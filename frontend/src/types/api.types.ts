@@ -175,61 +175,6 @@ export interface ApiDashboardResponse {
 }
 
 // ---------------------------------------------------------------------------
-// 4. ACTIVITY / HEATMAP TYPES
-// ---------------------------------------------------------------------------
-
-export interface ApiActivityDay {
-  date: string;    // ISO 8601 date "2026-04-03"
-  count: number;
-  level: 0 | 1 | 2 | 3 | 4;
-  activities: ApiActivityEntry[];
-}
-
-export interface ApiActivityEntry {
-  id: string;
-  type: 'problem_solved' | 'commit_pushed' | 'pr_merged' | 'project_created' | 'project_updated' | 'project_deleted' | 'contest_participated' | 'streak_milestone' | 'note_added' | 'settings_updated';
-  title: string;
-  description: string;
-  platform: string;
-  url: string | null;
-  tags: string[];
-  metadata: Record<string, string | number | boolean>;
-  occurredAt: string; // ISO 8601
-}
-
-export interface ApiActivitySummary {
-  totalActivities: number;
-  totalActiveDays: number;
-  currentStreak: number;
-  longestStreak: number;
-  mostActiveDay: string;    // day of week
-  avgPerDay: number;
-  byPlatform: Record<string, number>;
-  byType: Record<string, number>;
-}
-
-export interface ApiActivityHeatmapResponse {
-  year: number;
-  days: ApiActivityDay[];
-  summary: ApiActivitySummary;
-}
-
-export interface ApiActivityFeedResponse {
-  activities: ApiActivityEntry[];
-  pagination: ApiPagination;
-}
-
-export interface ApiActivityFilters {
-  startDate?: string;
-  endDate?: string;
-  platform?: string;
-  type?: string;
-  tags?: string[];
-  page?: number;
-  pageSize?: number;
-}
-
-// ---------------------------------------------------------------------------
 // 5. DSA TRACKER TYPES
 // ---------------------------------------------------------------------------
 
@@ -667,4 +612,28 @@ export interface ApiPlatformStatsResponse {
   totals: {
     totalSolvedAllPlatforms: number;
   };
+}
+
+// ---------------------------------------------------------------------------
+// 10. ACHIEVEMENTS TYPES
+// ---------------------------------------------------------------------------
+
+export interface ApiAchievement {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  unlockedAt: string | null;
+  progress: number;
+  target: number;
+  isUnlocked: boolean;
+  category: 'streak' | 'problems' | 'contest' | 'projects' | 'social';
+  xpReward: number;
+}
+
+export interface ApiAchievementsResponse {
+  achievements: ApiAchievement[];
+  totalUnlocked: number;
+  totalAchievements: number;
+  totalXp: number;
 }

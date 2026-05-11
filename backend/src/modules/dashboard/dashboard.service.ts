@@ -16,6 +16,8 @@ import type {
   ApiPlatformStats,
   ApiMission,
   ApiDashboardRecentActivity,
+  ApiAchievement,
+  ApiAchievementsResponse,
 } from '../../types/api.types.js';
 import { getStartOfDay, formatISODate, getLast365Days, isSameDay } from '../../shared/date.js';
 
@@ -327,4 +329,223 @@ export async function getRecentActivity(userId: string, limit: number): Promise<
     metadata: activity.metadata || {},
     occurredAt: activity.occurredAt.toISOString(),
   }));
+}
+
+// Achievement definitions - derived from user stats
+interface AchievementDefinition {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  category: ApiAchievement['category'];
+  xpReward: number;
+  targets: { threshold: number; label: string }[];
+}
+
+const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
+  {
+    id: 'streak_3',
+    icon: '🔥',
+    title: 'Hot Streak',
+    description: 'Maintain a 3-day coding streak',
+    category: 'streak',
+    xpReward: 50,
+    targets: [{ threshold: 3, label: '3 days' }],
+  },
+  {
+    id: 'streak_7',
+    icon: '🔥',
+    title: 'Week Warrior',
+    description: 'Maintain a 7-day coding streak',
+    category: 'streak',
+    xpReward: 100,
+    targets: [{ threshold: 7, label: '7 days' }],
+  },
+  {
+    id: 'streak_30',
+    icon: '🔥',
+    title: 'Monthly Master',
+    description: 'Maintain a 30-day coding streak',
+    category: 'streak',
+    xpReward: 500,
+    targets: [{ threshold: 30, label: '30 days' }],
+  },
+  {
+    id: 'problems_10',
+    icon: '💯',
+    title: 'Century',
+    description: 'Solve 10 problems',
+    category: 'problems',
+    xpReward: 50,
+    targets: [{ threshold: 10, label: '10 problems' }],
+  },
+  {
+    id: 'problems_50',
+    icon: '💯',
+    title: 'Half Century',
+    description: 'Solve 50 problems',
+    category: 'problems',
+    xpReward: 200,
+    targets: [{ threshold: 50, label: '50 problems' }],
+  },
+  {
+    id: 'problems_100',
+    icon: '💯',
+    title: 'Centurion',
+    description: 'Solve 100 problems',
+    category: 'problems',
+    xpReward: 500,
+    targets: [{ threshold: 100, label: '100 problems' }],
+  },
+  {
+    id: 'problems_500',
+    icon: '💯',
+    title: 'Grand Master',
+    description: 'Solve 500 problems',
+    category: 'problems',
+    xpReward: 1000,
+    targets: [{ threshold: 500, label: '500 problems' }],
+  },
+  {
+    id: 'contest_1',
+    icon: '🏆',
+    title: 'Contest Debut',
+    description: 'Participate in your first contest',
+    category: 'contest',
+    xpReward: 50,
+    targets: [{ threshold: 1, label: '1 contest' }],
+  },
+  {
+    id: 'contest_10',
+    icon: '🏆',
+    title: 'Contest Regular',
+    description: 'Participate in 10 contests',
+    category: 'contest',
+    xpReward: 200,
+    targets: [{ threshold: 10, label: '10 contests' }],
+  },
+  {
+    id: 'contest_50',
+    icon: '🏆',
+    title: 'Contest Champion',
+    description: 'Participate in 50 contests',
+    category: 'contest',
+    xpReward: 500,
+    targets: [{ threshold: 50, label: '50 contests' }],
+  },
+  {
+    id: 'projects_1',
+    icon: '🎯',
+    title: 'Project Starter',
+    description: 'Create your first project',
+    category: 'projects',
+    xpReward: 50,
+    targets: [{ threshold: 1, label: '1 project' }],
+  },
+  {
+    id: 'projects_5',
+    icon: '🎯',
+    title: 'Product Builder',
+    description: 'Create 5 projects',
+    category: 'projects',
+    xpReward: 200,
+    targets: [{ threshold: 5, label: '5 projects' }],
+  },
+  {
+    id: 'projects_10',
+    icon: '🎯',
+    title: 'Project Architect',
+    description: 'Create 10 projects',
+    category: 'projects',
+    xpReward: 500,
+    targets: [{ threshold: 10, label: '10 projects' }],
+  },
+  {
+    id: 'hard_10',
+    icon: '⚡',
+    title: 'Hardcore',
+    description: 'Solve 10 hard problems',
+    category: 'problems',
+    xpReward: 150,
+    targets: [{ threshold: 10, label: '10 hard problems' }],
+  },
+  {
+    id: 'hard_50',
+    icon: '⚡',
+    title: 'Hard Master',
+    description: 'Solve 50 hard problems',
+    category: 'problems',
+    xpReward: 500,
+    targets: [{ threshold: 50, label: '50 hard problems' }],
+  },
+];
+
+export async function getAchievements(userId: string): Promise<ApiAchievementsResponse> {
+  // Get user stats to derive achievements
+  const [dashboardStats, platformStats] = await Promise.all([
+    getDashboardStats(userId),
+    getPlatformStats(userId),
+  ]);
+
+  const totalProblems = platformStats.reduce((sum, p) => sum + p.totalSolved, 0);
+  const totalHard = platformStats.reduce((sum, p) => sum + p.hardSolved, 0);
+  const totalContests = platformStats.reduce((sum, p) => sum + p.totalContests, 0);
+  const currentStreak = dashboardStats.currentStreak;
+  const totalProjects = dashboardStats.totalProjects;
+
+  // Calculate achievements based on stats
+  const achievements: ApiAchievement[] = ACHIEVEMENT_DEFINITIONS.map((def) => {
+    let progress = 0;
+    let target = def.targets[0].threshold;
+    let isUnlocked = false;
+
+    switch (def.category) {
+      case 'streak':
+        progress = Math.min(currentStreak, target);
+        isUnlocked = currentStreak >= target;
+        break;
+      case 'problems':
+        if (def.id.includes('hard')) {
+          progress = Math.min(totalHard, target);
+          isUnlocked = totalHard >= target;
+        } else {
+          progress = Math.min(totalProblems, target);
+          isUnlocked = totalProblems >= target;
+        }
+        break;
+      case 'contest':
+        progress = Math.min(totalContests, target);
+        isUnlocked = totalContests >= target;
+        break;
+      case 'projects':
+        progress = Math.min(totalProjects, target);
+        isUnlocked = totalProjects >= target;
+        break;
+      default:
+        break;
+    }
+
+    return {
+      id: def.id,
+      icon: def.icon,
+      title: def.title,
+      description: def.description,
+      unlockedAt: isUnlocked ? new Date().toISOString() : null,
+      progress,
+      target,
+      isUnlocked,
+      category: def.category,
+      xpReward: def.xpReward,
+    };
+  });
+
+  const totalUnlocked = achievements.filter((a) => a.isUnlocked).length;
+  const totalXp = achievements.filter((a) => a.isUnlocked).reduce((sum, a) => sum + a.xpReward, 0);
+
+  return {
+    achievements,
+    totalUnlocked,
+    totalAchievements: achievements.length,
+    totalXp,
+  };
 }

@@ -17,34 +17,38 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ title, progress, insight, i
     return () => clearTimeout(t);
   }, []);
 
-  const progressColor = progress >= 80 ? 'from-emerald-500 to-emerald-400' : progress >= 50 ? 'from-blue-500 to-indigo-500' : 'from-amber-500 to-orange-500';
-  const progressBg = progress >= 80 ? 'bg-emerald-100' : progress >= 50 ? 'bg-blue-100' : 'bg-amber-100';
-  const iconBg = progress >= 80 ? 'bg-emerald-50' : progress >= 50 ? 'bg-blue-50' : 'bg-amber-50';
-  const iconColor = progress >= 80 ? 'text-emerald-600' : progress >= 50 ? 'text-blue-600' : 'text-amber-600';
+  const progressColor = progress >= 80 ? 'from-dt-success to-emerald-400' : progress >= 50 ? 'from-dt-primary to-dt-secondary' : 'from-dt-warning to-amber-400';
+  const progressBg = progress >= 80 ? 'bg-dt-success/10' : progress >= 50 ? 'bg-dt-primary/10' : 'bg-dt-warning/10';
+  const iconBg = progress >= 80 ? 'bg-dt-success/10' : progress >= 50 ? 'bg-dt-primary/10' : 'bg-dt-warning/10';
+  const iconColor = progress >= 80 ? 'text-dt-success' : progress >= 50 ? 'text-dt-primary' : 'text-dt-warning';
+  const accentColor = progress >= 80 ? 'bg-dt-success' : progress >= 50 ? 'bg-dt-primary' : 'bg-dt-warning';
 
   return (
     <div
-      className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out flex flex-col gap-3"
+      className="dt-card bg-gradient-to-br from-white to-dt-bg/50 border-dt-primary/10 p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 ease-out flex flex-col gap-4 relative overflow-hidden group"
       style={{ animation: `dtFadeIn 520ms ease-out ${index * 80}ms both` }}
     >
+      {/* Top accent line */}
+      <div className={`absolute top-0 left-0 right-0 h-1.5 ${accentColor} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={['w-10 h-10 rounded-xl flex items-center justify-center', iconBg].join(' ')}>
+          <div className={['w-10 h-10 rounded-xl flex items-center justify-center border border-transparent shadow-sm', iconBg, progress >= 50 && progress < 80 ? 'border-dt-primary/10' : ''].join(' ')}>
             <Icon name={icon} size={18} className={iconColor} />
           </div>
-          <span className="text-sm font-semibold text-gray-900">{title}</span>
+          <span className="text-[15px] font-bold text-dt-text tracking-tight">{title}</span>
         </div>
-        <span className="text-lg font-bold text-gray-900 tabular-nums">{progress}%</span>
+        <span className="text-xl font-extrabold text-dt-text tabular-nums">{progress}%</span>
       </div>
 
-      <div className={['h-3 w-full rounded-full overflow-hidden', progressBg].join(' ')}>
+      <div className={['h-2.5 w-full rounded-full overflow-hidden shadow-inner', progressBg].join(' ')}>
         <div
-          className={['h-full rounded-full bg-gradient-to-r transition-all duration-700 ease-out', progressColor].join(' ')}
+          className={['h-full rounded-full bg-gradient-to-r transition-all duration-700 ease-out shadow-sm', progressColor].join(' ')}
           style={{ width: mounted ? `${progress}%` : '0%' }}
         />
       </div>
 
-      <p className="text-xs text-gray-500 leading-relaxed">{insight}</p>
+      <p className="text-[13px] font-medium text-dt-textSecondary leading-relaxed">{insight}</p>
     </div>
   );
 };
@@ -93,7 +97,7 @@ export const ProgressCards: React.FC<ProgressCardsProps> = ({ platformStats }) =
   // If no data, show empty state
   if (progressItems.length === 0) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-8">
         {[
           { title: 'Weekly Problem Goal', icon: 'target' },
           { title: 'Easy/Medium Ratio', icon: 'chart-bar' },
@@ -101,22 +105,25 @@ export const ProgressCards: React.FC<ProgressCardsProps> = ({ platformStats }) =
         ].map((item, index) => (
           <div
             key={item.title}
-            className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex flex-col gap-3"
-            style={{ animation: `dtFadeIn 520ms ease-out ${index * 80}ms both` }}
+            className="bg-white/40 backdrop-blur-2xl border border-dt-primary/10 p-7 rounded-[24px] shadow-[0_8px_30px_rgba(124,92,252,0.05)] hover:shadow-[0_12px_40px_rgba(124,92,252,0.08)] hover:-translate-y-1 transition-all duration-500 cubic-bezier(0.22, 1, 0.36, 1) flex flex-col gap-5 relative overflow-hidden group"
+            style={{ animation: `dtFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 80}ms both` }}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-50">
-                  <Icon name={item.icon} size={18} className="text-gray-400" />
+            <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none transform translate-x-4 -translate-y-4 group-hover:scale-[1.3] group-hover:rotate-12 transition-transform duration-700">
+              <Icon name={item.icon} size={80} className="text-dt-text" />
+            </div>
+            <div className="flex items-center justify-between relative z-10">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-[16px] flex items-center justify-center bg-white/60 border border-dt-primary/10 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                  <Icon name={item.icon} size={22} className="text-dt-textMuted" />
                 </div>
-                <span className="text-sm font-semibold text-gray-900">{item.title}</span>
+                <span className="text-[15px] font-black text-dt-text tracking-tight leading-snug">{item.title}</span>
               </div>
-              <span className="text-lg font-bold text-gray-400 tabular-nums">—</span>
+              <span className="text-2xl font-extrabold text-dt-textDisabled tabular-nums">—</span>
             </div>
-            <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-gray-200 rounded-full" style={{ width: '0%' }} />
+            <div className="h-2 w-full bg-dt-primary/5 rounded-full overflow-hidden shadow-inner relative z-10">
+              <div className="h-full bg-transparent" style={{ width: '0%' }} />
             </div>
-            <p className="text-xs text-gray-400 leading-relaxed">Sync platforms to track progress</p>
+            <p className="text-[13px] text-dt-textSecondary leading-relaxed font-bold tracking-tight relative z-10">Connect platforms to track progress</p>
           </div>
         ))}
       </div>
@@ -124,7 +131,7 @@ export const ProgressCards: React.FC<ProgressCardsProps> = ({ platformStats }) =
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-1 gap-5 lg:gap-8">
       {progressItems.map((item, index) => (
         <ProgressCard key={item.id} title={item.title} progress={item.progress} insight={item.insight} icon={item.icon} index={index} />
       ))}

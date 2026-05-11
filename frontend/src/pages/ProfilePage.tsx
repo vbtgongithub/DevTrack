@@ -151,7 +151,7 @@ const ProfilePage: React.FC = () => {
 
           {/* ─── 5. Empty State ───────────────────────────────────────── */}
           {!hasAnyStats && !isLoading && (
-            <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#6b7280', fontSize: '0.875rem' }}>
+            <div style={{ textAlign: 'center', padding: '2rem 1rem', fontSize: '0.875rem' }} className="text-dt-textSecondary">
               <Icon name="chart-bar" size={24} />
               <p style={{ marginTop: '0.5rem' }}>No data available. Please sync your platforms.</p>
             </div>

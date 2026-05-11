@@ -2,6 +2,7 @@ import { PageShell } from '../components/layout/PageShell';
 import { useDsaData } from '../hooks/useDsaData';
 import React from 'react';
 import { HeatmapCard } from '../components/dsa/HeatmapCard';
+import { DsaHero } from '../components/dsa/DsaHero';
 import { SubmissionsTable } from '../components/dsa/SubmissionsTable';
 import { TopicProgress } from '../components/dsa/TopicProgress';
 import { PlatformOverview } from '../components/dsa/PlatformOverview';
@@ -9,65 +10,6 @@ import { ContestList } from '../components/dsa/ContestList';
 import { InsightsCard } from '../components/dsa/InsightsCard';
 import { Icon } from '../components/shared/Icon';
 import type { DsaData } from '../types/dsa';
-
-/* ─── Summary Bar ─── */
-const DsaSummaryBar: React.FC<{ heatmap: number[]; stats: DsaData['stats'] }> = ({ heatmap, stats }) => {
-  const activeDays = React.useMemo(() => heatmap.filter((v) => v > 0).length, [heatmap]);
-
-  const totalSolvedStat = stats.find((s) => s.label === 'Problems Solved');
-  const totalSolved = totalSolvedStat?.value ?? '0';
-
-  const lcRatingStat = stats.find((s) => s.label === 'LeetCode Rating');
-  const ratingDisplay = lcRatingStat?.value && lcRatingStat.value !== '—'
-    ? `LeetCode rating: ${lcRatingStat.value}`
-    : (() => {
-      const cfStat = stats.find((s) => s.label === 'CF Rating');
-      return cfStat?.value && cfStat.value !== '—'
-        ? `Codeforces rating: ${cfStat.value}`
-        : 'No rating data yet';
-    })();
-
-  const summaryItems = [
-    { emoji: '📊', text: `Total solved: ${totalSolved}`, type: 'blue' },
-    { emoji: '📅', text: `${activeDays} active days recorded`, type: 'green' },
-    { emoji: '🎯', text: ratingDisplay, type: 'orange' },
-    {
-      emoji: '🏆',
-      text: (() => {
-        const cc = stats.find((s) => s.label === 'CodeChef Rating');
-        return cc?.value && cc.value !== '—' ? `CodeChef rating: ${cc.value}` : 'Add profiles in Profile page';
-      })(),
-      type: 'purple',
-    },
-  ];
-
-  const colorMap: Record<string, string> = {
-    blue: 'bg-blue-50 border-blue-200 text-blue-800',
-    green: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-    orange: 'bg-orange-50 border-orange-200 text-orange-800',
-    purple: 'bg-violet-50 border-violet-200 text-violet-800',
-  };
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-      {summaryItems.map((item, idx) => (
-        <div
-          key={idx}
-          className={[
-            'flex items-center gap-3 px-4 py-3 rounded-xl border',
-            'hover:shadow-md hover:-translate-y-0.5',
-            'transition-all duration-200 ease-out cursor-default',
-            colorMap[item.type],
-          ].join(' ')}
-          style={{ animation: `dtFadeIn 520ms ease-out ${idx * 80}ms both` }}
-        >
-          <span className="text-lg shrink-0">{item.emoji}</span>
-          <span className="text-sm font-medium leading-snug">{item.text}</span>
-        </div>
-      ))}
-    </div>
-  );
-};
 
 const DsaPage: React.FC = () => {
   const { data, loading, error } = useDsaData();
@@ -126,49 +68,110 @@ const DsaPage: React.FC = () => {
   }
 
   return (
-    <div className={['transition-opacity duration-300', mounted ? 'opacity-100' : 'opacity-0'].join(' ')}>
+    <div className={['transition-all duration-700 cubic-bezier(0.22, 1, 0.36, 1)', mounted ? 'opacity-100' : 'opacity-0'].join(' ')}>
       <PageShell
-        title="DSA Progress"
-        subtitle="Track, analyze, and improve your problem-solving skills"
+        title="DSA Tracker"
+        subtitle="Intelligent monitoring of your problem-solving architecture"
         status="success"
         error={null}
         actions={(
           <button
             type="button"
-            className={[
-              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white',
-              'bg-gray-900 hover:bg-black shadow-sm hover:shadow-md',
-              'transition-all duration-200 cursor-pointer',
-            ].join(' ')}
+            className="inline-flex items-center gap-2 rounded-[14px] px-6 py-2.5 text-[13px] font-black uppercase tracking-widest text-white bg-dt-text shadow-dt-floating hover:shadow-dt-card-hover hover:scale-[1.05] active:scale-[0.95] transition-all duration-500 cubic-bezier(0.22, 1, 0.36, 1)"
           >
-            <Icon name="folder-plus" size={16} className="text-white" />
-            Log Submission
+            <Icon name="plus" size={14} className="text-white" />
+            Log Packet
           </button>
         )}
       >
-        {/* ─── Single-column vertical flow ─── */}
-        <div className="mx-auto w-full max-w-[1000px] flex flex-col gap-6">
+        <div className="mx-auto w-full max-w-[1200px] flex flex-col gap-6 pb-16 relative">
 
-          {/* 0. Summary Bar */}
-          <DsaSummaryBar heatmap={heatmap365} stats={safeData.stats} />
+          {/* Elite Atmospheric System - Tighter & More Focused */}
+          <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+            <div className="absolute top-[8%] left-[5%] w-[600px] h-[600px] bg-dt-primary/3 rounded-full blur-[100px] opacity-50" />
+            <div className="absolute top-[50%] right-[0%] w-[400px] h-[500px] bg-dt-secondary/2 rounded-full blur-[80px] opacity-40" />
+            <div className="absolute bottom-[20%] left-[10%] w-[500px] h-[400px] bg-indigo-500/2 rounded-full blur-[90px] opacity-20" />
+          </div>
 
-          {/* 1. Heatmap — primary visual */}
-          <HeatmapCard title="Consistency" cells={heatmap365} />
+          <div className="relative z-10 flex flex-col gap-6">
+            {/* Command Surface: Hero + Heatmap - Compressed */}
+            <div className="flex flex-col gap-4">
+              <DsaHero heatmap={heatmap365} stats={safeData.stats} />
+              <HeatmapCard title="Velocity Matrix" cells={heatmap365} />
+            </div>
 
-          {/* 2. Recent Submissions */}
-          <SubmissionsTable title="Recent Submissions" submissions={safeData.submissions} />
+            {/* Core Operation Layer - Tighter Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              <div className="lg:col-span-7 flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-dt-primary/5 flex items-center justify-center text-dt-primary border border-dt-primary/10">
+                     <Icon name="bolt" size={16} />
+                  </div>
+                  <div>
+                    <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Recent Telemetry</h2>
+                    <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">Live submission stream</p>
+                  </div>
+                </div>
+                <SubmissionsTable title="Recent Submissions" submissions={safeData.submissions} />
+              </div>
 
-          {/* 3. Topic Mastery */}
-          <TopicProgress title="Topic Mastery" topics={safeData.topics} />
+              <div className="lg:col-span-5 flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-dt-secondary/5 flex items-center justify-center text-dt-secondary border border-dt-secondary/10">
+                     <Icon name="trophy" size={16} />
+                  </div>
+                  <div>
+                    <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Competition Matrix</h2>
+                    <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">Performance packets</p>
+                  </div>
+                </div>
+                <ContestList title="Contests" contests={safeData.contests} />
+              </div>
+            </div>
 
-          {/* 4. Contest History */}
-          <ContestList title="Contest History" contests={safeData.contests} />
+            {/* Neural Analytics Layer - Tighter */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              <div className="lg:col-span-5 flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/5 flex items-center justify-center text-emerald-600 border border-emerald-500/10">
+                     <Icon name="chart-bar" size={16} />
+                  </div>
+                  <div>
+                    <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Topic DNA</h2>
+                    <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">Algorithmic vectors</p>
+                  </div>
+                </div>
+                <TopicProgress title="Mastery Progress" topics={safeData.topics} />
+              </div>
 
-          {/* 5. Platform Overview */}
-          <PlatformOverview title="Platform Overview" items={safeData.platformOverview} submissions={safeData.submissions} />
+              <div className="lg:col-span-7 flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-dt-primary/5 flex items-center justify-center text-dt-primary border border-dt-primary/10">
+                     <Icon name="cpu-chip" size={16} />
+                  </div>
+                  <div>
+                    <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Neural Synthesis</h2>
+                    <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">AI-driven ROI analysis</p>
+                  </div>
+                </div>
+                <InsightsCard title="Growth Insights" submissions={safeData.submissions} topics={safeData.topics} />
+              </div>
+            </div>
 
-          {/* 6. Insights */}
-          <InsightsCard title="Insights" submissions={safeData.submissions} topics={safeData.topics} stats={safeData.stats} />
+            {/* Infrastructure Layer - Compressed */}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-dt-text/5 flex items-center justify-center text-dt-text border border-dt-text/10">
+                   <Icon name="globe-alt" size={16} />
+                </div>
+                <div>
+                  <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Global Node Distribution</h2>
+                  <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">Ecosystem contribution density</p>
+                </div>
+              </div>
+              <PlatformOverview title="Ecosystem Metrics" items={safeData.platformOverview} submissions={safeData.submissions} />
+            </div>
+          </div>
         </div>
       </PageShell>
     </div>

@@ -66,6 +66,10 @@ export interface UpdateSettingsPayload {
     leetcode?: PlatformConfig;
     codechef?: PlatformConfig;
   };
+  notifications?: Partial<NotificationSettings>;
+  appearance?: Partial<AppearanceSettings>;
+  privacy?: Partial<PrivacySettings>;
+  // For profile changes, usually goes to another endpoint, but let's assume it's here or we can just mock the UI first.
 }
 
 export interface SyncGithubResponse {

@@ -31,30 +31,30 @@ export const PricingCard: React.FC<PricingCardProps> = ({
       viewport={{ once: true }}
       transition={{ delay }}
       whileHover={{ y: -8 }}
-      className={`relative p-6 rounded-3xl border transition-all duration-300 ${
+      className={`relative p-6 rounded-3xl border transition-all duration-300 dt-card ${
         popular
-          ? 'bg-white border-[#7C6CF2]/40 shadow-2xl shadow-[#7C6CF2]/10 scale-105'
-          : 'bg-[#FAFAF8] border-[rgba(15,23,42,0.06)] hover:border-[rgba(15,23,42,0.1)]'
+          ? 'bg-dt-surface border-dt-primary/40 shadow-dt-glow shadow-dt-primary/20 scale-105 z-10'
+          : 'bg-dt-elevated border-dt-primary/10 hover:border-dt-primary/20 shadow-sm hover:shadow-dt-card-hover'
       }`}
     >
       {popular && (
-        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-4 py-1.5 bg-gradient-to-r from-[#7C6CF2] to-[#A78BFA] rounded-full text-xs font-semibold text-white shadow-lg shadow-purple-500/30">
+        <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 px-4 py-1.5 bg-gradient-to-r from-dt-primary to-dt-secondary rounded-full text-[11px] uppercase tracking-wider font-bold text-white shadow-lg shadow-purple-500/30">
           Most Popular
         </div>
       )}
 
-      <div className="text-lg font-semibold text-[#0F172A] mb-2">{name}</div>
+      <div className="text-[17px] font-bold text-dt-text tracking-tight mb-2">{name}</div>
       <div className="flex items-baseline gap-1 mb-2">
-        <span className="text-4xl font-bold text-[#0F172A]">{price}</span>
-        {period && <span className="text-sm text-[#64748B]">{period}</span>}
+        <span className="text-4xl font-extrabold text-dt-text tracking-tight">{price}</span>
+        {period && <span className="text-[13px] font-semibold text-dt-textSecondary">{period}</span>}
       </div>
-      <p className="text-sm text-[#64748B] mb-6">{description}</p>
+      <p className="text-[14px] font-medium text-dt-textSecondary mb-6">{description}</p>
 
       <ul className="space-y-3 mb-8">
         {features.map((feature, j) => (
-          <li key={j} className="flex items-center gap-2 text-sm text-[#64748B]">
-            <svg className="w-4 h-4 text-[#7C6CF2] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          <li key={j} className="flex items-center gap-2 text-[14px] font-medium text-dt-textSecondary">
+            <svg className="w-4 h-4 text-dt-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
             {feature}
           </li>
@@ -65,10 +65,10 @@ export const PricingCard: React.FC<PricingCardProps> = ({
         onClick={onCtaClick}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className={`w-full py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+        className={`w-full py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
           popular
-            ? 'bg-gradient-to-r from-[#7C6CF2] to-[#A78BFA] text-white shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30'
-            : 'bg-white text-[#0F172A] hover:bg-[#F1EFEA] border border-[rgba(15,23,42,0.06)] shadow-[0_1px_2px_rgba(15,23,42,0.04)]'
+            ? 'bg-gradient-to-r from-dt-primary to-dt-secondary text-white shadow-lg shadow-dt-primary/20 hover:shadow-dt-primary/30'
+            : 'bg-dt-surface text-dt-text hover:bg-dt-bg border border-dt-primary/10 shadow-sm'
         }`}
       >
         {cta}

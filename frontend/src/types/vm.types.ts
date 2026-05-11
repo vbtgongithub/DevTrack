@@ -146,65 +146,6 @@ export interface RecentActivityVM {
 }
 
 // ---------------------------------------------------------------------------
-// 3. ACTIVITY VM TYPES
-// ---------------------------------------------------------------------------
-
-export interface ActivityPageVM {
-  heatmap: ActivityHeatmapVM;
-  feed: ActivityFeedVM;
-  summary: ActivitySummaryVM;
-  filters: ActivityFilterOptionsVM;
-}
-
-export interface ActivityHeatmapVM {
-  year: number;
-  days: HeatmapDayVM[];
-  monthLabels: string[];      // ["Jan", "Feb", ...]
-  weekdayLabels: string[];    // ["Mon", "Wed", "Fri"]
-  totalContributions: string; // "1,247 contributions in 2026"
-  legendLevels: { label: string; level: number }[];
-}
-
-export interface ActivityFeedVM {
-  items: ActivityFeedItemVM[];
-  hasMore: boolean;
-  currentPage: number;
-  totalPages: number;
-}
-
-export interface ActivityFeedItemVM {
-  id: string;
-  icon: string;
-  title: string;
-  description: string;
-  platform: string;
-  platformIcon: string;
-  tags: string[];
-  url: string | null;
-  timeAgo: string;          // "2 hours ago"
-  dateFormatted: string;    // "Apr 3, 2026"
-  typeLabel: string;
-  typeColor: string;
-}
-
-export interface ActivitySummaryVM {
-  totalActivities: string;   // "1,247"
-  activeDays: string;        // "182"
-  currentStreak: string;     // "12"
-  longestStreak: string;     // "34"
-  mostActiveDay: string;     // "Wednesday"
-  avgPerDay: string;         // "6.8"
-  platformBreakdown: { platform: string; count: string; percent: number; color: string }[];
-  typeBreakdown: { type: string; label: string; count: string; percent: number; color: string }[];
-}
-
-export interface ActivityFilterOptionsVM {
-  platforms: { value: string; label: string }[];
-  types: { value: string; label: string }[];
-  dateRanges: { value: string; label: string }[];
-}
-
-// ---------------------------------------------------------------------------
 // 4. DSA TRACKER VM TYPES
 // ---------------------------------------------------------------------------
 

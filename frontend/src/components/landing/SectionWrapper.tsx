@@ -16,7 +16,7 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
   id, 
   className = '', 
   children,
-  bgConfig = { color: 'bg-[#F7F6F3]', hasGlow: false, glowPositions: [] }
+  bgConfig = { color: 'bg-dt-bg', hasGlow: false, glowPositions: [] }
 }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-10%' });
@@ -26,19 +26,19 @@ export const SectionWrapper: React.FC<SectionWrapperProps> = ({
       {bgConfig.hasGlow && (
         <div className="absolute inset-0 pointer-events-none">
           {bgConfig.glowPositions?.includes('top-left') && (
-            <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#7C6CF2]/5 rounded-full blur-[120px]" />
+            <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-dt-primary/5 rounded-full blur-[120px]" />
           )}
           {bgConfig.glowPositions?.includes('top-right') && (
-            <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-[#A78BFA]/5 rounded-full blur-[120px]" />
+            <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-dt-secondary/5 rounded-full blur-[120px]" />
           )}
           {bgConfig.glowPositions?.includes('bottom-left') && (
-            <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-[#7C6CF2]/5 rounded-full blur-[100px]" />
+            <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-dt-primary/5 rounded-full blur-[100px]" />
           )}
           {bgConfig.glowPositions?.includes('bottom-right') && (
-            <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#A78BFA]/5 rounded-full blur-[120px]" />
+            <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-dt-secondary/5 rounded-full blur-[120px]" />
           )}
           {bgConfig.glowPositions?.includes('center') && (
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#7C6CF2]/10 rounded-full blur-[120px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-dt-primary/10 rounded-full blur-[120px]" />
           )}
         </div>
       )}

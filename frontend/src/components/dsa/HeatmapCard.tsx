@@ -25,9 +25,9 @@ const addDays = (d: Date, delta: number) => {
   return x;
 };
 
-const CELL = 10;
-const GAP = 3;
-const RADIUS = 2;
+const CELL = 8;
+const GAP = 2;
+const RADIUS = 1;
 
 export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cells, className }) => {
   const normalized = React.useMemo(() => {
@@ -102,34 +102,40 @@ export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cell
   return (
     <section
       className={[
-        'bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ease-out',
+        'bg-white/40 backdrop-blur-2xl border border-dt-primary/10 rounded-2xl p-4 sm:p-5 shadow-dt-card group/heatmap',
+        'hover:shadow-dt-floating hover:-translate-y-0.5 transition-all duration-500 relative overflow-hidden',
         className,
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      {/* Header stats */}
-      <div className="flex items-start justify-between gap-4">
-        <h3 className="text-lg font-semibold tracking-tight text-dt-text">{title}</h3>
-        <div className="text-right">
-          <div className="text-sm font-medium text-dt-text">{total} submissions in the past year</div>
-          <div className="mt-0.5 text-sm text-dt-muted">{activeDays} active days • Max streak: {maxStreak}</div>
+      <div className="absolute top-0 right-0 w-[250px] h-[250px] bg-dt-primary/5 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/3 opacity-40 group-hover/heatmap:scale-105 transition-transform duration-700" />
+
+      {/* Header stats - Compressed */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-4 relative z-10">
+        <div>
+           <h3 className="text-[15px] font-black tracking-tighter text-dt-text">{title}</h3>
+           <p className="text-[9px] font-black text-dt-textSecondary/50 tracking-widest uppercase mt-0.5">Consistency Matrix</p>
+        </div>
+        <div className="text-left sm:text-right flex flex-row sm:flex-col gap-2 sm:gap-0">
+          <div className="text-[12px] font-bold text-dt-text"><span className="text-dt-primary">{total}</span> submissions past year</div>
+          <div className="text-[10px] font-medium text-dt-textMuted opacity-70">{activeDays} active days • Max streak: <span className="font-bold text-dt-textSecondary">{maxStreak}</span></div>
         </div>
       </div>
 
-      {/* Heatmap grid — no horizontal scroll */}
+      {/* Heatmap grid - Tighter */}
       <div
         ref={wrapperRef}
-        className="mt-4 relative"
+        className="mt-2 relative"
         onMouseLeave={() => setTooltip(null)}
       >
         {/* Month labels */}
-        <div className="flex dt-fade-in" style={{ gap: GAP, marginBottom: 6 }}>
+        <div className="flex dt-fade-in" style={{ gap: GAP, marginBottom: 8 }}>
           {monthLabels.map((m, i) => (
             <div
               key={`m-${i}`}
               style={{ width: CELL, flexShrink: 0, overflow: 'visible' }}
-              className="text-[10px] text-dt-muted leading-none whitespace-nowrap"
+              className="text-[9px] font-bold text-dt-textMuted/60 leading-none whitespace-nowrap uppercase tracking-tighter"
             >
               {m ?? ''}
             </div>
@@ -147,7 +153,7 @@ export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cell
                     key={`cell-${weekIndex}-${dayIndex}`}
                     onMouseEnter={(e) => {
                       if (!day) return;
-                      const label = `${fmtDate.format(day.date)} — ${value} problem${value !== 1 ? 's' : ''} solved`;
+                      const label = `${fmtDate.format(day.date)} — ${value} problem${value !== 1 ? 's' : ''}`;
                       const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
                       const host = wrapperRef.current?.getBoundingClientRect();
                       if (!host) return;
@@ -164,6 +170,7 @@ export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cell
                       backgroundColor: colorFor(value),
                       flexShrink: 0,
                     }}
+                    className="hover:scale-125 hover:z-10 transition-transform duration-200 cursor-crosshair"
                     aria-label={day ? `${fmtDate.format(day.date)}: ${value} problems solved` : undefined}
                   />
                 );
@@ -178,21 +185,23 @@ export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cell
             className="pointer-events-none absolute z-20"
             style={{ left: tooltip.x, top: tooltip.y }}
           >
-            <div className="-translate-x-1/2 -translate-y-3 rounded-md border border-black/5 bg-white px-2.5 py-1.5 text-xs font-medium text-dt-text shadow-sm whitespace-nowrap">
+            <div className="-translate-x-1/2 -translate-y-4 rounded-lg border border-dt-primary/10 bg-white/90 backdrop-blur-md px-2.5 py-1.5 text-[10px] font-black text-dt-text shadow-dt-floating whitespace-nowrap uppercase tracking-widest animate-in fade-in zoom-in duration-200">
               {tooltip.text}
             </div>
           </div>
         ) : null}
 
         {/* Legend */}
-        <div className="mt-3 flex justify-end items-center gap-2 text-xs text-dt-muted">
+        <div className="mt-6 flex justify-end items-center gap-2.5 text-[9px] font-black uppercase tracking-widest text-dt-textMuted/50">
           <span>Less</span>
-          {[0, 1, 2, 3, 4].map((v) => (
-            <div
-              key={`leg-${v}`}
-              style={{ width: CELL, height: CELL, borderRadius: RADIUS, backgroundColor: colorFor(v) }}
-            />
-          ))}
+          <div className="flex gap-1">
+            {[0, 1, 2, 3, 4].map((v) => (
+              <div
+                key={`leg-${v}`}
+                style={{ width: CELL, height: CELL, borderRadius: RADIUS, backgroundColor: colorFor(v) }}
+              />
+            ))}
+          </div>
           <span>More</span>
         </div>
       </div>

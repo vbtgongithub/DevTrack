@@ -1,6 +1,7 @@
 import React from 'react';
 import type { SidebarProps } from '../../types/ui.types';
 import { Icon } from '../shared/Icon';
+import { motion } from 'framer-motion';
 
 export const Sidebar: React.FC<SidebarProps> = ({
   navItems,
@@ -10,77 +11,140 @@ export const Sidebar: React.FC<SidebarProps> = ({
   profile,
 }) => {
   return (
-    <aside className="w-64 bg-transparent border-r border-black/5 flex flex-col">
-      <div className="h-16 px-6 flex items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-md flex items-center justify-center bg-dt-surface border border-black/5 text-dt-text shadow-sm">
-            <Icon name="bolt" size={18} className="w-5 h-5 object-contain" />
+    <aside className="w-[260px] xl:w-[280px] flex-col hidden lg:flex relative z-40 py-6 px-4 border-r border-dt-primary/[0.04] bg-white/40 backdrop-blur-[30px]">
+      {/* ─── Brand & Workspace ─── */}
+      <div className="px-3 mb-8 shrink-0">
+        <div className="flex items-center gap-4 group cursor-pointer p-2 rounded-2xl hover:bg-white/60 transition-all duration-300">
+          <div className="w-10 h-10 rounded-[14px] flex items-center justify-center bg-gradient-to-br from-dt-primary to-dt-secondary text-white shadow-dt-glow group-hover:scale-110 transition-transform duration-500">
+            <Icon name="bolt" size={20} />
           </div>
-          <div className="text-[15px] font-semibold tracking-tight text-dt-text">DevTrack</div>
+          <div className="flex flex-col">
+            <div className="text-[18px] font-black tracking-tighter text-dt-text flex items-center gap-1.5">
+              DevTrack
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+            </div>
+            <div className="text-[10px] font-bold text-dt-textSecondary/40 uppercase tracking-[0.2em]">Engineering OS</div>
+          </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-4 py-5">
-        <ul className="space-y-2">
+      {/* ─── Main Navigation ─── */}
+      <nav className="flex-1 overflow-y-auto no-scrollbar px-1">
+        <div className="text-[9px] font-black text-dt-textSecondary/30 uppercase tracking-[0.25em] px-4 mb-4">Core Systems</div>
+        <ul className="space-y-1.5">
           {navItems.map((item) => (
-            <li key={item.id}>
+            <li key={item.id} className="relative">
               <button
                 type="button"
                 onClick={() => onNavigate(item.path)}
                 className={[
-                  'group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors duration-150',
-                  item.isActive ? 'bg-[#F3F4F6] text-dt-text' : 'text-dt-muted hover:bg-[#F3F4F6] hover:text-dt-text',
+                  'group w-full flex items-center gap-4 px-4 py-3 rounded-[20px] text-left transition-all duration-500 relative overflow-hidden',
+                  item.isActive
+                    ? 'bg-white shadow-dt-card border border-dt-primary/5 text-dt-primary'
+                    : 'text-dt-textSecondary/60 hover:bg-white/50 hover:text-dt-text',
                 ].join(' ')}
               >
-                <div className="relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0">
-                  <span
-                    className={[
-                      'absolute left-[-10px] top-1/2 -translate-y-1/2 h-6 w-[3px] rounded-full transition-all duration-200',
-                      item.isActive ? 'bg-[#111827] opacity-100' : 'opacity-0',
-                    ].join(' ')}
-                    aria-hidden="true"
+                {item.isActive && (
+                  <motion.div
+                    layoutId="nav-active"
+                    className="absolute inset-0 bg-gradient-to-r from-dt-primary/[0.03] to-transparent pointer-events-none"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                   />
-                  <div
-                    className={[
-                      'h-9 w-9 rounded-md flex items-center justify-center border border-transparent',
-                      item.isActive ? 'bg-white border-black/5' : 'bg-transparent group-hover:bg-white group-hover:border-black/5',
-                    ].join(' ')}
-                  >
-                    <Icon
-                      name={item.icon}
-                      size={16}
-                      className={[
-                        'w-5 h-5 object-contain',
-                        item.isActive ? 'text-dt-text' : 'text-dt-muted group-hover:text-dt-text',
-                      ].join(' ')}
-                    />
-                  </div>
+                )}
+
+                <div
+                  className={[
+                    'h-9 w-9 rounded-[14px] flex items-center justify-center transition-all duration-500 shrink-0 relative overflow-hidden',
+                    item.isActive
+                      ? 'bg-dt-primary/10 text-dt-primary'
+                      : 'bg-transparent text-dt-textMuted group-hover:bg-white group-hover:shadow-sm group-hover:text-dt-textSecondary',
+                  ].join(' ')}
+                >
+                  <Icon
+                    name={item.icon}
+                    size={19}
+                    className="relative z-10 transition-transform duration-500 group-hover:scale-110"
+                  />
                 </div>
-                <span className={['truncate text-[13px] whitespace-nowrap', item.isActive ? 'font-semibold' : 'font-medium'].join(' ')}>
+
+                <span className="truncate text-[14px] font-bold tracking-tight relative z-10">
                   {item.label}
                 </span>
+
+                {item.isActive && (
+                  <motion.div
+                    layoutId="active-dot"
+                    className="ml-auto w-1.5 h-1.5 rounded-full bg-dt-primary shadow-[0_0_10px_rgba(124,92,252,0.8)]"
+                  />
+                )}
               </button>
             </li>
           ))}
         </ul>
-      </nav>
 
-      <div className="px-4 pb-4">
-        <div className="dt-card p-4">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-md border border-black/5 bg-white flex items-center justify-center overflow-hidden">
-              {profile?.avatarUrl ? (
-                <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <Icon name="user" size={18} className="text-dt-muted" />
-              )}
+        {/* ─── Premium Streak Widget ─── */}
+        <div className="mt-10 px-4">
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50/30 rounded-[24px] p-5 border border-amber-200/20 relative overflow-hidden group">
+            <div className="absolute -top-4 -right-4 w-16 h-16 bg-amber-500/5 rounded-full blur-xl group-hover:scale-150 transition-transform duration-1000" />
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+                <Icon name="flame" size={16} />
+              </div>
+              <div className="flex flex-col">
+                <div className="text-[14px] font-black text-dt-text tracking-tight">12 Day Streak</div>
+                <div className="text-[9px] font-black text-amber-600/60 uppercase tracking-widest">Momentum High</div>
+              </div>
             </div>
-            <div className="min-w-0">
-              <div className="text-[13px] font-semibold text-dt-text truncate">{profile?.displayName ?? 'User'}</div>
-              <div className="text-xs text-dt-muted truncate">{profile?.subtitle ?? 'Stay consistent'}</div>
+            <div className="h-1.5 w-full bg-amber-200/20 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: '85%' }}
+                transition={{ duration: 1, ease: 'easeOut' }}
+                className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full"
+              />
             </div>
           </div>
         </div>
+      </nav>
+
+      {/* ─── Profile & Meta ─── */}
+      <div className="mt-auto pt-6 px-1 shrink-0">
+        <button
+          className="w-full flex items-center gap-4 p-3 rounded-[24px] bg-white border border-dt-primary/5 hover:border-dt-primary/20 transition-all duration-500 shadow-dt-card hover:shadow-dt-floating group"
+          onClick={() => onNavigate('/settings')}
+        >
+          {/* Profile Completion Ring */}
+          <div className="relative shrink-0">
+            <svg className="w-12 h-12 -rotate-90">
+              <circle cx="24" cy="24" r="21" fill="none" stroke="currentColor" strokeWidth="3" className="text-dt-primary/5" />
+              <motion.circle
+                cx="24" cy="24" r="21" fill="none" stroke="currentColor" strokeWidth="3"
+                strokeDasharray="132"
+                initial={{ strokeDashoffset: 132 }}
+                animate={{ strokeDashoffset: 132 * (1 - 0.85) }}
+                className="text-dt-primary"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center p-1.5">
+              <div className="w-full h-full rounded-full border-2 border-white bg-white overflow-hidden shadow-sm">
+                {profile?.avatarUrl ? (
+                  <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-dt-primary/5 flex items-center justify-center">
+                    <Icon name="user" size={16} className="text-dt-primary/40" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="text-[14px] font-black text-dt-text truncate tracking-tight group-hover:text-dt-primary transition-colors">{profile?.displayName ?? 'Varshith Reddy'}</div>
+            <div className="text-[10px] font-bold text-dt-textSecondary/40 truncate tracking-[0.1em] uppercase">Architecture Lead</div>
+          </div>
+          <Icon name="settings" size={16} className="text-dt-textMuted/40 group-hover:rotate-90 transition-transform duration-500" />
+        </button>
       </div>
 
       <button type="button" onClick={onToggleCollapse} className="hidden" aria-hidden="true">

@@ -7,9 +7,6 @@ const DashboardPage = lazy(
   () => import('../components/dashboard/DashboardPage')
 );
 
-const ActivityPage = lazy(
-  () => import('../pages/ActivityPage')
-);
 
 const DsaPage = lazy(
   () => import('../pages/DsaPage')
@@ -45,16 +42,6 @@ export const AppRouter: React.FC = () => {
           <ErrorBoundary pageName="Dashboard">
             <Suspense fallback={<PageFallback />}>
               <DashboardPage />
-            </Suspense>
-          </ErrorBoundary>
-        }
-      />
-      <Route
-        path="/activity"
-        element={
-          <ErrorBoundary pageName="Activity">
-            <Suspense fallback={<PageFallback />}>
-              <ActivityPage />
             </Suspense>
           </ErrorBoundary>
         }

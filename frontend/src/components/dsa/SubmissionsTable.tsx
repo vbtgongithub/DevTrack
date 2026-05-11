@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Submission, Platform, SubmissionStatus } from '../../types/dsa';
+import type { Submission, SubmissionStatus } from '../../types/dsa';
 import { Icon } from '../shared/Icon';
 import { PlatformLogo } from './PlatformLogo';
 
@@ -9,212 +9,183 @@ export type SubmissionsTableProps = {
   className?: string;
 };
 
-const statusClass = (status: SubmissionStatus) =>
+type DayGroup = {
+  label: string;
+  date: string;
+  submissions: Submission[];
+};
+
+const getRelativeDayLabel = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const targetDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  if (targetDate.getTime() === today.getTime()) return 'Today';
+  if (targetDate.getTime() === yesterday.getTime()) return 'Yesterday';
+
+  const diffDays = Math.floor((today.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays < 7) {
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+const groupSubmissionsByDay = (submissions: Submission[]): DayGroup[] => {
+  const groups = new Map<string, Submission[]>();
+
+  for (const sub of submissions) {
+    const dateKey = sub.date;
+    if (!groups.has(dateKey)) {
+      groups.set(dateKey, []);
+    }
+    groups.get(dateKey)!.push(sub);
+  }
+
+  const sortedEntries = Array.from(groups.entries()).sort(
+    (a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime()
+  );
+
+  return sortedEntries.map(([date, subs]) => ({
+    label: getRelativeDayLabel(date),
+    date,
+    submissions: subs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+  }));
+};
+
+const statusGlow = (status: SubmissionStatus) =>
   status === 'accepted'
-    ? 'bg-[#ECFDF3] text-[#065F46]'
-    : 'bg-[#FEF2F2] text-[#991B1B]';
-
-const difficultyClass = (difficulty?: Submission['difficulty']) => {
-  if (difficulty === 'easy') return 'bg-[#F0FDF4] text-[#166534]';
-  if (difficulty === 'medium') return 'bg-[#FFFBEB] text-[#92400E]';
-  if (difficulty === 'hard') return 'bg-[#FEF2F2] text-[#991B1B]';
-  return 'bg-[#F3F4F6] text-dt-muted';
-};
-
-const platformLabel: Record<Platform, string> = {
-  leetcode: 'LeetCode',
-  codeforces: 'Codeforces',
-  codechef: 'CodeChef',
-  github: 'GitHub',
-};
-
-const statusMeta: Record<SubmissionStatus, { label: string; icon: string }> = {
-  accepted: { label: 'Accepted', icon: 'check-circle' },
-  wrong: { label: 'Wrong', icon: 'exclamation-triangle' },
-};
+    ? 'bg-dt-success shadow-[0_0_12px_rgba(34,197,94,0.3)]'
+    : 'bg-dt-error shadow-[0_0_12px_rgba(239,68,68,0.3)]';
 
 export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
-  ({ title, submissions, className }) => {
-    const [statusFilter, setStatusFilter] = React.useState<'all' | SubmissionStatus>('all');
-    const [difficultyFilter, setDifficultyFilter] = React.useState<'all' | NonNullable<Submission['difficulty']>>('all');
-    const [platformFilter, setPlatformFilter] = React.useState<'all' | Platform>('all');
-    const [sortBy, setSortBy] = React.useState<'date-desc' | 'date-asc' | 'status' | 'platform' | 'difficulty'>('date-desc');
+  ({ submissions, className }) => {
+    const { recentGroups } = React.useMemo(() => {
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const rows = React.useMemo(() => {
-      const filtered = submissions.filter((s) => {
-        const okStatus = statusFilter === 'all' ? true : s.status === statusFilter;
-        const okDifficulty = difficultyFilter === 'all' ? true : s.difficulty === difficultyFilter;
-        const okPlatform = platformFilter === 'all' ? true : s.platform === platformFilter;
-        return okStatus && okDifficulty && okPlatform;
+      const recent = submissions.filter(sub => {
+        const subDate = new Date(sub.date);
+        return subDate >= sevenDaysAgo;
       });
 
-      const byDate = (a: Submission, b: Submission) => {
-        const ad = new Date(a.date).getTime();
-        const bd = new Date(b.date).getTime();
-        const safeA = Number.isFinite(ad) ? ad : 0;
-        const safeB = Number.isFinite(bd) ? bd : 0;
-        return safeA - safeB;
+      return {
+        recentGroups: groupSubmissionsByDay(recent),
       };
+    }, [submissions]);
 
-      const byText = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' });
+    // Calculate streak
+    const streak = React.useMemo(() => {
+      if (submissions.length === 0) return 0;
+      const sortedDates = [...new Set(submissions.map(s => s.date))].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
-      const sorted = [...filtered].sort((a, b) => {
-        if (sortBy === 'date-asc') return byDate(a, b);
-        if (sortBy === 'date-desc') return byDate(b, a);
-        if (sortBy === 'status') return byText(a.status, b.status);
-        if (sortBy === 'platform') return byText(a.platform, b.platform);
-        if (sortBy === 'difficulty') return byText(a.difficulty ?? 'z', b.difficulty ?? 'z');
-        return 0;
-      });
+      let count = 0;
+      const today = new Date().toISOString().split('T')[0];
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-      return sorted;
-    }, [submissions, statusFilter, difficultyFilter, platformFilter, sortBy]);
+      if (sortedDates[0] !== today && sortedDates[0] !== yesterday) return 0;
+
+      for (let i = 0; i < sortedDates.length; i++) {
+        const d1 = new Date(sortedDates[i]);
+        const d2 = i + 1 < sortedDates.length ? new Date(sortedDates[i + 1]) : null;
+        count++;
+        if (d2) {
+          const diff = (d1.getTime() - d2.getTime()) / 86400000;
+          if (diff > 1.5) break; // Gap larger than 1 day
+        }
+      }
+      return count;
+    }, [submissions]);
 
     return (
-      <section
-        className={[
-          'dt-card p-4',
-          className,
-        ]
-          .filter(Boolean)
-          .join(' ')}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h3 className="text-lg font-semibold tracking-tight text-dt-text">{title}</h3>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-2 rounded-xl border border-dt-border/70 bg-dt-bg/40 px-3 py-2">
-              <span className="text-xs font-semibold text-dt-muted">Status</span>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-                className="bg-transparent text-sm text-dt-text outline-none"
-                aria-label="Filter by status"
-              >
-                <option value="all">All</option>
-                <option value="accepted">Accepted</option>
-                <option value="wrong">Wrong</option>
-              </select>
-            </div>
-
-            <div className="inline-flex items-center gap-2 rounded-xl border border-dt-border/70 bg-dt-bg/40 px-3 py-2">
-              <span className="text-xs font-semibold text-dt-muted">Difficulty</span>
-              <select
-                value={difficultyFilter}
-                onChange={(e) => setDifficultyFilter(e.target.value as typeof difficultyFilter)}
-                className="bg-transparent text-sm text-dt-text outline-none"
-                aria-label="Filter by difficulty"
-              >
-                <option value="all">All</option>
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
-              </select>
-            </div>
-
-            <div className="inline-flex items-center gap-2 rounded-xl border border-dt-border/70 bg-dt-bg/40 px-3 py-2">
-              <span className="text-xs font-semibold text-dt-muted">Platform</span>
-              <select
-                value={platformFilter}
-                onChange={(e) => setPlatformFilter(e.target.value as typeof platformFilter)}
-                className="bg-transparent text-sm text-dt-text outline-none"
-                aria-label="Filter by platform"
-              >
-                <option value="all">All</option>
-                <option value="leetcode">LeetCode</option>
-                <option value="codeforces">Codeforces</option>
-                <option value="github">GitHub</option>
-              </select>
-            </div>
-
-            <div className="inline-flex items-center gap-2 rounded-xl border border-dt-border/70 bg-dt-bg/40 px-3 py-2">
-              <span className="text-xs font-semibold text-dt-muted">Sort</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="bg-transparent text-sm text-dt-text outline-none"
-                aria-label="Sort submissions"
-              >
-                <option value="date-desc">Newest</option>
-                <option value="date-asc">Oldest</option>
-                <option value="status">Status</option>
-                <option value="difficulty">Difficulty</option>
-                <option value="platform">Platform</option>
-              </select>
-            </div>
+      <section className={['dt-card overflow-hidden transition-all duration-700 cubic-bezier(0.22, 1, 0.36, 1) hover:shadow-dt-floating group/table', className].filter(Boolean).join(' ')}>
+        {/* Intelligence Header */}
+        <div className="px-6 py-4 border-b border-dt-primary/5 bg-white/30 backdrop-blur-xl flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-1 h-1 rounded-full bg-dt-primary animate-pulse shadow-[0_0_8px_rgba(124,92,252,0.8)]" />
+            <span className="text-[10px] font-black text-dt-textSecondary uppercase tracking-widest opacity-80">Live Telemetry Feed</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/5 border border-orange-500/10 group-hover/table:border-orange-500/20 transition-colors">
+            <Icon name="fire" size={10} className="text-orange-500" />
+            <span className="text-[9px] font-black text-orange-600 uppercase tracking-tight">{streak} Day Momentum</span>
           </div>
         </div>
 
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-dt-muted uppercase border-b border-black/5">
-                <th className="pb-3 pr-4 font-semibold">Status</th>
-                <th className="pb-3 pr-4 font-medium">Problem</th>
-                <th className="pb-3 pr-4 font-medium">Topic</th>
-                <th className="pb-3 pr-4 font-medium">Difficulty</th>
-                <th className="pb-3 pr-4 font-medium">Platform</th>
-                <th className="pb-3 pr-4 font-medium">Language</th>
-                <th className="pb-3 font-medium">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((submission) => (
-                <tr
-                  key={submission.id}
-                  className="border-b border-black/5 hover:bg-[#F3F4F6] cursor-default transition-colors duration-150"
-                >
-                  <td className="py-3 pr-4">
-                    <span
-                      className={[
-                        'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium',
-                        statusClass(submission.status),
-                      ].join(' ')}
-                    >
-                      <Icon name={statusMeta[submission.status].icon} size={14} className="text-current" />
-                      {statusMeta[submission.status].label}
+        <div className="p-2 sm:p-3">
+          {recentGroups.length > 0 ? (
+            <div className="flex flex-col gap-1">
+              {recentGroups.map((group, groupIndex) => (
+                <div key={group.date} className="flex flex-col">
+                  {/* Soft Day Divider */}
+                  <div className="flex items-center gap-3 py-2 px-3">
+                    <span className="text-[9px] font-black text-dt-textSecondary/40 uppercase tracking-[0.15em] shrink-0">
+                      {group.label}
                     </span>
-                  </td>
-                  <td className="py-4 pr-4">
-                    <button
-                      type="button"
-                      className="text-dt-text font-medium hover:underline underline-offset-4"
-                      onClick={() => {}}
-                    >
-                      {submission.problem}
-                    </button>
-                  </td>
-                  <td className="py-4 pr-4 text-dt-muted">{submission.topic}</td>
-                  <td className="py-3 pr-4">
-                    <span
-                      className={[
-                        'inline-flex items-center rounded-md px-2 py-1 text-xs font-medium',
-                        difficultyClass(submission.difficulty),
-                      ].join(' ')}
-                    >
-                      {submission.difficulty ? submission.difficulty[0].toUpperCase() + submission.difficulty.slice(1) : '—'}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 text-dt-muted">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 bg-white">
-                        <PlatformLogo platform={submission.platform} iconSize={14} className="" />
-                      </div>
-                      <span className="text-sm text-dt-text">{platformLabel[submission.platform]}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 pr-4 text-dt-muted">{submission.language}</td>
-                  <td className="py-4 text-dt-muted">{submission.date}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <div className="flex-1 h-[1px] bg-gradient-to-r from-dt-primary/5 via-dt-primary/5 to-transparent" />
+                  </div>
 
-          {rows.length === 0 ? (
-            <div className="py-10 text-center text-sm text-dt-muted">
-              No submissions match your filters.
+                  {/* Submission Items */}
+                  <div className="flex flex-col gap-1">
+                    {group.submissions.map((submission, idx) => (
+                      <div
+                        key={submission.id}
+                        className="group/item flex items-center justify-between gap-3 p-3 rounded-[14px] hover:bg-white/60 hover:shadow-sm border border-transparent hover:border-dt-primary/10 transition-all duration-500 cubic-bezier(0.22, 1, 0.36, 1)"
+                        style={{ animation: `dtFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) ${(groupIndex * 80 + idx * 40)}ms both` }}
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <div className={['w-1.5 h-1.5 rounded-full shrink-0 group-hover/item:scale-125 transition-transform duration-500', statusGlow(submission.status)].join(' ')} />
+                          <div className="w-8 h-8 rounded-xl bg-white/80 border border-dt-primary/5 flex items-center justify-center shrink-0 shadow-sm group-hover/item:shadow-dt-card group-hover/item:border-dt-primary/20 transition-all duration-500">
+                            <PlatformLogo platform={submission.platform} iconSize={16} />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-[14px] font-bold text-dt-text group-hover/item:text-dt-primary transition-colors truncate block tracking-tight">
+                              {submission.problem}
+                            </span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[9px] text-dt-textSecondary font-black uppercase tracking-widest opacity-40">{submission.topic}</span>
+                              <span className="w-0.5 h-0.5 rounded-full bg-dt-textSecondary/20" />
+                              <span className="text-[9px] text-dt-textSecondary font-black uppercase tracking-widest opacity-40">{submission.platform}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 opacity-40 group-hover/item:opacity-100 transition-opacity duration-500">
+                          <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-lg bg-dt-bg text-dt-textSecondary border border-dt-primary/5 group-hover/item:bg-white transition-colors">
+                            {submission.difficulty || '—'}
+                          </span>
+                          <button className="w-7 h-7 rounded-lg bg-dt-bg flex items-center justify-center border border-dt-primary/5 hover:bg-dt-primary hover:text-white hover:border-dt-primary transition-all duration-300">
+                            <Icon name="arrow-up-right" size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          ) : null}
+          ) : (
+            <div className="py-16 flex flex-col items-center justify-center text-center">
+              <div className="w-14 h-14 rounded-[24px] bg-dt-primary/5 flex items-center justify-center border border-dt-primary/10 mb-5 group-hover/table:scale-110 transition-transform duration-700">
+                <Icon name="code-bracket" size={24} className="text-dt-primary/20" />
+              </div>
+              <p className="text-[14px] font-bold text-dt-textSecondary tracking-tight">Zero recent activity packets</p>
+              <p className="text-[11px] text-dt-textMuted mt-1 uppercase tracking-widest font-black opacity-50">Initiate coding block to sync</p>
+            </div>
+          )}
+        </div>
+
+        {/* Intelligence Footer */}
+        <div className="px-6 py-4 border-t border-dt-primary/5 bg-dt-bg/20 backdrop-blur-md flex justify-center">
+          <button
+            type="button"
+            className="flex items-center gap-2 text-[10px] font-black text-dt-primary uppercase tracking-[0.2em] hover:tracking-[0.25em] transition-all duration-500 group/btn"
+          >
+            Access full telemetry
+            <Icon name="arrow-right" size={10} className="group-hover/btn:translate-x-1 transition-transform" />
+          </button>
         </div>
       </section>
     );

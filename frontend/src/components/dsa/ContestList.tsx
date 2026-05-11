@@ -16,78 +16,108 @@ const platformFromLabel = (platform: string) => {
   return 'codechef';
 };
 
-function formatContestDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-}
+export const ContestList: React.FC<ContestListProps> = React.memo(({ contests, className }) => {
+  const [showAll, setShowAll] = React.useState(false);
 
-export const ContestList: React.FC<ContestListProps> = React.memo(({ title, contests, className }) => {
+  // Limit contests for compact view
+  const displayedContests = showAll ? contests : contests.slice(0, 5);
+  const hiddenCount = contests.length - displayedContests.length;
+
   if (contests.length === 0) {
     return (
-      <section className={['dt-card p-5', className].filter(Boolean).join(' ')}>
-        <h3 className="text-lg font-semibold tracking-tight text-dt-text">{title}</h3>
-        <div className="mt-6 flex flex-col items-center gap-2 py-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-            <Icon name="trophy" size={20} className="text-gray-400" />
-          </div>
-          <p className="text-sm text-dt-muted">No contest history yet</p>
-          <p className="text-xs text-gray-400">Participate in contests to track your progress</p>
+      <section className={['dt-card p-8 flex flex-col items-center justify-center text-center h-full group/contests', className].filter(Boolean).join(' ')}>
+        <div className="w-14 h-14 rounded-[24px] bg-dt-secondary/5 flex items-center justify-center border border-dt-secondary/10 mb-5 group-hover/contests:scale-110 transition-transform duration-700">
+          <Icon name="trophy" size={24} className="text-dt-secondary/20" />
         </div>
+        <p className="text-[14px] font-bold text-dt-textSecondary tracking-tight">No active contest log</p>
+        <p className="text-[11px] text-dt-textMuted mt-1 uppercase tracking-widest font-black opacity-50">Join events to benchmark skills</p>
       </section>
     );
   }
 
   return (
-    <section className={['dt-card p-5', className].filter(Boolean).join(' ')}>
-      <h3 className="text-lg font-semibold tracking-tight text-dt-text">{title}</h3>
+    <section className={['dt-card flex flex-col transition-all duration-700 cubic-bezier(0.22, 1, 0.36, 1) hover:shadow-dt-floating group/contests', className].filter(Boolean).join(' ')}>
+      <div className="px-6 py-4 border-b border-dt-primary/5 bg-white/30 backdrop-blur-xl flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-1 rounded-full bg-dt-secondary shadow-[0_0_8px_rgba(167,139,250,0.8)]" />
+          <span className="text-[10px] font-black text-dt-textSecondary uppercase tracking-widest opacity-80">Competition Matrix</span>
+        </div>
+        <span className="text-[9px] font-black text-dt-secondary px-2.5 py-1 rounded-full bg-dt-secondary/5 border border-dt-secondary/10 group-hover/contests:border-dt-secondary/30 transition-colors uppercase tracking-widest">
+          {contests.length} Logged
+        </span>
+      </div>
 
-      <ul className="mt-4 space-y-3">
-        {contests.map((contest) => {
+      <div className="p-2 sm:p-3 flex flex-col gap-1">
+        {displayedContests.map((contest, idx) => {
           const ratingChange = contest.ratingChange;
           const isPositive = ratingChange !== null && ratingChange > 0;
           const isNegative = ratingChange !== null && ratingChange < 0;
 
           return (
-            <li
+            <div
               key={contest.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-black/5 bg-white px-3 py-2.5 dt-pop hover:bg-[#F3F4F6]"
+              className="group/item flex items-center justify-between gap-3 p-3 rounded-[14px] hover:bg-white/60 hover:shadow-sm border border-transparent hover:border-dt-secondary/10 transition-all duration-500 cubic-bezier(0.22, 1, 0.36, 1)"
+              style={{ animation: `dtFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) ${idx * 40}ms both` }}
             >
-              <div className="min-w-0 flex items-center gap-2">
-                <div className="w-9 h-9 bg-white border border-black/5 rounded-md flex items-center justify-center shrink-0">
-                  <PlatformLogo platform={platformFromLabel(contest.platform)} iconSize={14} className="" />
+              <div className="flex items-center gap-3.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-white/80 border border-dt-primary/5 flex items-center justify-center shrink-0 shadow-sm group-hover/item:shadow-dt-card group-hover/item:border-dt-secondary/20 transition-all duration-500">
+                  <PlatformLogo platform={platformFromLabel(contest.platform)} iconSize={16} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-dt-text truncate">{contest.contestName}</p>
-                  <p className="text-xs text-dt-muted">
-                    {contest.platform} · {formatContestDate(contest.participatedAt)}
+                  <p className="text-[14px] font-bold text-dt-text truncate leading-snug group-hover/item:text-dt-secondary transition-colors tracking-tight">
+                    {contest.contestName}
+                  </p>
+                  <p className="text-[9px] text-dt-textSecondary font-black uppercase tracking-widest opacity-40">
+                    {contest.platform} • {new Date(contest.participatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 {contest.rank !== null && (
-                  <span className="text-xs font-medium text-gray-600 bg-gray-100 rounded-md px-2 py-1">
+                  <span className="text-[10px] font-black text-dt-textSecondary bg-dt-bg px-2 py-0.5 rounded-lg border border-dt-primary/5 tabular-nums tracking-tighter">
                     #{contest.rank}
-                    {contest.totalParticipants ? ` / ${contest.totalParticipants}` : ''}
                   </span>
                 )}
                 {ratingChange !== null && (
-                  <span
-                    className={[
-                      'rounded-md px-2 py-1 text-xs font-semibold tabular-nums',
-                      isPositive ? 'bg-emerald-50 text-emerald-700' : '',
-                      isNegative ? 'bg-red-50 text-red-700' : '',
-                      !isPositive && !isNegative ? 'bg-gray-100 text-gray-500' : '',
-                    ].join(' ')}
-                  >
+                  <span className={[
+                    'text-[10px] font-black px-2 py-0.5 rounded-lg tabular-nums min-w-[40px] text-center transition-all duration-300',
+                    isPositive ? 'text-dt-success bg-dt-success/5 border border-dt-success/10' :
+                      isNegative ? 'text-[#F06A6A] bg-[#F06A6A]/5 border border-[#F06A6A]/10' :
+                        'text-dt-textMuted bg-dt-bg border border-dt-primary/5',
+                  ].join(' ')}>
                     {isPositive ? '+' : ''}{ratingChange}
                   </span>
                 )}
               </div>
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
+
+      {hiddenCount > 0 && (
+        <div className="p-3 pt-1 border-t border-dt-primary/5">
+          <button
+            type="button"
+            onClick={() => setShowAll(true)}
+            className="w-full py-2.5 rounded-xl text-[10px] font-black text-dt-textSecondary/60 uppercase tracking-widest hover:bg-dt-secondary/5 hover:text-dt-secondary transition-all duration-300"
+          >
+            Show {hiddenCount} historical packets
+          </button>
+        </div>
+      )}
+
+      {showAll && (
+        <div className="p-3 pt-1 border-t border-dt-primary/5">
+          <button
+            type="button"
+            onClick={() => setShowAll(false)}
+            className="w-full py-2.5 rounded-xl text-[9px] font-black text-dt-textMuted uppercase tracking-widest hover:bg-dt-bg transition-all duration-300"
+          >
+            Collapse Log
+          </button>
+        </div>
+      )}
     </section>
   );
 });

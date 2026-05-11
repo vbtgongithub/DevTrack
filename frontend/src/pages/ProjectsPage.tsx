@@ -1,6 +1,7 @@
 import React from 'react';
 import { PageShell } from '../components/layout/PageShell';
 import { Icon } from '../components/shared/Icon';
+import { EmptyState } from '../components/shared/EmptyState';
 import { useProjectsData } from '../hooks/useProjectsData';
 import githubLogo from '../assets/logos/github.png';
 import type { ProjectCardVM } from '../types/vm.types';
@@ -15,47 +16,28 @@ const FILTERS: ProjectFilter[] = ['All', 'Active', 'Completed'];
 function badgeClasses(status: string): string {
   switch (status) {
     case 'completed':
-      return 'bg-green-100 text-green-700';
+      return 'bg-emerald-500/5 text-emerald-600 border-emerald-500/10 shadow-[0_0_10px_rgba(16,185,129,0.1)]';
     case 'in_progress':
-      return 'bg-yellow-100 text-yellow-800';
+      return 'bg-dt-primary/5 text-dt-primary border-dt-primary/10 shadow-[0_0_10px_rgba(124,92,252,0.1)]';
     case 'planning':
-      return 'bg-blue-100 text-blue-700';
+      return 'bg-indigo-500/5 text-indigo-600 border-indigo-500/10';
     case 'on_hold':
-      return 'bg-orange-100 text-orange-700';
-    case 'archived':
-      return 'bg-gray-100 text-gray-500';
+      return 'bg-amber-500/5 text-amber-600 border-amber-500/10';
     default:
-      return 'bg-gray-100 text-gray-700';
+      return 'bg-dt-textMuted/5 text-dt-textMuted border-dt-textMuted/10';
   }
 }
 
 function progressBarColor(status: string): string {
   switch (status) {
     case 'completed':
-      return 'bg-green-500';
+      return 'from-emerald-500 via-emerald-400 to-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]';
     case 'in_progress':
-      return 'bg-black';
+      return 'from-dt-primary via-dt-secondary to-dt-primary shadow-[0_0_12px_rgba(124,92,252,0.4)]';
     case 'planning':
-      return 'bg-blue-500';
+      return 'from-indigo-500 via-indigo-400 to-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.3)]';
     default:
-      return 'bg-gray-400';
-  }
-}
-
-function leftBorderColor(status: string): string {
-  switch (status) {
-    case 'completed':
-      return 'border-l-green-500';
-    case 'in_progress':
-      return 'border-l-yellow-400';
-    case 'planning':
-      return 'border-l-blue-500';
-    case 'on_hold':
-      return 'border-l-orange-400';
-    case 'archived':
-      return 'border-l-gray-300';
-    default:
-      return 'border-l-gray-300';
+      return 'from-dt-textMuted/30 to-dt-textMuted/10';
   }
 }
 
@@ -117,96 +99,109 @@ const CreateProjectModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-dt-bg/80 backdrop-blur-md" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 mx-4 animate-[dtFadeIn_200ms_ease-out]"
+        className="bg-white/95 backdrop-blur-3xl border border-dt-primary/10 rounded-[32px] shadow-dt-floating w-full max-w-lg p-10 mx-4 animate-[dtFadeIn_400ms_cubic-bezier(0.22,1,0.36,1)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-gray-900">New Project</h2>
-          <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors">
-            <Icon name="x-mark" size={20} className="text-gray-400" />
+        <div className="flex items-center justify-between mb-10">
+          <div>
+            <h2 className="text-[22px] font-black text-dt-text tracking-tighter leading-none">New Project</h2>
+            <p className="text-[10px] font-black text-dt-textSecondary/40 tracking-[0.15em] uppercase mt-2">Initialize workspace vector</p>
+          </div>
+          <button type="button" onClick={onClose} className="w-10 h-10 rounded-[14px] bg-dt-primary/5 hover:bg-dt-primary/10 border border-dt-primary/10 hover:border-dt-primary/20 cursor-pointer transition-all duration-300 group flex items-center justify-center">
+            <Icon name="x-mark" size={20} className="text-dt-primary/60 group-hover:text-dt-primary transition-colors" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Project Name *</label>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="group/field">
+            <label className="block text-[10px] font-black tracking-widest uppercase text-dt-textSecondary/50 mb-2 transition-colors group-focus-within/field:text-dt-primary">Project Identity</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300"
-              placeholder="e.g. DevTrack"
+              className="w-full px-5 py-4 bg-dt-bg/40 border border-dt-primary/10 rounded-[16px] text-[15px] font-bold text-dt-text outline-none placeholder:text-dt-textSecondary/30 focus:border-dt-primary/30 focus:bg-white shadow-sm focus:shadow-dt-card transition-all duration-500"
+              placeholder="System name..."
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-[10px] font-black tracking-widest uppercase text-dt-textSecondary/50 mb-2">Description Matrix</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 resize-none"
-              rows={2}
-              placeholder="Brief project description"
+              className="w-full px-5 py-4 bg-dt-bg/40 border border-dt-primary/10 rounded-[16px] text-[15px] font-bold text-dt-text outline-none placeholder:text-dt-textSecondary/30 focus:border-dt-primary/30 focus:bg-white shadow-sm focus:shadow-dt-card transition-all duration-500 resize-none"
+              rows={3}
+              placeholder="Define project scope and architecture..."
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value as typeof form.status })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300"
-              >
-                <option value="planning">Planning</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
-                <option value="on_hold">On Hold</option>
-              </select>
+              <label className="block text-[10px] font-black tracking-widest uppercase text-dt-textSecondary/50 mb-2">Lifecycle</label>
+              <div className="relative">
+                <select
+                  value={form.status}
+                  onChange={(e) => setForm({ ...form, status: e.target.value as typeof form.status })}
+                  className="w-full px-5 py-4 bg-dt-bg/40 border border-dt-primary/10 rounded-[16px] text-[14px] font-bold text-dt-text outline-none focus:border-dt-primary/30 focus:bg-white shadow-sm transition-all duration-500 appearance-none cursor-pointer"
+                >
+                  <option value="planning">Planning</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="on_hold">On Hold</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
+                  <Icon name="chevron-down" size={14} />
+                </div>
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Visibility</label>
-              <select
-                value={form.visibility}
-                onChange={(e) => setForm({ ...form, visibility: e.target.value as typeof form.visibility })}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300"
-              >
-                <option value="private">Private</option>
-                <option value="public">Public</option>
-              </select>
+              <label className="block text-[10px] font-black tracking-widest uppercase text-dt-textSecondary/50 mb-2">Access Control</label>
+              <div className="relative">
+                <select
+                  value={form.visibility}
+                  onChange={(e) => setForm({ ...form, visibility: e.target.value as typeof form.visibility })}
+                  className="w-full px-5 py-4 bg-dt-bg/40 border border-dt-primary/10 rounded-[16px] text-[14px] font-bold text-dt-text outline-none focus:border-dt-primary/30 focus:bg-white shadow-sm transition-all duration-500 appearance-none cursor-pointer"
+                >
+                  <option value="private">Private</option>
+                  <option value="public">Public</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
+                  <Icon name="chevron-down" size={14} />
+                </div>
+              </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tech Stack</label>
+            <label className="block text-[10px] font-black tracking-widest uppercase text-dt-textSecondary/50 mb-2">Tech Spectrum</label>
             <input
               type="text"
               value={form.techStack}
               onChange={(e) => setForm({ ...form, techStack: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300"
-              placeholder="React, TypeScript, Node.js"
+              className="w-full px-5 py-4 bg-dt-bg/40 border border-dt-primary/10 rounded-[16px] text-[15px] font-bold text-dt-text outline-none placeholder:text-dt-textSecondary/30 focus:border-dt-primary/30 focus:bg-white shadow-sm focus:shadow-dt-card transition-all duration-500"
+              placeholder="React, TypeScript, GraphQL..."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Repository URL</label>
+            <label className="block text-[10px] font-black tracking-widest uppercase text-dt-textSecondary/50 mb-2">Repository Vector</label>
             <input
               type="url"
               value={form.repoUrl}
               onChange={(e) => setForm({ ...form, repoUrl: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300"
+              className="w-full px-5 py-4 bg-dt-bg/40 border border-dt-primary/10 rounded-[16px] text-[15px] font-bold text-dt-text outline-none placeholder:text-dt-textSecondary/30 focus:border-dt-primary/30 focus:bg-white shadow-sm focus:shadow-dt-card transition-all duration-500"
               placeholder="https://github.com/..."
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-4 pt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors"
+              className="px-6 py-3.5 text-[12px] font-black tracking-[0.15em] uppercase rounded-[16px] border border-dt-primary/5 text-dt-textSecondary/60 hover:bg-white hover:text-dt-text hover:shadow-sm cursor-pointer transition-all duration-500"
             >
               Cancel
             </button>
@@ -214,11 +209,11 @@ const CreateProjectModal: React.FC<{
               type="submit"
               disabled={saving || !form.name.trim()}
               className={[
-                'px-4 py-2 text-sm rounded-lg font-semibold text-white cursor-pointer transition-all duration-200',
-                saving ? 'bg-gray-400' : 'bg-gray-900 hover:shadow-lg hover:scale-[1.03] active:scale-[0.97]',
+                'px-8 py-3.5 text-[12px] font-black tracking-[0.15em] uppercase rounded-[16px] text-white cursor-pointer transition-all duration-700 cubic-bezier(0.22,1,0.36,1)',
+                saving ? 'bg-dt-primary/40' : 'bg-dt-text hover:bg-dt-primary hover:shadow-dt-floating hover:-translate-y-1 active:scale-[0.98]',
               ].join(' ')}
             >
-              {saving ? 'Creating…' : 'Create Project'}
+              {saving ? 'Processing…' : 'Initialize Project'}
             </button>
           </div>
         </form>
@@ -256,7 +251,7 @@ const ProjectsPage: React.FC = () => {
   }, [filter, projects]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this project? This action cannot be undone.')) return;
+    if (!confirm('Delete this project architecture from the node?')) return;
     setDeletingId(id);
     try {
       await deleteProject(id);
@@ -269,7 +264,7 @@ const ProjectsPage: React.FC = () => {
 
   /* ─── Filter Toggle Group ─── */
   const filterGroup = (
-    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
+    <div className="flex items-center gap-1.5 bg-white/40 backdrop-blur-2xl border border-dt-primary/5 rounded-[18px] p-1.5 shadow-sm group/filters">
       {FILTERS.map((key) => {
         const isSelected = filter === key;
         return (
@@ -278,11 +273,11 @@ const ProjectsPage: React.FC = () => {
             type="button"
             onClick={() => setFilter(key)}
             className={[
-              'px-3 py-1.5 text-sm rounded-md cursor-pointer',
-              'transition-all duration-200',
+              'px-5 py-2.5 text-[10px] font-black tracking-[0.2em] uppercase rounded-[14px] cursor-pointer border border-transparent',
+              'transition-all duration-700 cubic-bezier(0.22, 1, 0.36, 1)',
               isSelected
-                ? 'bg-gray-900 text-white shadow-sm font-medium'
-                : 'text-gray-600 hover:bg-gray-100',
+                ? 'bg-dt-text text-white shadow-dt-card border-dt-primary/10'
+                : 'text-dt-textSecondary/40 hover:bg-white/60 hover:text-dt-text hover:border-dt-primary/10',
             ].join(' ')}
           >
             {key}
@@ -294,21 +289,24 @@ const ProjectsPage: React.FC = () => {
 
   /* ─── Header Actions ─── */
   const headerActions = (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-col sm:flex-row items-center gap-5">
       {filterGroup}
       <button
         type="button"
         onClick={() => setShowCreate(true)}
         className={[
-          'inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold cursor-pointer',
-          'bg-gray-900 text-white shadow-md',
-          'hover:shadow-lg hover:scale-[1.03]',
-          'active:scale-[0.97]',
-          'transition-all duration-200',
+          'group/new-btn inline-flex items-center gap-3 rounded-[18px] px-7 py-3.5 text-[11px] font-black tracking-[0.25em] uppercase cursor-pointer',
+          'bg-dt-text text-white shadow-dt-floating border border-dt-text/10',
+          'hover:bg-dt-primary hover:border-dt-primary/20 hover:shadow-dt-card-hover hover:-translate-y-1',
+          'active:scale-[0.96]',
+          'transition-all duration-700 cubic-bezier(0.22, 1, 0.36, 1)',
         ].join(' ')}
       >
-        <Icon name="plus" size={16} className="text-white" />
-        New Project
+        <div className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-dt-secondary opacity-75"></span>
+          <Icon name="plus" size={14} className="relative text-white group-hover/new-btn:rotate-90 transition-transform duration-500" />
+        </div>
+        Initialize Node
       </button>
     </div>
   );
@@ -316,26 +314,24 @@ const ProjectsPage: React.FC = () => {
   /* ─── Loading Skeleton ─── */
   if (status === 'loading' && !data) {
     return (
-      <div className="transition-opacity duration-300 opacity-100">
-        <PageShell title="My Projects" subtitle="Manage and track your development work" status="loading" error={null}>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 animate-pulse">
-                <div className="h-5 bg-gray-200 rounded w-20 mb-4" />
-                <div className="h-5 bg-gray-200 rounded w-3/4 mb-2" />
-                <div className="h-4 bg-gray-100 rounded w-full mb-4" />
-                <div className="h-2.5 bg-gray-100 rounded-full w-full mb-3" />
-                <div className="h-3 bg-gray-100 rounded w-1/2" />
-              </div>
-            ))}
-          </div>
-        </PageShell>
-      </div>
+      <PageShell title="My Projects" subtitle="Managing development architecture vectors" status="loading" error={null}>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="dt-card p-10 animate-pulse rounded-[32px]">
+              <div className="h-4 bg-dt-primary/10 rounded w-16 mb-8" />
+              <div className="h-8 bg-dt-primary/10 rounded w-3/4 mb-4" />
+              <div className="h-4 bg-dt-primary/5 rounded w-full mb-8" />
+              <div className="h-2 bg-dt-primary/5 rounded-full w-full mb-6" />
+              <div className="h-4 bg-dt-primary/5 rounded w-1/3" />
+            </div>
+          ))}
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className={['transition-opacity duration-300', mounted ? 'opacity-100' : 'opacity-0'].join(' ')}>
+    <div className={['transition-all duration-1000 cubic-bezier(0.22, 1, 0.36, 1)', mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'].join(' ')}>
       <PageShell
         title="My Projects"
         subtitle="Manage and track your development work"
@@ -344,215 +340,255 @@ const ProjectsPage: React.FC = () => {
         actions={headerActions}
         onRetry={refresh}
       >
+        {/* Elite Atmospheric System — Ultra-Subtle Mesh Gradients */}
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          {/* Subtle Lavender Diffusion */}
+          <div className="absolute top-[-5%] left-[10%] w-[900px] h-[900px] bg-dt-lavender/5 rounded-full blur-[160px] opacity-40 animate-pulse" style={{ animationDuration: '18s' }} />
+          <div className="absolute bottom-[-5%] right-[5%] w-[800px] h-[800px] bg-dt-primary/3 rounded-full blur-[140px] opacity-30 animate-pulse" style={{ animationDuration: '22s' }} />
+
+          {/* Depth-Based Lighting */}
+          <div className="absolute top-[30%] right-[15%] w-[500px] h-[500px] bg-indigo-500/2 rounded-full blur-[110px] opacity-15" />
+          <div className="absolute bottom-[15%] left-[20%] w-[400px] h-[400px] bg-dt-secondary/2 rounded-full blur-[100px] opacity-10" />
+
+          {/* Cinema Softness Layer */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(246,244,241,0.4)_100%)]" />
+        </div>
+
         {/* ─── Content ─── */}
-        <div className="flex flex-col">
+        <div className="relative z-10 mx-auto w-full max-w-[1300px]">
 
           {/* Empty State */}
           {filteredProjects.length === 0 ? (
-            <div className="dt-card shadow-sm rounded-2xl p-10 text-center max-w-md mx-auto border border-gray-200">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
-                <Icon name="folder" size={24} className="text-gray-400" />
-              </div>
-              <div className="text-base font-semibold text-gray-900">
-                {projects.length === 0 ? 'No projects yet' : 'No matching projects'}
-              </div>
-              <p className="mt-1 text-sm text-gray-500">
-                {projects.length === 0 ? 'Create your first project to get started' : 'Try adjusting your filters'}
-              </p>
-              {projects.length === 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowCreate(true)}
-                  className={[
-                    'mt-5 inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold cursor-pointer',
-                    'bg-gray-900 text-white shadow-md',
-                    'hover:shadow-lg hover:scale-[1.03]',
-                    'active:scale-[0.97]',
-                    'transition-all duration-200',
-                  ].join(' ')}
-                >
-                  <Icon name="plus" size={16} className="text-white" />
-                  Create Project
-                </button>
-              )}
-            </div>
+            <EmptyState
+              title={projects.length === 0 ? 'Project Log Empty' : 'No Vectors Found'}
+              description={projects.length === 0 ? 'Initialize your first project architecture to start tracking development intelligence.' : 'Refine search filters to locate specific project nodes.'}
+              icon="folder"
+              action={
+                projects.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCreate(true)}
+                    className="inline-flex items-center gap-3 rounded-[18px] px-8 py-4 text-[11px] font-black tracking-[0.25em] uppercase bg-dt-text text-white shadow-dt-floating hover:bg-dt-primary hover:shadow-dt-card-hover hover:-translate-y-1 transition-all duration-700 cubic-bezier(0.22, 1, 0.36, 1)"
+                  >
+                    <Icon name="plus" size={16} className="text-white" />
+                    Initialize Node
+                  </button>
+                )
+              }
+            />
           ) : (
-            /* ─── Project Grid ─── */
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            /* ─── Project Intelligence Grid: Orchestrated Hierarchy ─── */
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-20">
               {filteredProjects.map((p, index) => {
                 const progress = statusProgress(p);
+                const isActive = isActiveStatus(p.status);
+
                 return (
                   <div
                     key={p.id}
                     className={[
-                      'group',
-                      'bg-white relative overflow-hidden rounded-2xl p-6',
-                      'shadow-sm border border-gray-200',
-                      'border-l-4',
-                      leftBorderColor(p.status),
-                      'cursor-pointer',
-                      'hover:shadow-lg hover:-translate-y-0.5',
-                      'transition-all duration-200 ease-out',
-                      deletingId === p.id ? 'opacity-50 pointer-events-none' : '',
+                      'group/project-card',
+                      'bg-white/40 backdrop-blur-[40px] border border-white/60 rounded-[28px] p-0 shadow-dt-card relative overflow-hidden',
+                      'hover:shadow-dt-floating hover:-translate-y-1 hover:bg-white/60',
+                      'transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1)',
+                      deletingId === p.id ? 'opacity-40 grayscale pointer-events-none' : '',
                     ].join(' ')}
                     style={{
-                      animation: mounted ? `dtFadeIn 520ms ease-out ${index * 60}ms both` : 'none',
+                      animation: mounted ? `dtFadeIn 1000ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 80}ms both` : 'none',
                     }}
                   >
-                    {/* ── Top Row: Badge + Actions ── */}
-                    <div className="flex items-center justify-between mb-3">
-                      <span
-                        className={[
-                          'inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-wide shadow-sm',
-                          badgeClasses(p.status),
-                        ].join(' ')}
-                      >
-                        {p.statusLabel}
-                      </span>
+                    {/* Atmospheric Interior Depth — Extremely Subtle */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-dt-primary/[0.02] pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-1/2 h-full bg-[radial-gradient(circle_at_100%_0%,rgba(124,92,252,0.03),transparent_70%)] pointer-events-none" />
 
-                      <div className="flex items-center gap-1">
-                        {p.repoUrl && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(p.repoUrl!, '_blank', 'noopener,noreferrer');
-                            }}
-                            className="inline-flex items-center justify-center rounded-lg border border-gray-200 h-9 w-9 cursor-pointer hover:bg-gray-100 hover:scale-110 transition-all duration-200"
-                            aria-label="Open GitHub repository"
-                          >
-                            <Icon name="github" size={16} className="text-gray-600" />
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(p.id);
-                          }}
-                          className="inline-flex items-center justify-center rounded-lg border border-gray-200 h-9 w-9 cursor-pointer hover:bg-red-50 hover:border-red-200 hover:scale-110 transition-all duration-200 opacity-0 group-hover:opacity-100"
-                          aria-label="Delete project"
-                        >
-                          <Icon name="trash" size={14} className="text-red-400" />
-                        </button>
-                      </div>
-                    </div>
+                    <div className="flex flex-col h-full">
+                      {/* ── Top Bar: Control & Identity ── */}
+                      <div className="flex items-center justify-between p-6 pb-5 border-b border-dt-primary/[0.03] relative z-10">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-[14px] bg-white border border-dt-primary/10 shadow-sm flex items-center justify-center shrink-0 group-hover/project-card:scale-105 transition-all duration-500 overflow-hidden relative">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-dt-primary/5 to-transparent opacity-0 group-hover/project-card:opacity-100 transition-opacity" />
+                            <img src={githubLogo} alt="" className="w-6 h-6 object-contain opacity-70 group-hover/project-card:opacity-100 transition-opacity relative z-10" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-3 mb-1">
+                              <h3 className="text-[19px] font-black text-dt-text tracking-tight truncate group-hover/project-card:text-dt-primary transition-colors duration-500">
+                                {p.name}
+                              </h3>
+                              <span className="text-[10px] font-black text-dt-textSecondary/30 uppercase tracking-[0.2em] select-none bg-dt-primary/5 px-2 py-0.5 rounded-full">v2.4.0</span>
+                            </div>
+                            <p className="text-[9px] font-black text-dt-textSecondary/50 uppercase tracking-[0.35em]">Infrastructure Vector</p>
+                          </div>
+                        </div>
 
-                    {/* ── Title with Logo ── */}
-                    <div className="flex items-center gap-2.5">
-                      <img src={githubLogo} alt="" className="w-5 h-5 object-contain shrink-0" />
-                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-black transition-colors duration-150 truncate">
-                        {p.name}
-                      </h3>
-                    </div>
-
-                    {/* ── Description ── */}
-                    <p
-                      className="mt-1.5 text-sm text-gray-500 overflow-hidden leading-relaxed"
-                      style={{
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                      } as React.CSSProperties}
-                    >
-                      {p.description || 'No description'}
-                    </p>
-
-                    {/* ── Divider ── */}
-                    <div className="border-t border-gray-100 my-3" />
-
-                    {/* ── Tech Stack ── */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {p.techStack.length > 0 ? (
-                        p.techStack.map((tag) => (
+                        <div className="flex items-center gap-2">
                           <span
-                            key={`${p.id}-${tag}`}
-                            className="bg-gray-100 text-gray-700 text-xs px-2.5 py-0.5 rounded-full hover:bg-gray-200 transition-colors duration-150"
+                            className={[
+                              'px-4 py-2 rounded-[10px] text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm transition-all duration-500',
+                              badgeClasses(p.status),
+                            ].join(' ')}
                           >
-                            {tag}
+                            {p.statusLabel}
                           </span>
-                        ))
-                      ) : (
-                        <span className="text-xs text-gray-300 italic">No tech stack</span>
-                      )}
-                    </div>
-
-                    {/* ── Divider ── */}
-                    <div className="border-t border-gray-100 my-3" />
-
-                    {/* ── Progress Bar ── */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs text-gray-500 font-medium">Progress</span>
-                        <span className="text-xs font-semibold text-gray-700 tabular-nums">{progress}%</span>
+                          <div className="flex items-center gap-1.5 ml-2 opacity-0 group-hover/project-card:opacity-100 transition-all duration-500">
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}
+                              className="w-9 h-9 rounded-[12px] bg-white/80 hover:bg-red-50 hover:text-red-500 border border-dt-primary/5 hover:border-red-200 shadow-sm flex items-center justify-center transition-all duration-300"
+                            >
+                              <Icon name="trash" size={16} />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className={[
-                            'h-full rounded-full transition-all duration-700 ease-out',
-                            progressBarColor(p.status),
-                          ].join(' ')}
-                          style={{ width: mounted ? `${progress}%` : '0%' }}
-                        />
+
+                      {/* ── Middle: Main Orchestration ── */}
+                      <div className="flex flex-1 relative z-10 min-h-[180px]">
+                        {/* Content Sector */}
+                        <div className="flex-1 p-8 flex flex-col justify-between">
+                          <p className="text-[15px] text-dt-textSecondary/80 font-medium leading-[1.7] mb-8 line-clamp-2">
+                            {p.description || 'System node initialized with default architecture matrices. No descriptive override provided.'}
+                          </p>
+
+                          <div className="flex items-center gap-8 mt-auto">
+                            <div className="flex flex-col gap-2">
+                              <span className="text-[8px] font-black text-dt-textSecondary/40 uppercase tracking-[0.2em]">Primary Stack</span>
+                              <div className="flex flex-wrap gap-2">
+                                {p.techStack.length > 0 ? (
+                                  p.techStack.slice(0, 3).map((tag) => (
+                                    <span
+                                      key={`${p.id}-${tag}`}
+                                      className="bg-dt-bg/50 border border-dt-primary/5 text-dt-textSecondary/70 text-[9px] font-black tracking-[0.1em] uppercase px-3 py-1.5 rounded-[8px] group-hover/project-card:bg-white group-hover/project-card:border-dt-primary/10 transition-all duration-500"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-[9px] text-dt-textSecondary/20 font-bold tracking-widest italic">Void Stack</span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="h-10 w-px bg-dt-primary/[0.06]" />
+
+                            <div className="flex flex-col gap-2">
+                              <span className="text-[8px] font-black text-dt-textSecondary/40 uppercase tracking-[0.2em]">Build Latency</span>
+                              <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                <span className="text-[12px] font-black text-dt-text tracking-tighter tabular-nums">142ms</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Telemetry Sidebar: High Density Instrument */}
+                        <div className="w-[200px] border-l border-dt-primary/[0.05] bg-dt-primary/[0.005] p-8 flex flex-col gap-6">
+                          {/* Progress Meter */}
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-black text-dt-textSecondary/40 uppercase tracking-[0.25em]">Sync Level</span>
+                              <span className="text-[16px] font-black text-dt-text tabular-nums">{progress}%</span>
+                            </div>
+                            <div className="h-[5px] w-full bg-dt-primary/5 rounded-full overflow-hidden relative">
+                              <div
+                                className={[
+                                  'h-full rounded-full transition-all duration-1000 cubic-bezier(0.22, 1, 0.36, 1)',
+                                  progressBarColor(p.status),
+                                ].join(' ')}
+                                style={{ width: mounted ? `${progress}%` : '0%' }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Data Matrix */}
+                          <div className="grid grid-cols-2 gap-4 border-t border-dt-primary/[0.04] pt-5">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[8px] font-black text-dt-textSecondary/40 uppercase tracking-[0.2em] mb-1">Health</span>
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]" />
+                                <span className="text-[11px] font-black text-dt-text tracking-tight uppercase">Stable</span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-1 text-right">
+                              <span className="text-[8px] font-black text-dt-textSecondary/40 uppercase tracking-[0.2em] mb-1">Flow</span>
+                              <div className="flex items-center gap-1.5 justify-end">
+                                <Icon name="bolt" size={12} className="text-amber-500/80" />
+                                <span className="text-[11px] font-black text-dt-text tracking-tight uppercase">High</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action Anchor */}
+                          <div className="mt-auto">
+                            <button
+                              className={[
+                                'w-full py-3.5 rounded-[14px] text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3',
+                                'bg-dt-text text-white shadow-dt-floating relative overflow-hidden group/btn',
+                                'hover:bg-dt-primary hover:shadow-dt-card-hover hover:-translate-y-0.5',
+                                'transition-all duration-500 active:scale-[0.96] cubic-bezier(0.16, 1, 0.3, 1)'
+                              ].join(' ')}
+                              onClick={(e) => { e.stopPropagation(); }}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
+                              <span className="relative z-10">Open Node</span>
+                              <Icon name="arrow-right" size={12} className="relative z-10 opacity-60 group-hover/project-card:translate-x-1 transition-transform" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── Footer: Granular System Meta ── */}
+                      <div className="p-5 px-8 border-t border-dt-primary/[0.04] bg-white/20 flex items-center justify-between relative z-10">
+                        <div className="flex items-center gap-6">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-6 h-6 rounded-full bg-amber-500/5 flex items-center justify-center">
+                              <Icon name="star" size={12} className="text-amber-500/70" />
+                            </div>
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-[12px] font-black text-dt-text tabular-nums">{p.stars}</span>
+                              <span className="text-[8px] font-black text-dt-textSecondary/40 uppercase tracking-[0.1em]">Stars</span>
+                            </div>
+                          </div>
+                          <div className="w-px h-4 bg-dt-primary/10" />
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-6 h-6 rounded-full bg-dt-primary/5 flex items-center justify-center">
+                              <Icon name="clock" size={12} className="text-dt-primary/70" />
+                            </div>
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-[12px] font-bold text-dt-textSecondary/90 tabular-nums">{p.updatedAgo}</span>
+                              <span className="text-[8px] font-black text-dt-textSecondary/40 uppercase tracking-[0.1em]">Last Sync</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          {p.repoUrl && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); window.open(p.repoUrl!, '_blank', 'noopener,noreferrer'); }}
+                              className="flex items-center gap-2 px-3 py-1.5 rounded-[8px] bg-dt-text/5 hover:bg-dt-text hover:text-white border border-transparent hover:border-dt-text text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 group/gh"
+                            >
+                              <Icon name="github" size={14} className="opacity-70 group-hover/gh:opacity-100" />
+                              GitHub
+                            </button>
+                          )}
+                          {p.liveUrl && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); window.open(p.liveUrl!, '_blank', 'noopener,noreferrer'); }}
+                              className="flex items-center gap-2 px-3 py-1.5 rounded-[8px] bg-dt-primary/5 hover:bg-dt-primary hover:text-white border border-transparent hover:border-dt-primary text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 group/lh"
+                            >
+                              <Icon name="external-link" size={14} className="opacity-70 group-hover/lh:opacity-100" />
+                              Live Hub
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    {/* ── Divider ── */}
-                    <div className="border-t border-gray-100 my-3" />
-
-                    {/* ── Meta Info Row ── */}
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span className="flex items-center gap-2">
-                        {isActiveStatus(p.status) ? (
-                          <>
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-emerald-600 font-medium">Active {p.updatedAgo}</span>
-                          </>
-                        ) : (
-                          <>
-                            <Icon name="clock" size={13} className="text-gray-400" />
-                            {p.updatedAgo}
-                          </>
-                        )}
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <Icon name="star" size={13} className="text-gray-400" />
-                        {p.stars}
-                      </span>
-                    </div>
-
-                    {/* ── Divider ── */}
-                    <div className="border-t border-gray-100 my-3" />
-
-                    {/* ── Footer ── */}
-                    <div className="flex items-center justify-between">
-                      {p.repoUrl ? (
-                        <a
-                          href={p.repoUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-sm font-medium text-gray-700 hover:text-black hover:underline transition-all duration-150 flex items-center gap-1"
-                        >
-                          View Repo
-                          <span className="inline-block group-hover:translate-x-1 transition-transform duration-200">→</span>
-                        </a>
-                      ) : (
-                        <span className="text-sm text-gray-300">No repo linked</span>
-                      )}
-                      {p.liveUrl && (
-                        <a
-                          href={p.liveUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center justify-center rounded-lg h-8 w-8 hover:bg-gray-100 hover:scale-110 transition-all duration-200"
-                          aria-label="Open live site"
-                        >
-                          <Icon name="external-link" size={14} className="text-gray-400" />
-                        </a>
-                      )}
-                    </div>
+                    {/* Active Ingestion Glow — Only for Active status */}
+                    {isActive && (
+                      <div className="absolute top-0 left-0 w-[2.5px] h-full bg-gradient-to-b from-emerald-500/0 via-emerald-500/50 to-emerald-500/0 animate-pulse" />
+                    )}
                   </div>
                 );
               })}

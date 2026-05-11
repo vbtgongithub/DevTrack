@@ -39,11 +39,11 @@ const PlatformsSection: React.FC = () => {
 
   return (
     <SectionWrapper 
-      bgConfig={{ color: 'bg-[#F7F6F3]', hasGlow: true, glowPositions: ['top-left', 'top-right'] }}
-      className="!py-20 border-y border-[rgba(15,23,42,0.06)]"
+      bgConfig={{ color: 'bg-dt-bg', hasGlow: true, glowPositions: ['top-left', 'top-right'] }}
+      className="!py-20 border-y border-dt-primary/5"
     >
       <div className="text-center mb-10">
-        <p className="text-sm text-[#64748B] mb-6">Sync with your favorite platforms</p>
+        <p className="text-sm font-medium text-dt-textSecondary tracking-wide uppercase mb-6">Sync with your favorite platforms</p>
         <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
           {platforms.map((platform, i) => (
             <motion.div
@@ -53,10 +53,10 @@ const PlatformsSection: React.FC = () => {
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
               whileHover={{ y: -4, scale: 1.05 }}
-              className="flex items-center gap-2 text-[#64748B] hover:text-[#0F172A]/80 transition-all duration-200 cursor-pointer"
+              className="flex items-center gap-2 text-dt-textSecondary hover:text-dt-text transition-all duration-200 cursor-pointer"
             >
               <span className="text-2xl grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-300">{platform.icon}</span>
-              <span className="text-sm font-medium">{platform.name}</span>
+              <span className="text-sm font-bold tracking-tight">{platform.name}</span>
             </motion.div>
           ))}
         </div>
@@ -82,15 +82,15 @@ const features = [
 
 const FeaturesSection: React.FC = () => {
   return (
-    <SectionWrapper id="features" bgConfig={{ color: 'bg-[#F7F6F3]', hasGlow: true, glowPositions: ['top-left', 'bottom-right'] }}>
+    <SectionWrapper id="features" bgConfig={{ color: 'bg-dt-bg', hasGlow: true, glowPositions: ['top-left', 'bottom-right'] }}>
       <div className="text-center mb-16">
-        <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-4">
+        <h2 className="text-4xl md:text-5xl font-bold text-dt-text tracking-tight mb-4">
           Everything you need to{' '}
-          <span className="bg-gradient-to-r from-[#7C6CF2] to-[#A78BFA] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-dt-primary to-dt-secondary bg-clip-text text-transparent">
             level up
           </span>
         </h2>
-        <p className="text-lg text-[#64748B] max-w-2xl mx-auto">
+        <p className="text-lg text-dt-textSecondary max-w-2xl mx-auto font-medium">
           Comprehensive analytics and insights to help you become a better developer
         </p>
       </div>
@@ -116,15 +116,15 @@ const FeaturesSection: React.FC = () => {
 
 const DashboardPreviewSection: React.FC = () => {
   return (
-    <SectionWrapper id="preview" bgConfig={{ color: 'bg-[#F1EFEA]', hasGlow: true, glowPositions: ['center'] }}>
+    <SectionWrapper id="preview" bgConfig={{ color: 'bg-dt-elevated', hasGlow: true, glowPositions: ['center'] }}>
       <div className="text-center mb-16">
-        <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-4">
+        <h2 className="text-4xl md:text-5xl font-bold text-dt-text tracking-tight mb-4">
           Your development journey,{' '}
-          <span className="bg-gradient-to-r from-[#7C6CF2] to-[#A78BFA] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-dt-primary to-dt-secondary bg-clip-text text-transparent">
             visualized
           </span>
         </h2>
-        <p className="text-lg text-[#64748B] max-w-2xl mx-auto">
+        <p className="text-lg text-dt-textSecondary max-w-2xl mx-auto font-medium">
           Beautiful, real-time dashboards that make tracking your progress effortless
         </p>
       </div>
@@ -146,22 +146,22 @@ const steps = [
 
 const HowItWorksSection: React.FC = () => {
   return (
-    <SectionWrapper bgConfig={{ color: 'bg-[#F7F6F3]', hasGlow: true, glowPositions: ['top-left', 'bottom-right'] }}>
+    <SectionWrapper bgConfig={{ color: 'bg-dt-bg', hasGlow: true, glowPositions: ['top-left', 'bottom-right'] }}>
       <div className="text-center mb-16">
-        <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-4">
+        <h2 className="text-4xl md:text-5xl font-bold text-dt-text tracking-tight mb-4">
           How it{' '}
-          <span className="bg-gradient-to-r from-[#7C6CF2] to-[#A78BFA] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-dt-primary to-dt-secondary bg-clip-text text-transparent">
             works
           </span>
         </h2>
-        <p className="text-lg text-[#64748B] max-w-2xl mx-auto">
+        <p className="text-lg text-dt-textSecondary max-w-2xl mx-auto font-medium">
           Get started in minutes with our simple onboarding process
         </p>
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
         {/* Connection Line */}
-        <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#7C6CF2]/30 to-transparent transform -translate-y-1/2" />
+        <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-px bg-gradient-to-r from-transparent via-dt-primary/30 to-transparent transform -translate-y-1/2" />
 
         {steps.map((step, i) => (
           <motion.div
@@ -174,19 +174,19 @@ const HowItWorksSection: React.FC = () => {
           >
             <motion.div
               whileHover={{ y: -8 }}
-              className="p-6 rounded-3xl bg-white border border-white/[0.05] backdrop-blur-sm h-full relative overflow-hidden group"
+              className="p-6 rounded-3xl dt-card bg-dt-surface border border-dt-primary/10 backdrop-blur-sm h-full relative overflow-hidden group shadow-sm hover:shadow-dt-card-hover"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-[#7C6CF2]/0 to-[#A78BFA]/0 group-hover:from-[#7C6CF2]/5 group-hover:to-[#A78BFA]/5 transition-all duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-br from-dt-primary/0 to-dt-secondary/0 group-hover:from-dt-primary/5 group-hover:to-dt-secondary/5 transition-all duration-500" />
               <div className="relative">
                 <motion.div
                   whileHover={{ scale: 1.1, rotate: 5 }}
-                  className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7C6CF2]/20 to-[#A78BFA]/20 flex items-center justify-center text-2xl mb-4 border border-[rgba(15,23,42,0.06)]"
+                  className="w-14 h-14 rounded-2xl bg-gradient-to-br from-dt-primary/10 to-dt-secondary/10 flex items-center justify-center text-2xl mb-4 border border-dt-primary/10 shadow-sm text-dt-primary"
                 >
                   {step.icon}
                 </motion.div>
-                <div className="text-5xl font-bold text-[#0F172A]/[0.06] mb-2">{step.number}</div>
-                <h3 className="text-xl font-semibold text-[#0F172A] mb-2">{step.title}</h3>
-                <p className="text-sm text-[#64748B]">{step.description}</p>
+                <div className="text-5xl font-extrabold text-dt-primary/5 mb-2">{step.number}</div>
+                <h3 className="text-[17px] font-bold text-dt-text tracking-tight mb-2">{step.title}</h3>
+                <p className="text-[14px] text-dt-textSecondary font-medium">{step.description}</p>
               </div>
             </motion.div>
           </motion.div>
@@ -227,15 +227,15 @@ const testimonials = [
 
 const TestimonialsSection: React.FC = () => {
   return (
-    <SectionWrapper bgConfig={{ color: 'bg-[#F1EFEA]', hasGlow: true, glowPositions: ['bottom-left'] }}>
+    <SectionWrapper bgConfig={{ color: 'bg-dt-elevated', hasGlow: true, glowPositions: ['bottom-left'] }}>
       <div className="text-center mb-16">
-        <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-4">
+        <h2 className="text-4xl md:text-5xl font-bold text-dt-text tracking-tight mb-4">
           Loved by{' '}
-          <span className="bg-gradient-to-r from-[#7C6CF2] to-[#A78BFA] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-dt-primary to-dt-secondary bg-clip-text text-transparent">
             developers
           </span>
         </h2>
-        <p className="text-lg text-[#64748B] max-w-2xl mx-auto">
+        <p className="text-lg text-dt-textSecondary max-w-2xl mx-auto font-medium">
           Join thousands of developers tracking their growth with DevTrack
         </p>
       </div>
@@ -312,16 +312,16 @@ const PricingSection: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <SectionWrapper id="pricing" bgConfig={{ color: 'bg-[#F7F6F3]', hasGlow: true, glowPositions: ['center'] }}>
+    <SectionWrapper id="pricing" bgConfig={{ color: 'bg-dt-bg', hasGlow: true, glowPositions: ['center'] }}>
       <div className="text-center mb-16">
-        <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-4">
+        <h2 className="text-4xl md:text-5xl font-bold text-dt-text tracking-tight mb-4">
           Simple,{' '}
-          <span className="bg-gradient-to-r from-[#7C6CF2] to-[#A78BFA] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-dt-primary to-dt-secondary bg-clip-text text-transparent">
             transparent
           </span>
           {' '}pricing
         </h2>
-        <p className="text-lg text-[#64748B] max-w-2xl mx-auto">
+        <p className="text-lg text-dt-textSecondary max-w-2xl mx-auto font-medium">
           Choose the plan that fits your coding journey
         </p>
       </div>
@@ -348,17 +348,17 @@ const CTASection: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <SectionWrapper bgConfig={{ color: 'bg-[#F1EFEA]', hasGlow: true, glowPositions: ['center'] }}>
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#7C6CF2]/20 to-transparent pointer-events-none" />
+    <SectionWrapper bgConfig={{ color: 'bg-dt-elevated', hasGlow: true, glowPositions: ['center'] }}>
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-dt-primary/20 to-transparent pointer-events-none" />
 
       <div className="text-center">
-        <h2 className="text-4xl md:text-5xl font-bold text-[#0F172A] mb-6">
+        <h2 className="text-4xl md:text-5xl font-bold text-dt-text tracking-tight mb-6">
           Start tracking your{' '}
-          <span className="bg-gradient-to-r from-[#7C6CF2] to-[#A78BFA] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-dt-primary to-dt-secondary bg-clip-text text-transparent">
             developer growth
           </span>
         </h2>
-        <p className="text-lg text-[#64748B] mb-10 max-w-2xl mx-auto">
+        <p className="text-lg text-dt-textSecondary mb-10 max-w-2xl mx-auto font-medium">
           Join thousands of developers who are leveling up their coding journey with DevTrack
         </p>
         <div className="flex flex-wrap justify-center gap-4">
@@ -380,7 +380,7 @@ const CTASection: React.FC = () => {
 
 export const LandingPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-[#F7F6F3]">
+    <div className="min-h-screen bg-dt-bg">
       <NoiseOverlay />
       <Navbar />
       <Hero />

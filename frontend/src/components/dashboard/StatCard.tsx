@@ -4,56 +4,57 @@ export type StatCardProps = {
   label: string;
   value: string | number;
   leading: React.ReactNode;
+  highlight?: boolean;
+  delay?: number;
 };
 
-export const StatCard: React.FC<StatCardProps> = ({ label, value, leading }) => {
+export const StatCard: React.FC<StatCardProps> = ({ label, value, leading, highlight, delay = 0 }) => {
   const leadingEl = React.isValidElement(leading)
     ? React.cloneElement(
-        leading as React.ReactElement<{ className?: string }>,
-        {
-          className: [
-            (leading as React.ReactElement<{ className?: string }>).props.className,
-            'w-5 h-5',
-            'object-contain',
-          ]
-            .filter(Boolean)
-            .join(' '),
-        },
-      )
+      leading as React.ReactElement<{ className?: string }>,
+      {
+        className: [
+          (leading as React.ReactElement<{ className?: string }>).props.className,
+          'w-5 h-5',
+          'object-contain',
+        ]
+          .filter(Boolean)
+          .join(' '),
+      },
+    )
     : leading;
 
   return (
     <div
       className={[
-        'h-[120px]',
-        'rounded-2xl',
-        'bg-white',
-        'shadow-sm',
-        'hover:shadow-lg',
-        'hover:-translate-y-0.5',
-        'transition-all',
-        'duration-200',
-        'ease-out',
-        'border',
-        'border-gray-200',
-        'p-5',
-        'flex',
-        'items-center',
-        'gap-4',
-        'min-w-0',
-        'cursor-default',
+        'h-[110px] lg:h-[120px]',
+        'dt-card border-dt-primary/5 dt-pop flex flex-col justify-between p-5 relative overflow-hidden',
+        highlight ? 'bg-gradient-to-br from-dt-primary/5 to-dt-secondary/10 border-dt-primary/20' : 'bg-gradient-to-br from-white to-dt-bg/50',
       ].join(' ')}
+      style={{
+        animation: `dtFadeIn 400ms ease-out ${delay}ms both`,
+      }}
     >
-      <div className="shrink-0 w-11 h-11 bg-gray-50 rounded-xl flex items-center justify-center border border-gray-100">
-        {leadingEl}
+      <div className="flex items-center justify-between">
+        <div className={[
+          'w-10 h-10 rounded-xl flex items-center justify-center shadow-sm',
+          highlight ? 'bg-white text-dt-primary' : 'bg-white border border-dt-primary/10 text-dt-textMuted',
+        ].join(' ')}>
+          {leadingEl}
+        </div>
+        <div className="text-xs font-semibold text-dt-textSecondary">{label}</div>
       </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="text-xl font-bold text-gray-900 leading-none tabular-nums whitespace-nowrap truncate">
+      <div className="mt-2">
+        <div className={[
+          'text-3xl font-extrabold tabular-nums tracking-tight leading-none',
+          highlight ? 'text-dt-primary' : 'text-dt-text',
+        ].join(' ')}>
           {typeof value === 'number' ? value.toLocaleString() : value}
         </div>
-        <div className="mt-1.5 text-xs text-gray-500 font-medium whitespace-nowrap truncate">{label}</div>
       </div>
+      {highlight && (
+        <div className="absolute top-0 right-0 w-32 h-32 bg-dt-primary/10 blur-3xl rounded-full -mr-10 -mt-10 pointer-events-none" />
+      )}
     </div>
   );
 };

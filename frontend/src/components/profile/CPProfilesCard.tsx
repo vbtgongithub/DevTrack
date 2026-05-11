@@ -33,6 +33,7 @@ type PlatformConfig = {
   placeholder: string;
   bgColor: string;
   status: 'connected' | 'loading' | 'error' | 'idle';
+  helpText?: string;
 };
 
 /** Format ISO date to a human-readable "last synced" string */
@@ -63,6 +64,7 @@ export const CPProfilesCard: React.FC<CPProfilesCardProps> = React.memo(
         placeholder: 'e.g. leetcode_user',
         bgColor: '#fff7ed',
         status: leetcode.loading ? 'loading' : leetcode.error ? 'error' : leetcode.data ? 'connected' : 'idle',
+        helpText: 'Only shows recent activity',
       },
       {
         key: 'codeforcesUsername',
@@ -71,6 +73,7 @@ export const CPProfilesCard: React.FC<CPProfilesCardProps> = React.memo(
         placeholder: 'e.g. tourist',
         bgColor: '#eff6ff',
         status: codeforces.loading ? 'loading' : codeforces.error ? 'error' : codeforces.data ? 'connected' : 'idle',
+        helpText: '',
       },
       {
         key: 'codechefUsername',
@@ -79,6 +82,7 @@ export const CPProfilesCard: React.FC<CPProfilesCardProps> = React.memo(
         placeholder: 'e.g. codechef_user',
         bgColor: '#faf5f0',
         status: codechef.loading ? 'loading' : codechef.error ? 'error' : codechef.data ? 'connected' : 'idle',
+        helpText: '',
       },
     ];
 
@@ -111,6 +115,9 @@ export const CPProfilesCard: React.FC<CPProfilesCardProps> = React.memo(
                 aria-label={`${p.label} username`}
                 disabled={isSyncing}
               />
+              {p.helpText && (
+                <p className="cp-platform-help">{p.helpText}</p>
+              )}
             </div>
             <div className={`cp-status-dot cp-status-dot--${p.status}`} title={p.status} />
           </div>

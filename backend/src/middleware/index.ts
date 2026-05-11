@@ -15,3 +15,5 @@ export {
 } from './auth.js';
 
 export { validateBody, validateQuery, validateParams } from './validation.js';
+
+export { rateLimit } from './rateLimit.js';

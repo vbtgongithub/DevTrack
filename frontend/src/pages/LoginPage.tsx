@@ -35,9 +35,9 @@ const Field: React.FC<FieldProps> = ({
 
   return (
     <div className="space-y-1.5 relative group">
-      <label htmlFor={id} className="block text-[13px] font-semibold text-[#0F172A]">
+      <label htmlFor={id} className="block text-[13px] font-bold text-dt-text tracking-tight">
         {label}
-        {required && <span className="text-[#7C6CF2] ml-1" aria-hidden="true">*</span>}
+        {required && <span className="text-dt-primary ml-1" aria-hidden="true">*</span>}
       </label>
       <div className="relative">
         <input
@@ -51,14 +51,14 @@ const Field: React.FC<FieldProps> = ({
           aria-invalid={!!error}
           aria-describedby={error ? `${id}-error` : undefined}
           className={`
-            w-full px-4 py-3.5 rounded-xl text-[14px] text-[#0F172A] font-medium
-            bg-[#FAFAF8] 
+            w-full px-4 py-3.5 rounded-xl text-[14px] text-dt-text font-bold
+            bg-dt-elevated 
             border transition-all duration-300 ease-out
-            placeholder:text-[#94A3B8] placeholder:font-normal
+            placeholder:text-dt-textMuted placeholder:font-medium
             outline-none
             ${error
               ? 'border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10 bg-white'
-              : 'border-[rgba(15,23,42,0.06)] hover:border-[rgba(15,23,42,0.12)] focus:border-[#7C6CF2] focus:ring-4 focus:ring-[#7C6CF2]/10 bg-[#FAFAF8] focus:bg-white'
+              : 'border-dt-primary/5 hover:border-dt-primary/10 focus:border-dt-primary focus:ring-4 focus:ring-dt-primary/10 bg-dt-elevated focus:bg-dt-surface'
             }
             ${isPassword ? 'pr-12' : ''}
           `}
@@ -67,7 +67,7 @@ const Field: React.FC<FieldProps> = ({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#0F172A] transition-colors p-1"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-dt-textMuted hover:text-dt-text transition-colors p-1"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? (
@@ -90,7 +90,7 @@ const Field: React.FC<FieldProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             id={`${id}-error`}
-            className="text-[13px] text-red-500 font-medium pl-1 m-0 absolute -bottom-5"
+            className="text-[13px] text-red-500 font-bold pl-1 m-0 absolute -bottom-5"
           >
             {error}
           </motion.p>
@@ -198,24 +198,24 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden bg-[#F7F6F3] font-sans selection:bg-[#7C6CF2]/15 selection:text-[#0F172A]">
+    <div className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden bg-dt-bg font-sans selection:bg-dt-primary/15 selection:text-dt-text">
       {/* ─── Background Effects ─── */}
       <div className="absolute inset-0 pointer-events-none bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay z-0" />
-      <motion.div 
-        animate={{ 
+      <motion.div
+        animate={{
           y: [0, -20, 0],
           x: [0, 10, 0],
         }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#7C6CF2]/10 rounded-full blur-[120px]" 
+        className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-dt-primary/10 rounded-full blur-[120px]"
       />
-      <motion.div 
-        animate={{ 
+      <motion.div
+        animate={{
           y: [0, 20, 0],
           x: [0, -15, 0],
         }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-        className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-[#A78BFA]/10 rounded-full blur-[100px]" 
+        className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-dt-secondary/10 rounded-full blur-[100px]"
       />
 
       {/* ─── Card Container ─── */}
@@ -231,9 +231,9 @@ export const LoginPage: React.FC = () => {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="inline-flex items-center justify-center w-14 h-14 rounded-[18px] bg-white border border-[rgba(15,23,42,0.06)] shadow-[0_4px_12px_rgba(15,23,42,0.06)] mb-6"
+            className="inline-flex items-center justify-center w-14 h-14 rounded-[18px] bg-dt-surface border border-dt-primary/10 shadow-dt-glow mb-6"
           >
-            <svg className="w-6 h-6 text-[#0F172A]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-dt-text" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
             </svg>
           </motion.div>
@@ -241,7 +241,7 @@ export const LoginPage: React.FC = () => {
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.15, duration: 0.5 }}
-            className="text-[32px] font-bold text-[#0F172A] tracking-tight leading-tight"
+            className="text-[32px] font-bold text-dt-text tracking-tight leading-tight"
           >
             Welcome to DevTrack
           </motion.h1>
@@ -249,7 +249,7 @@ export const LoginPage: React.FC = () => {
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-[15px] text-[#64748B] mt-2 font-medium"
+            className="text-[15px] text-dt-textSecondary mt-2 font-medium"
           >
             Log in to continue your developer journey.
           </motion.p>
@@ -260,29 +260,29 @@ export const LoginPage: React.FC = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.25, duration: 0.5 }}
-          className="relative rounded-[28px] p-8 sm:p-10 bg-white border border-[rgba(15,23,42,0.06)] shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_rgba(15,23,42,0.06)]"
+          className="relative rounded-[28px] p-8 sm:p-10 dt-card bg-dt-surface border border-dt-primary/10 shadow-sm"
         >
           {/* ─── Tab Toggle ─── */}
-          <div className="flex rounded-2xl bg-[#F1EFEA] p-1.5 mb-8 border border-[rgba(15,23,42,0.04)]">
+          <div className="flex rounded-2xl bg-dt-bg p-1.5 mb-8 border border-dt-primary/5">
             {(['login', 'register'] as Mode[]).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => switchMode(m)}
                 className={`
-                  flex-1 py-2.5 text-[14px] font-semibold rounded-xl
+                  flex-1 py-2.5 text-[14px] font-bold rounded-xl
                   transition-all duration-300 ease-out
                   relative overflow-hidden
                   ${mode === m
-                    ? 'text-[#0F172A] shadow-[0_1px_3px_rgba(15,23,42,0.06)]'
-                    : 'text-[#64748B] hover:text-[#0F172A]'
+                    ? 'text-dt-text shadow-sm'
+                    : 'text-dt-textSecondary hover:text-dt-text'
                   }
                 `}
               >
                 {mode === m && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute inset-0 bg-white rounded-xl border border-[rgba(15,23,42,0.04)]"
+                    className="absolute inset-0 bg-dt-surface rounded-xl border border-dt-primary/5"
                     transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                   />
                 )}
@@ -396,7 +396,7 @@ export const LoginPage: React.FC = () => {
                   <svg className="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                   </svg>
-                  <p className="text-[14px] font-medium text-red-600 leading-snug">{error}</p>
+                  <p className="text-[14px] font-bold text-red-600 leading-snug">{error}</p>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -409,12 +409,12 @@ export const LoginPage: React.FC = () => {
               whileTap={{ scale: 0.98 }}
               className="
                 w-full py-3.5 px-4 mt-4
-                bg-[#7C6CF2] hover:bg-[#6b5ae0]
-                disabled:bg-[#A78BFA] disabled:cursor-not-allowed
-                text-white font-semibold text-[15px]
+                bg-gradient-to-r from-dt-primary to-dt-secondary hover:bg-[position:100%_0] bg-[length:200%_auto]
+                disabled:opacity-70 disabled:cursor-not-allowed
+                text-white font-bold text-[15px]
                 rounded-[14px]
-                shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_16px_rgba(124,108,242,0.2)]
-                hover:shadow-[0_1px_2px_rgba(15,23,42,0.04),0_12px_24px_rgba(124,108,242,0.3)]
+                shadow-lg shadow-dt-primary/20
+                hover:shadow-dt-primary/30
                 transition-all duration-300 ease-out
                 flex items-center justify-center gap-2
               "
@@ -432,14 +432,14 @@ export const LoginPage: React.FC = () => {
         </motion.div>
 
         {/* ─── Footer Link ─── */}
-        <p className="text-center text-[14px] text-[#64748B] mt-8 font-medium">
+        <p className="text-center text-[14px] text-dt-textSecondary mt-8 font-medium">
           {mode === 'login' ? (
             <>
               Don't have an account?{' '}
               <button
                 type="button"
                 onClick={() => switchMode('register')}
-                className="font-semibold text-[#0F172A] hover:text-[#7C6CF2] transition-colors duration-200 underline decoration-[rgba(15,23,42,0.1)] underline-offset-4 hover:decoration-[#7C6CF2]/40"
+                className="font-bold text-dt-text hover:text-dt-primary transition-colors duration-200 underline decoration-dt-primary/10 underline-offset-4 hover:decoration-dt-primary/40"
               >
                 Create one
               </button>
@@ -450,7 +450,7 @@ export const LoginPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => switchMode('login')}
-                className="font-semibold text-[#0F172A] hover:text-[#7C6CF2] transition-colors duration-200 underline decoration-[rgba(15,23,42,0.1)] underline-offset-4 hover:decoration-[#7C6CF2]/40"
+                className="font-bold text-dt-text hover:text-dt-primary transition-colors duration-200 underline decoration-dt-primary/10 underline-offset-4 hover:decoration-dt-primary/40"
               >
                 Sign in
               </button>
@@ -459,7 +459,7 @@ export const LoginPage: React.FC = () => {
         </p>
 
         {/* ─── Subtle Brand Footer ─── */}
-        <p className="text-center text-[11px] text-[#94A3B8] mt-10 font-medium tracking-widest uppercase">
+        <p className="text-center text-[11px] text-dt-textMuted mt-10 font-bold tracking-widest uppercase">
           DEVTRACK
         </p>
       </motion.div>

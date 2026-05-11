@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
+import { ToastContainer } from './components/shared/ToastContainer';
 import { useUserStore } from './store/userStore';
 import { LoginPage } from './pages/LoginPage';
 import { LandingPage } from './pages/LandingPage';
@@ -13,14 +14,12 @@ const NAV_ITEMS: Omit<SidebarNavItemVM, 'isActive'>[] = [
   { id: 'dashboard', label: 'Dashboard', icon: 'home', path: '/dashboard', badge: null },
   { id: 'dsa', label: 'DSA', icon: 'code-bracket', path: '/dsa', badge: null },
   { id: 'projects', label: 'Projects', icon: 'folder', path: '/projects', badge: null },
-  { id: 'activity', label: 'History', icon: 'chart-bar', path: '/activity', badge: null },
   { id: 'profile', label: 'Profile', icon: 'user', path: '/profile', badge: null },
   { id: 'settings', label: 'Settings', icon: 'cog', path: '/settings', badge: null },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
-  '/activity': 'Smart History',
   '/dsa': 'DSA Tracker',
   '/projects': 'Projects',
   '/profile': 'Profile',
@@ -29,7 +28,7 @@ const PAGE_TITLES: Record<string, string> = {
 
 // ─── Boot Splash (shown while hydrating auth state) ────────────────────────
 const BootSplash: React.FC = () => (
-  <div className="min-h-screen flex items-center justify-center bg-[#fff7f0]">
+  <div className="min-h-screen flex items-center justify-center bg-dt-bg">
     <div className="flex flex-col items-center gap-4 animate-pulse">
       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -68,7 +67,7 @@ const AppShell: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-[#fff7f0] text-gray-900 overflow-hidden">
+    <div className="flex min-h-screen w-full bg-dt-bg text-dt-text overflow-hidden">
       <Sidebar
         navItems={navItems}
         isCollapsed={false}
@@ -141,6 +140,7 @@ const AuthGate: React.FC = () => {
 function App() {
   return (
     <BrowserRouter>
+      <ToastContainer />
       <AuthGate />
     </BrowserRouter>
   );

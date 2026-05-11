@@ -31,15 +31,15 @@ export const Hero: React.FC = () => {
   return (
     <section ref={ref} className="relative min-h-screen flex items-center pt-32 pb-20 overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-[#F7F6F3]" />
+      <div className="absolute inset-0 bg-dt-bg" />
 
       {/* Radial Gradient Orbs */}
-      <div className="absolute top-0 left-1/4 w-[700px] h-[700px] bg-[#7C6CF2]/10 rounded-full blur-[150px]" />
-      <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-[#A78BFA]/10 rounded-full blur-[130px]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] bg-[#7C3AED]/5 rounded-full blur-[180px]" />
+      <div className="absolute top-0 left-1/4 w-[700px] h-[700px] bg-dt-primary/10 rounded-full blur-[150px]" />
+      <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-dt-secondary/10 rounded-full blur-[130px]" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] bg-dt-primary/5 rounded-full blur-[180px]" />
 
       {/* Grid Pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black_40%,transparent_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(124,92,252,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(124,92,252,0.03)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black_40%,transparent_100%)]" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 w-full">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -49,24 +49,24 @@ export const Hero: React.FC = () => {
             animate={isInView ? "animate" : "initial"}
             variants={staggerContainer}
           >
-            <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[rgba(15,23,42,0.06)] backdrop-blur-sm mb-6">
-              <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse shadow-lg shadow-green-400/50" />
-              <span className="text-sm text-[#64748B]">Trusted by 2,400+ developers</span>
+            <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-dt-surface border border-dt-primary/10 backdrop-blur-sm mb-6 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-dt-success animate-pulse shadow-lg shadow-green-400/50" />
+              <span className="text-sm font-medium text-dt-textSecondary">Trusted by 2,400+ developers</span>
             </motion.div>
 
             <motion.h1
               variants={fadeInUp}
-              className="text-5xl md:text-6xl lg:text-7xl font-bold text-[#0F172A] leading-[1.02] tracking-tight mb-6"
+              className="text-5xl md:text-6xl lg:text-7xl font-bold text-dt-text leading-[1.02] tracking-tight mb-6"
             >
               Track Your
-              <span className="block mt-3 bg-gradient-to-r from-[#7C6CF2] via-[#7C6CF2] to-[#A78BFA] bg-[length:200%_auto] bg-clip-text text-transparent animate-gradient">
+              <span className="block mt-3 bg-gradient-to-r from-dt-primary via-dt-primary to-dt-secondary bg-[length:200%_auto] bg-clip-text text-transparent animate-gradient">
                 Developer Growth
               </span>
             </motion.h1>
 
             <motion.p
               variants={fadeInUp}
-              className="text-lg md:text-xl text-[#64748B] max-w-xl mb-8 leading-relaxed"
+              className="text-lg md:text-xl text-dt-textSecondary max-w-xl mb-8 leading-relaxed font-medium"
             >
               The all-in-one platform for DSA tracking, coding streaks, GitHub insights, and productivity analytics. Level up your coding journey.
             </motion.p>
@@ -92,19 +92,19 @@ export const Hero: React.FC = () => {
                   <motion.div
                     key={i}
                     whileHover={{ scale: 1.15, zIndex: 10 }}
-                    className="w-10 h-10 rounded-full bg-gradient-to-br from-[rgba(15,23,42,0.02)] to-[rgba(15,23,42,0.01)] border-2 border-[#050816] ring-1 ring-white/20 relative z-0"
+                    className="w-10 h-10 rounded-full bg-gradient-to-br from-dt-primary/5 to-dt-secondary/5 border-2 border-dt-bg ring-1 ring-dt-primary/10 relative z-0"
                   />
                 ))}
               </div>
               <div>
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <svg key={i} className="w-4 h-4 text-dt-warning" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                   ))}
                 </div>
-                <span className="text-sm text-[#0F172A]/45">4.9/5 from 850+ reviews</span>
+                <span className="text-sm font-medium text-dt-textMuted">4.9/5 from 850+ reviews</span>
               </div>
             </motion.div>
           </motion.div>
@@ -118,20 +118,20 @@ export const Hero: React.FC = () => {
           >
             <div className="relative">
               {/* Glow */}
-              <div className="absolute inset-0 bg-gradient-to-r from-[#7C6CF2]/20 to-[#A78BFA]/20 blur-3xl rounded-3xl" />
+              <div className="absolute inset-0 bg-gradient-to-r from-dt-primary/20 to-dt-secondary/20 blur-3xl rounded-3xl" />
 
               {/* Dashboard Mockup */}
               <motion.div
                 whileHover={{ y: -8 }}
                 transition={{ duration: 0.4 }}
-                className="relative bg-[#F1EFEA]/90 rounded-2xl border border-[rgba(15,23,42,0.06)] overflow-hidden shadow-2xl backdrop-blur-sm"
+                className="relative bg-dt-elevated/90 rounded-2xl border border-dt-primary/10 overflow-hidden shadow-2xl backdrop-blur-md"
               >
                 {/* Window Controls */}
-                <div className="flex items-center gap-2 px-4 py-3 bg-[#F7F6F3]/80 border-b border-[rgba(15,23,42,0.06)]">
-                  <div className="w-3 h-3 rounded-full bg-red-500/60" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/60" />
-                  <span className="ml-4 text-xs text-[#64748B]">DevTrack Dashboard</span>
+                <div className="flex items-center gap-2 px-4 py-3 bg-dt-bg/80 border-b border-dt-primary/10 backdrop-blur-md">
+                  <div className="w-3 h-3 rounded-full bg-dt-error/80 shadow-sm" />
+                  <div className="w-3 h-3 rounded-full bg-dt-warning/80 shadow-sm" />
+                  <div className="w-3 h-3 rounded-full bg-dt-success/80 shadow-sm" />
+                  <span className="ml-4 text-xs font-semibold text-dt-textSecondary">DevTrack Dashboard</span>
                 </div>
 
                 {/* Content */}
@@ -145,25 +145,25 @@ export const Hero: React.FC = () => {
                     ].map((stat) => (
                       <motion.div
                         key={stat.label}
-                        whileHover={{ y: -4, borderColor: 'rgba(124, 108, 242, 0.3)' }}
-                        className="p-4 rounded-xl bg-white border border-[rgba(15,23,42,0.06)] backdrop-blur-sm transition-all duration-200"
+                        whileHover={{ y: -4, borderColor: 'rgba(124, 92, 252, 0.3)' }}
+                        className="p-4 rounded-xl dt-card bg-dt-surface border border-dt-primary/10 backdrop-blur-sm transition-all duration-200"
                       >
                         <div className="flex items-center gap-2 mb-2">
                           <span>{stat.icon}</span>
-                          <div className="text-xs text-[#64748B]">{stat.label}</div>
+                          <div className="text-[11px] font-bold text-dt-textSecondary uppercase tracking-widest">{stat.label}</div>
                         </div>
-                        <div className="text-2xl font-bold text-[#0F172A] flex items-baseline gap-1">
+                        <div className="text-2xl font-extrabold text-dt-text flex items-baseline gap-1 tracking-tight">
                           {stat.value}
-                          {stat.suffix && <span className="text-sm font-normal text-[#64748B]">{stat.suffix}</span>}
+                          {stat.suffix && <span className="text-sm font-semibold text-dt-textSecondary">{stat.suffix}</span>}
                         </div>
-                        <div className="text-xs text-[#7C6CF2] mt-1">{stat.change}</div>
+                        <div className="text-xs font-bold text-dt-primary mt-1">{stat.change}</div>
                       </motion.div>
                     ))}
                   </div>
 
                   {/* Heatmap */}
-                  <div className="p-4 rounded-xl bg-white border border-[rgba(15,23,42,0.06)] backdrop-blur-sm">
-                    <div className="text-xs text-[#64748B] mb-3">Contribution Activity</div>
+                  <div className="p-4 rounded-xl dt-card bg-dt-surface border border-dt-primary/10 backdrop-blur-sm">
+                    <div className="text-[11px] font-bold text-dt-textSecondary uppercase tracking-widest mb-3">Contribution Activity</div>
                     <div className="flex gap-1">
                       {Array.from({ length: 52 }).map((_, week) => (
                         <div key={week} className="flex flex-col gap-1">
@@ -176,8 +176,8 @@ export const Hero: React.FC = () => {
                                 className="w-2 h-2 rounded-sm"
                                 style={{
                                   backgroundColor: intensity > 0.35
-                                    ? `rgba(124, 108, 242, ${Math.min(intensity + 0.2, 0.95)})`
-                                    : 'rgba(15, 23, 42, 0.04)'
+                                    ? `rgba(124, 92, 252, ${Math.min(intensity + 0.2, 0.95)})`
+                                    : 'rgba(124, 92, 252, 0.05)'
                                 }}
                               />
                             );
@@ -196,12 +196,12 @@ export const Hero: React.FC = () => {
                     ].map((item, i) => (
                       <motion.div
                         key={i}
-                        whileHover={{ x: 6, backgroundColor: 'rgba(15, 23, 42, 0.02)' }}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-white transition-all duration-200 cursor-pointer"
+                        whileHover={{ x: 6, backgroundColor: 'rgba(124, 92, 252, 0.05)' }}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-dt-surface border border-dt-primary/5 transition-all duration-200 cursor-pointer shadow-sm"
                       >
                         <span>{item.icon}</span>
-                        <span className="text-sm text-[#0F172A]/70 flex-1">{item.text}</span>
-                        <span className="text-xs text-[#94A3B8]">{item.time}</span>
+                        <span className="text-[13px] font-bold text-dt-text flex-1 tracking-tight">{item.text}</span>
+                        <span className="text-[11px] font-semibold text-dt-textMuted uppercase tracking-wider">{item.time}</span>
                       </motion.div>
                     ))}
                   </div>
@@ -212,32 +212,32 @@ export const Hero: React.FC = () => {
               <motion.div
                 animate={floatAnimation}
                 transition={floatAnimation.transition}
-                className="absolute -right-10 top-20 p-4 bg-[#F1EFEA]/90 backdrop-blur-sm rounded-xl border border-[rgba(15,23,42,0.06)] shadow-xl"
+                className="absolute -right-10 top-20 p-4 bg-dt-elevated/90 backdrop-blur-md rounded-xl border border-dt-primary/10 shadow-dt-card-hover"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <div className="w-10 h-10 rounded-xl bg-dt-success/10 border border-dt-success/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-dt-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-[#0F172A]">Streak: 45 Days</div>
-                    <div className="text-xs text-[#64748B]">Longest ever!</div>
+                    <div className="text-[14px] font-bold text-dt-text tracking-tight">Streak: 45 Days</div>
+                    <div className="text-[12px] font-medium text-dt-textSecondary">Longest ever!</div>
                   </div>
                 </div>
               </motion.div>
 
               <motion.div
                 animate={{ y: [0, 12, 0], transition: { duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 } }}
-                className="absolute -left-8 bottom-24 p-4 bg-[#F1EFEA]/90 backdrop-blur-sm rounded-xl border border-[rgba(15,23,42,0.06)] shadow-xl"
+                className="absolute -left-8 bottom-24 p-4 bg-dt-elevated/90 backdrop-blur-md rounded-xl border border-dt-primary/10 shadow-dt-card-hover"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-[#7C6CF2]/20 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-dt-primary/10 border border-dt-primary/20 flex items-center justify-center">
                     <span className="text-lg">📈</span>
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-[#0F172A]">+847 Problems</div>
-                    <div className="text-xs text-[#64748B]">This year</div>
+                    <div className="text-[14px] font-bold text-dt-text tracking-tight">+847 Problems</div>
+                    <div className="text-[12px] font-medium text-dt-textSecondary">This year</div>
                   </div>
                 </div>
               </motion.div>

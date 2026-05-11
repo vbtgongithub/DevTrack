@@ -8,7 +8,8 @@
       "Bash(npm test *)",
       "Bash(npx vite *)",
       "Bash(pnpm build *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(pnpm run *)"
     ]
   }
 }

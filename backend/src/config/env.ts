@@ -31,6 +31,20 @@ function getEnvVarNumber(key: string, defaultValue: number): number {
   return num;
 }
 
+function getCorsOrigin(): string {
+  const origin = getEnvVar('CORS_ORIGIN', 'http://localhost:5173');
+  const nodeEnv = getEnvVar('NODE_ENV', 'development');
+  const isProd = nodeEnv === 'production';
+
+  // In production, validate it's an HTTPS origin
+  if (isProd) {
+    if (!origin.startsWith('https://')) {
+      throw new Error(`CORS_ORIGIN must use HTTPS in production. Got: ${origin}`);
+    }
+  }
+  return origin;
+}
+
 const NODE_ENV = getEnvVar('NODE_ENV', 'development');
 const IS_PROD = NODE_ENV === 'production';
 
@@ -65,11 +79,16 @@ export const env = {
   GITHUB_TOKEN: getEnvVar('GITHUB_TOKEN', ''),
 
   // CORS
-  CORS_ORIGIN: getEnvVar('CORS_ORIGIN', 'http://localhost:5173'),
+  CORS_ORIGIN: getCorsOrigin(),
 
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: getEnvVarNumber('RATE_LIMIT_WINDOW_MS', 900000), // 15 minutes
   RATE_LIMIT_MAX_REQUESTS: getEnvVarNumber('RATE_LIMIT_MAX_REQUESTS', 100),
+
+  // Auth-specific rate limiting (stricter for auth endpoints)
+  AUTH_RATE_LIMIT_WINDOW_MS: getEnvVarNumber('AUTH_RATE_LIMIT_WINDOW_MS', 900000), // 15 min
+  AUTH_RATE_LIMIT_MAX_REQUESTS: getEnvVarNumber('AUTH_RATE_LIMIT_MAX_REQUESTS', 5), // 5 attempts
+  AUTH_RATE_LIMIT_MAX_REQUESTS_WINDOW_1H: getEnvVarNumber('AUTH_RATE_LIMIT_MAX_REQUESTS_WINDOW_1H', 20),
 };
 
 export default env;
