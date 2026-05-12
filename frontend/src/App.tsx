@@ -57,6 +57,16 @@ const BootSplash: React.FC = () => (
 
 // ─── Authenticated App Shell ───────────────────────────────────────────────
 const AppShell: React.FC = () => {
+  // Start hidden so framer-motion layoutId doesn't cause hydration mismatch
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen w-full bg-dt-bg" />
+    );
+  }
+
   const location = useLocation();
   const navigate = useNavigate();
   const user = useUserStore((s) => s.user);
