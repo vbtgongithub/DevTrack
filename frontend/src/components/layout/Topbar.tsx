@@ -54,7 +54,7 @@ export const Topbar: React.FC<TopbarProps> = ({
 
           <div className="relative z-10 flex-1 min-w-0">
             <input
-              className="w-full bg-transparent outline-none text-[14px] sm:text-[15px] font-semibold text-dt-text placeholder:text-dt-textSecondary/30"
+              className="w-full bg-transparent outline-none text-[14px] sm:text-[15px] font-medium text-dt-text placeholder:text-dt-textSecondary/30"
               onFocus={() => { setIsFocused(true); onSearchClick?.(); }}
               onBlur={() => setIsFocused(false)}
               aria-label="AI Command Center"
@@ -69,7 +69,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute inset-0 pointer-events-none flex items-center"
                 >
-                  <span className="text-[14px] sm:text-[15px] font-semibold text-dt-textSecondary/30 truncate">
+                  <span className="text-[14px] sm:text-[15px] font-medium text-dt-textSecondary/30 truncate">
                     {placeholders[placeholderIndex]}
                   </span>
                 </motion.div>
@@ -78,7 +78,7 @@ export const Topbar: React.FC<TopbarProps> = ({
           </div>
 
           <div className="hidden sm:flex relative z-10 items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/80 border border-dt-primary/10 shadow-sm">
-            <span className="text-[10px] font-black text-dt-textSecondary/60 tracking-widest">⌘K</span>
+            <span className="text-[10px] font-bold text-dt-textSecondary/60 tracking-widest">⌘K</span>
           </div>
         </motion.div>
 
@@ -120,8 +120,8 @@ export const Topbar: React.FC<TopbarProps> = ({
             )}
           </div>
           <div className="hidden sm:flex flex-col items-start">
-            <div className="text-[14px] font-black text-dt-text tracking-tight">{data.displayName}</div>
-            <div className="text-[10px] font-bold text-dt-primary/60 uppercase tracking-[0.15em]">Elite Node</div>
+            <div className="text-[13px] font-bold text-dt-text tracking-tight">{data.displayName}</div>
+            <div className="text-label text-[8px] !text-dt-primary/70">Elite Node</div>
           </div>
         </button>
       </div>

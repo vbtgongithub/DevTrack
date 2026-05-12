@@ -13,10 +13,12 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'framer-motion': ['framer-motion'],
-          'vendor-ui': ['clsx', 'tailwind-merge'],
-          'vendor-core': ['axios', 'zustand', 'zod', 'react-router-dom'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('framer-motion')) return 'framer-motion';
+            if (id.includes('clsx') || id.includes('tailwind-merge')) return 'vendor-ui';
+            if (id.includes('axios') || id.includes('zustand') || id.includes('zod') || id.includes('react-router-dom')) return 'vendor-core';
+          }
         },
       },
     },

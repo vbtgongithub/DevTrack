@@ -12,7 +12,6 @@ import { SETTINGS_SCHEMA } from './schemas';
 import { useSettingsStore } from '../../store/settingsStore';
 import { SettingsFieldRenderer } from './components/SettingsFieldRenderer';
 import { updateSettings } from '../../services/settingsService';
-import type { UpdateSettingsPayload } from '../../services/settingsService';
 import { useUIStore } from '../../store/uiStore';
 import { CommandPalette } from './components/CommandPalette';
 import { SystemHealthBar } from './components/SystemHealthBar';
@@ -24,11 +23,10 @@ export const SettingsWorkspace: React.FC = () => {
 
   const [activeSection, setActiveSection] = useState(SETTINGS_SCHEMA[0].id);
   const [searchQuery, setSearchQuery] = useState('');
-  const [localValues, setLocalValues] = useState<Record<string, any>>({});
+  const [localValues, setLocalValues] = useState<Record<string, unknown>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
-  const [recentChanges, setRecentChanges] = useState<{ settingId: string; timestamp: Date }[]>([]);
   const [showRecommendations, setShowRecommendations] = useState(true);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -38,13 +36,8 @@ export const SettingsWorkspace: React.FC = () => {
   const recommendations = useMemo(() => {
     if (!settings) return [];
     // In production, pass actual userActivity
-    return generateRecommendations(settings, undefined, recentChanges.map(r => ({
-      settingId: r.settingId,
-      previousValue: null,
-      newValue: localValues[r.settingId],
-      timestamp: r.timestamp,
-    })));
-  }, [settings, recentChanges, localValues]);
+    return generateRecommendations(settings);
+  }, [settings]);
 
   // === PHASE 3: PREMIUM SAVE EXPERIENCE ===
   // Auto-save with debounce
@@ -52,16 +45,21 @@ export const SettingsWorkspace: React.FC = () => {
     if (!hasChanges || isSaving) return;
 
     setIsSaving(true);
-    const payload: UpdateSettingsPayload = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const payload: any = {};
 
-    const setNestedValue = (obj: any, path: string, val: any) => {
+    const setNestedValue = (obj: Record<string, unknown>, path: string, val: unknown) => {
       const parts = path.split('.');
-      let current = obj;
+      let current: unknown = obj;
       for (let i = 0; i < parts.length - 1; i++) {
-        if (!current[parts[i]]) current[parts[i]] = {};
-        current = current[parts[i]];
+        if (typeof current !== 'object' || current === null) break;
+        const record = current as Record<string, unknown>;
+        if (!record[parts[i]]) record[parts[i]] = {};
+        current = record[parts[i]];
       }
-      current[parts[parts.length - 1]] = val;
+      if (typeof current === 'object' && current !== null) {
+        (current as Record<string, unknown>)[parts[parts.length - 1]] = val;
+      }
     };
 
     Object.entries(localValues).forEach(([key, value]) => {
@@ -73,8 +71,9 @@ export const SettingsWorkspace: React.FC = () => {
       await fetchSettings();
       setHasChanges(false);
       addToast({ type: 'success', title: 'Auto-saved', message: 'Your changes have been synced.', duration: 2000 });
-    } catch (err: any) {
-      addToast({ type: 'error', title: 'Save Failed', message: err.message || 'Could not save settings.' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Could not save settings.';
+      addToast({ type: 'error', title: 'Save Failed', message });
     } finally {
       setIsSaving(false);
     }
@@ -115,9 +114,12 @@ export const SettingsWorkspace: React.FC = () => {
   // Flatten settings into local values
   useEffect(() => {
     if (!settings) return;
-    const flattened: Record<string, any> = {};
-    const getNestedValue = (obj: any, path: string) => {
-      return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+    const flattened: Record<string, unknown> = {};
+    const getNestedValue = (obj: unknown, path: string): unknown => {
+      return path.split('.').reduce((acc, part) => {
+        if (typeof acc !== 'object' || acc === null) return undefined;
+        return (acc as Record<string, unknown>)[part];
+      }, obj);
     };
 
     SETTINGS_SCHEMA.forEach(section => {
@@ -151,15 +153,9 @@ export const SettingsWorkspace: React.FC = () => {
   }, [searchQuery]);
 
   // === PHASE 1: Track recent changes ===
-  const handleFieldChange = (id: string, value: any) => {
+  const handleFieldChange = (id: string, value: unknown) => {
     setLocalValues(prev => ({ ...prev, [id]: value }));
     setHasChanges(true);
-
-    // Track recent changes for recommendations
-    setRecentChanges(prev => [
-      { settingId: id, timestamp: new Date() },
-      ...prev.slice(0, 4),
-    ]);
   };
 
   const handleCommandPaletteNavigate = (sectionId: string, fieldId?: string) => {
@@ -173,7 +169,7 @@ export const SettingsWorkspace: React.FC = () => {
     setSearchQuery('');
   };
 
-  const handleCommandPaletteUpdate = (settingId: string, value: any) => {
+  const handleCommandPaletteUpdate = (settingId: string, value: unknown) => {
     setLocalValues(prev => ({ ...prev, [settingId]: value }));
     setHasChanges(true);
   };
@@ -183,6 +179,7 @@ export const SettingsWorkspace: React.FC = () => {
   // === PHASE 2: SPRING PHYSICS FOR TOGGLE ===
   // Calculate save progress for animation
   const saveProgress = useSpring(0, { stiffness: 300, damping: 30 });
+  const saveProgressWidth = useTransform(saveProgress, [0, 1], ['0%', '100%']);
   useEffect(() => {
     if (isSaving) {
       saveProgress.set(0);
@@ -438,7 +435,7 @@ export const SettingsWorkspace: React.FC = () => {
             >
               <motion.div
                 className="h-full bg-dt-primary"
-                style={{ width: useTransform(saveProgress, [0, 1], ['0%', '100%']) }}
+                style={{ width: saveProgressWidth }}
               />
             </motion.div>
 

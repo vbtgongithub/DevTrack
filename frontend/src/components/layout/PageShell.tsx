@@ -20,8 +20,8 @@ export const PageShell: React.FC<PageShellProps> = ({
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1.5 mb-2">
-          <h2 className="text-3xl font-black tracking-tighter text-dt-text leading-tight">{title}</h2>
-          {subtitle ? <p className="text-[15px] font-bold text-dt-textSecondary/70 tracking-tight">{subtitle}</p> : null}
+          <h2 className="text-dashboard-title text-3xl text-dt-text tracking-tightest leading-none">{title}</h2>
+          {subtitle ? <div className="mt-1">{subtitle}</div> : null}
         </div>
         {actions ? <div className="shrink-0 flex items-center gap-2">{actions}</div> : null}
       </div>

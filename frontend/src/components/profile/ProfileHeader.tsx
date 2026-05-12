@@ -16,6 +16,8 @@ interface ProfileHeaderProps {
 
 export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(
   ({ fullName, bio, totalSolved, currentStreak, bestRating }) => {
+    // currentStreak available for future streak-protection UI
+    void currentStreak;
     return (
       <motion.div
         className="profile-header"

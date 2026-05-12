@@ -501,6 +501,7 @@ export interface ApiSocialLinks {
   portfolio: string | null;
   leetcode: string | null;
   codeforces: string | null;
+  codechef: string | null;
 }
 
 export interface ApiConnectedPlatform {

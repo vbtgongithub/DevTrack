@@ -12,8 +12,71 @@ import { Icon } from '../components/shared/Icon';
 import type { DsaData } from '../types/dsa';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
+// ---------------------------------------------------------------------------
+// Sync status helpers
+// ---------------------------------------------------------------------------
+
+function formatTimeAgo(isoString: string | null): string {
+  if (!isoString) return 'Never synced';
+  const ms = Date.now() - new Date(isoString).getTime();
+  if (ms < 60_000) return 'Just now';
+  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
+  if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}h ago`;
+  return `${Math.floor(ms / 86_400_000)}d ago`;
+}
+
+function SyncStatusBar({ isSyncing, lastSyncCompletedAt, lastSyncStatus, isDataStale }: {
+  isSyncing: boolean;
+  lastSyncCompletedAt: string | null;
+  lastSyncStatus: string | null;
+  isDataStale: boolean;
+}) {
+  let message: string;
+  let iconName: string;
+  let colorClass: string;
+
+  if (isSyncing) {
+    message = 'Syncing latest submissions…';
+    iconName = 'refresh';
+    colorClass = 'text-dt-primary';
+  } else if (lastSyncStatus === 'failed') {
+    message = 'Sync failed — retrying automatically';
+    iconName = 'exclamation-circle';
+    colorClass = 'text-red-500';
+  } else if (isDataStale) {
+    message = 'Data may be outdated';
+    iconName = 'clock';
+    colorClass = 'text-amber-500';
+  } else if (lastSyncCompletedAt) {
+    message = `Last synced ${formatTimeAgo(lastSyncCompletedAt)}`;
+    iconName = 'check-circle';
+    colorClass = 'text-emerald-500';
+  } else {
+    message = 'Waiting for first sync';
+    iconName = 'clock';
+    colorClass = 'text-gray-400';
+  }
+
+  return (
+    <div
+      className={`flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase transition-opacity duration-300 ${colorClass}`}
+      aria-live="polite"
+      aria-label={message}
+    >
+      {isSyncing ? (
+        <span className="animate-spin">
+          <Icon name={iconName} size={12} className={colorClass} />
+        </span>
+      ) : (
+        <Icon name={iconName} size={12} className={colorClass} />
+      )}
+      <span>{message}</span>
+    </div>
+  );
+}
+
 const DsaPage: React.FC = () => {
-  const { data, loading, error } = useDsaData();
+  const { data, loading, error, isSyncing, isDataStale, schedulerStatus } = useDsaData();
   const [mounted, setMounted] = React.useState(false);
   const { scrollYProgress } = useScroll();
 
@@ -74,13 +137,20 @@ const DsaPage: React.FC = () => {
     <div className={['transition-all duration-700 cubic-bezier(0.22, 1, 0.36, 1)', mounted ? 'opacity-100' : 'opacity-0'].join(' ')}>
       <PageShell
         title="DSA Tracker"
-        subtitle="Intelligent monitoring of your problem-solving architecture"
+        subtitle={(
+          <SyncStatusBar
+            isSyncing={isSyncing}
+            lastSyncCompletedAt={schedulerStatus?.lastSyncCompletedAt ?? null}
+            lastSyncStatus={schedulerStatus?.lastSyncStatus ?? null}
+            isDataStale={isDataStale}
+          />
+        )}
         status="success"
         error={null}
         actions={(
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-[14px] px-6 py-2.5 text-[13px] font-black uppercase tracking-widest text-white bg-dt-text shadow-dt-floating hover:shadow-dt-card-hover hover:scale-[1.05] active:scale-[0.95] transition-all duration-500 cubic-bezier(0.22, 1, 0.36, 1)"
+            className="inline-flex items-center gap-2 rounded-[14px] px-6 py-2.5 text-label !text-white bg-dt-text shadow-dt-floating hover:shadow-dt-card-hover hover:scale-[1.05] active:scale-[0.95] transition-all duration-500 cubic-bezier(0.22, 1, 0.36, 1)"
           >
             <Icon name="plus" size={14} className="text-white" />
             Log Packet
@@ -123,8 +193,8 @@ const DsaPage: React.FC = () => {
                      <Icon name="bolt" size={16} />
                   </div>
                   <div>
-                    <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Recent Telemetry</h2>
-                    <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">Live submission stream</p>
+                    <h2 className="text-dashboard-title text-[15px] uppercase">Recent Telemetry</h2>
+                    <p className="text-label text-[9px] !text-dt-textSecondary/50 mt-0.5">Live submission stream</p>
                   </div>
                 </div>
                 <SubmissionsTable title="Recent Submissions" submissions={safeData.submissions} />
@@ -136,8 +206,8 @@ const DsaPage: React.FC = () => {
                      <Icon name="trophy" size={16} />
                   </div>
                   <div>
-                    <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Competition Matrix</h2>
-                    <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">Performance packets</p>
+                    <h2 className="text-dashboard-title text-[15px] uppercase">Competition Matrix</h2>
+                    <p className="text-label text-[9px] !text-dt-textSecondary/50 mt-0.5">Performance packets</p>
                   </div>
                 </div>
                 <ContestList title="Contests" contests={safeData.contests} />
@@ -158,8 +228,8 @@ const DsaPage: React.FC = () => {
                      <Icon name="chart-bar" size={16} />
                   </div>
                   <div>
-                    <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Algorithm Intelligence Matrix</h2>
-                    <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">Algorithmic vectors</p>
+                    <h2 className="text-dashboard-title text-[15px] uppercase">Algorithm Intelligence Matrix</h2>
+                    <p className="text-label text-[9px] !text-dt-textSecondary/50 mt-0.5">Algorithmic vectors</p>
                   </div>
                 </div>
                 <TopicProgress title="Mastery Progress" topics={safeData.topics} />
@@ -171,8 +241,8 @@ const DsaPage: React.FC = () => {
                      <Icon name="cpu-chip" size={16} />
                   </div>
                   <div>
-                    <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">AI Engineering Brain</h2>
-                    <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">Live neural analysis</p>
+                    <h2 className="text-dashboard-title text-[15px] uppercase">AI Engineering Brain</h2>
+                    <p className="text-label text-[9px] !text-dt-textSecondary/50 mt-0.5">Live neural analysis</p>
                   </div>
                 </div>
                 <InsightsCard title="Growth Insights" submissions={safeData.submissions} topics={safeData.topics} />
@@ -192,8 +262,8 @@ const DsaPage: React.FC = () => {
                    <Icon name="globe-alt" size={16} />
                 </div>
                 <div>
-                  <h2 className="text-[15px] font-black text-dt-text tracking-tighter uppercase">Platform Intelligence Network</h2>
-                  <p className="text-[9px] text-dt-textSecondary/50 font-black tracking-widest uppercase mt-0.5">Ecosystem contribution density</p>
+                  <h2 className="text-dashboard-title text-[15px] uppercase">Platform Intelligence Network</h2>
+                  <p className="text-label text-[9px] !text-dt-textSecondary/50 mt-0.5">Ecosystem contribution density</p>
                 </div>
               </div>
               <PlatformOverview title="Ecosystem Metrics" items={safeData.platformOverview} />

@@ -20,6 +20,7 @@ import { type GithubDashboardStats } from '../services/dashboardService';
 // ─── Extended API Profile Interface ────────────────────────────────────────
 interface ExtendedApiUserProfile extends ApiUserProfile {
   roleTitle?: string;
+  location?: string;
   targetRole?: string;
   targetCompanies?: string[];
   techStack?: string[];
@@ -77,6 +78,7 @@ function mapApiToProfileData(api: ApiUserProfile): ProfileData {
     email: api.email,
     role: a.roleTitle || 'Full Stack Developer',
     bio: api.bio || '',
+    location: a.location || '',
     targetRole: a.targetRole || '',
     targetCompanies: (a.targetCompanies || []).join(', '),
     techStack: a.techStack || [],
@@ -103,6 +105,7 @@ function mapProfileDataToApi(data: ProfileData) {
       leetcode: data.leetcodeUsername || null,
       codeforces: data.codeforcesUsername || null,
       codechef: data.codechefUsername || null,
+      twitter: null,
     }
   };
 }

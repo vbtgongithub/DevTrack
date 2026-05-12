@@ -15,3 +15,5 @@ export { Project, type IProject, type IProjectContributor, type IProjectMileston
 export { ProjectTask, type IProjectTask } from './projectTask.model.js';
 export { Mission, type IMission } from './mission.model.js';
 export { SyncJob, type ISyncJob } from './syncJob.model.js';
+export { UserXp, type IUserXp } from './userXp.model.js';
+export { XpTransaction, type IXpTransaction, type XpSourceType } from './xpTransaction.model.js';

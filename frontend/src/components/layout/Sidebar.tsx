@@ -20,18 +20,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Icon name="bolt" size={20} />
           </div>
           <div className="flex flex-col">
-            <div className="text-[18px] font-black tracking-tighter text-dt-text flex items-center gap-1.5">
+            <div className="text-display text-[20px] text-dt-text flex items-center gap-1.5">
               DevTrack
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
             </div>
-            <div className="text-[10px] font-bold text-dt-textSecondary/40 uppercase tracking-[0.2em]">Engineering OS</div>
+            <div className="text-label text-[9px]">Engineering OS</div>
           </div>
         </div>
       </div>
 
       {/* ─── Main Navigation ─── */}
       <nav className="flex-1 overflow-y-auto no-scrollbar px-1">
-        <div className="text-[9px] font-black text-dt-textSecondary/30 uppercase tracking-[0.25em] px-4 mb-4">Core Systems</div>
+        <div className="text-label text-[9px] px-4 mb-5">Core Systems</div>
         <ul className="space-y-1.5">
           {navItems.map((item) => (
             <li key={item.id} className="relative">
@@ -69,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   />
                 </div>
 
-                <span className="truncate text-[14px] font-bold tracking-tight relative z-10">
+                <span className="truncate text-[13px] font-semibold tracking-tight relative z-10">
                   {item.label}
                 </span>
 
@@ -93,8 +93,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Icon name="flame" size={16} />
               </div>
               <div className="flex flex-col">
-                <div className="text-[14px] font-black text-dt-text tracking-tight">{streak ?? 0} Day Streak</div>
-                <div className="text-[9px] font-black text-amber-600/60 uppercase tracking-widest">
+                <div className="text-mono-metric text-[14px] font-bold text-dt-text tracking-tight">{streak ?? 0} Day Streak</div>
+                <div className="text-label text-[8px] !text-amber-600/70">
                   {streak && streak > 0 ? 'Momentum High' : 'Start Your Journey'}
                 </div>
               </div>
@@ -143,8 +143,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           <div className="min-w-0 flex-1 flex flex-col justify-center">
-            <div className="text-[14px] font-black text-dt-text truncate tracking-tight group-hover:text-dt-primary transition-colors">{profile?.displayName ?? 'Varshith Reddy'}</div>
-            <div className="text-[10px] font-bold text-dt-textSecondary/40 truncate tracking-[0.2em] uppercase mt-0.5">Architecture Lead</div>
+            <div className="text-[13px] font-bold text-dt-text truncate tracking-tight group-hover:text-dt-primary transition-colors">{profile?.displayName ?? 'Varshith Reddy'}</div>
+            <div className="text-label text-[9px]">Architecture Lead</div>
           </div>
           <div className="w-8 h-8 rounded-full bg-dt-bg flex items-center justify-center group-hover:bg-dt-primary/10 transition-colors">
              <Icon name="chevron-right" size={16} className="text-dt-textMuted/40 group-hover:text-dt-primary transition-colors duration-500 group-hover:translate-x-0.5" />

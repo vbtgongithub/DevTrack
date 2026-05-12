@@ -32,7 +32,7 @@ export interface SettingFieldConfig {
   requiresRestart?: boolean;
   premium?: boolean;
   danger?: boolean;
-  dependencies?: { id: string; value: any }[];
+  dependencies?: { id: string; value: unknown }[];
   experimental?: boolean; // Hidden unless Power User Mode is enabled
 }
 
@@ -51,4 +51,20 @@ export interface SettingSectionConfig {
 }
 
 // Flat key-value map for the values
-export type SettingsValues = Record<string, any>;
+export type SettingsValues = Record<string, unknown>;
+
+// Recommendation types from recommendations.ts
+export interface Recommendation {
+  id: string;
+  type: 'suggestion' | 'tip' | 'onboarding' | 'optimization';
+  priority: 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+  action?: {
+    label: string;
+    settingId: string;
+    value: unknown;
+  };
+  context?: string;
+  icon: string;
+}

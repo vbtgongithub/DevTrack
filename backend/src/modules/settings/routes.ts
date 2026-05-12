@@ -1,7 +1,7 @@
-// src/routes/settings.routes.ts
+// src/modules/settings/routes.ts
 import { Router } from 'express';
-import { authMiddleware, asyncHandler } from '../middleware/index.js';
-import * as controller from '../controllers/settings.controller.js';
+import { authMiddleware, asyncHandler } from '../../middleware/index.js';
+import * as controller from './controller.js';
 
 const router = Router();
 

@@ -36,15 +36,16 @@ interface UserActivityContext {
 
 // Recommendation rules engine
 export function generateRecommendations(
-  settings: Record<string, unknown>,
+  settings: unknown,
   userActivity?: UserActivityContext
 ): Recommendation[] {
   const recommendations: Recommendation[] = [];
+  const s = settings as Record<string, unknown>;
 
   // === CONTEXT-AWARE SUGGESTIONS ===
 
   // If GitHub is connected, recommend commit analytics
-  if (settings['integrations.github.connected'] && !settings['analytics.commitInsights']) {
+  if (s['integrations.github.connected'] && !s['analytics.commitInsights']) {
     recommendations.push({
       id: 'rec_github_analytics',
       type: 'suggestion',
@@ -62,7 +63,7 @@ export function generateRecommendations(
   }
 
   // If user frequently solves DSA problems, suggest contest reminders
-  if (settings['integrations.leetcode.connected'] && !settings['notifications.contestReminders']) {
+  if (s['integrations.leetcode.connected'] && !s['notifications.contestReminders']) {
     recommendations.push({
       id: 'rec_contest_reminders',
       type: 'suggestion',
@@ -81,7 +82,7 @@ export function generateRecommendations(
 
   // Dark mode late at night suggestion
   const hour = new Date().getHours();
-  if (settings['appearance.theme'] === 'dark' && hour >= 22 || hour < 6) {
+  if (s['appearance.theme'] === 'dark' && hour >= 22 || hour < 6) {
     recommendations.push({
       id: 'rec_night_mode',
       type: 'optimization',
@@ -99,7 +100,7 @@ export function generateRecommendations(
   }
 
   // Power user mode recommendation for active users
-  if (!settings['account.powerUserMode'] && userActivity?.totalProblemsSolved && userActivity.totalProblemsSolved > 50) {
+  if (!s['account.powerUserMode'] && userActivity?.totalProblemsSolved && userActivity.totalProblemsSolved > 50) {
     recommendations.push({
       id: 'rec_power_user',
       type: 'onboarding',
@@ -117,7 +118,7 @@ export function generateRecommendations(
   }
 
   // Suggest API tokens for users with many projects
-  if (settings['integrations.github.connected'] && !settings['developer.apiTokens'] && userActivity?.totalProjects && userActivity.totalProjects > 3) {
+  if (s['integrations.github.connected'] && !s['developer.apiTokens'] && userActivity?.totalProjects && userActivity.totalProjects > 3) {
     recommendations.push({
       id: 'rec_api_tokens',
       type: 'suggestion',
@@ -135,7 +136,7 @@ export function generateRecommendations(
   }
 
   // Compact mode for productivity-focused users
-  if (!settings['appearance.compactMode'] && userActivity?.averageDailyProblems && userActivity.averageDailyProblems > 3) {
+  if (!s['appearance.compactMode'] && userActivity?.averageDailyProblems && userActivity.averageDailyProblems > 3) {
     recommendations.push({
       id: 'rec_compact_mode',
       type: 'optimization',
@@ -153,7 +154,7 @@ export function generateRecommendations(
   }
 
   // Streak reminder for consistency builders
-  if (!settings['notifications.streakReminder'] && userActivity?.currentStreak && userActivity.currentStreak > 7) {
+  if (!s['notifications.streakReminder'] && userActivity?.currentStreak && userActivity.currentStreak > 7) {
     recommendations.push({
       id: 'rec_streak_protection',
       type: 'tip',
@@ -173,7 +174,7 @@ export function generateRecommendations(
   // === ONBOARDING SUGGESTIONS ===
 
   // First-time user suggestions
-  if (!settings['integrations.github.connected'] && !settings['integrations.leetcode.connected']) {
+  if (!s['integrations.github.connected'] && !s['integrations.leetcode.connected']) {
     recommendations.push({
       id: 'rec_connect_platforms',
       type: 'onboarding',

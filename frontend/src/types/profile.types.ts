@@ -13,6 +13,7 @@ export interface ProfileData {
   email: string;
   role: string;
   bio: string;
+  location: string;
 
   // Career Goals
   targetRole: string;
@@ -35,6 +36,7 @@ export const DEFAULT_PROFILE: ProfileData = {
   email: '',
   role: 'Full Stack Developer',
   bio: '',
+  location: '',
   targetRole: '',
   targetCompanies: '',
   techStack: [],

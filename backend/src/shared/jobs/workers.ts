@@ -1,0 +1,169 @@
+// src/shared/jobs/workers.ts — BullMQ sync worker
+// Processes platform sync jobs from the queue.
+// Emits SSE events and enqueues XP jobs on success.
+
+import { Worker, Job } from 'bullmq';
+import { getRedisClient } from '../redis/index.js';
+import { logger } from '../logger.js';
+import { eventBus } from '../sse/index.js';
+import { syncState } from '../syncState.js';
+import { syncPlatform } from '../../modules/platform-sync/sync.service.js';
+import { PlatformSyncJobData, QueueNames, JobRetryConfig } from './types.js';
+import { getXpProcessingQueue } from './queueFactory.js';
+
+let _worker: Worker<PlatformSyncJobData> | null = null;
+
+export function startPlatformSyncWorker(): Worker<PlatformSyncJobData> {
+  if (_worker) return _worker;
+
+  const redis = getRedisClient();
+
+  _worker = new Worker<PlatformSyncJobData>(
+    QueueNames.PLATFORM_SYNC,
+    async (job: Job<PlatformSyncJobData>) => {
+      const { userId, platformName, requestId } = job.data;
+      const jobId = job.id ?? 'unknown';
+      const startTime = Date.now();
+
+      logger.info('[worker] Processing platform sync job', {
+        event: 'job_started',
+        queue: QueueNames.PLATFORM_SYNC,
+        jobId,
+        userId,
+        platform: platformName,
+        requestId: requestId ?? jobId,
+        attempt: job.attemptsMade + 1,
+      });
+
+      syncState.beginSync();
+      eventBus.emitSyncStarted(userId);
+
+      try {
+        const result = await syncPlatform(userId, platformName);
+
+        const durationMs = Date.now() - startTime;
+        logger.info('[worker] Platform sync job completed', {
+          event: 'job_completed',
+          queue: QueueNames.PLATFORM_SYNC,
+          jobId,
+          userId,
+          platform: platformName,
+          requestId: requestId ?? jobId,
+          durationMs,
+          success: result.success,
+          stats: result.stats ?? null,
+          error: result.error ?? null,
+        });
+
+        syncState.completeSync(result.success ? 'success' : 'failed', durationMs);
+
+        if (result.success) {
+          eventBus.emitSyncCompleted(userId, platformName, result.stats);
+
+          // Enqueue sync completion XP award
+          try {
+            const xpQueue = getXpProcessingQueue();
+            const syncSourceId = `sync_${userId}_${platformName}_${Date.now()}`;
+            await xpQueue.add(
+              'sync-completed-xp',
+              {
+                userId,
+                sourceType: 'sync_completed',
+                sourceId: syncSourceId,
+                metadata: { platform: platformName, stats: result.stats },
+                requestId: requestId ?? jobId,
+              },
+              { jobId: `xp-sync-${platformName}-${userId}-${Date.now()}` }
+            );
+            logger.debug('[worker] XP job enqueued for sync completion', {
+              event: 'xp_job_enqueued',
+              userId,
+              platform: platformName,
+            });
+          } catch (xpErr) {
+            // XP failure must NOT fail the sync pipeline
+            logger.warn('[worker] XP enqueue failed (non-fatal)', {
+              event: 'xp_enqueue_failed',
+              userId,
+              platform: platformName,
+              error: xpErr instanceof Error ? xpErr.message : String(xpErr),
+            });
+          }
+        } else {
+          eventBus.emitSyncFailed(userId, platformName, result.error ?? 'Unknown error');
+        }
+
+        return result;
+      } catch (err) {
+        const durationMs = Date.now() - startTime;
+        const errorMessage = err instanceof Error ? err.message : String(err);
+
+        logger.error('[worker] Platform sync job failed', err, {
+          event: 'job_failed',
+          queue: QueueNames.PLATFORM_SYNC,
+          jobId,
+          userId,
+          platform: platformName,
+          requestId: requestId ?? jobId,
+          durationMs,
+          attempt: job.attemptsMade + 1,
+          maxAttempts: job.opts.backoff ? JobRetryConfig.platformSync.attempts : undefined,
+        });
+
+        syncState.completeSync('failed', durationMs);
+        eventBus.emitSyncFailed(userId, platformName, errorMessage);
+
+        throw err;
+      }
+    },
+    {
+      connection: redis,
+      concurrency: 5,
+      ...JobRetryConfig.platformSync,
+    }
+  );
+
+  _worker.on('completed', (job: Job<PlatformSyncJobData>) => {
+    logger.info('[worker] Job completed', {
+      event: 'job_completed_event',
+      queue: QueueNames.PLATFORM_SYNC,
+      jobId: job.id,
+      userId: job.data.userId,
+    });
+  });
+
+  _worker.on('failed', (job: Job<PlatformSyncJobData> | undefined, err: Error) => {
+    logger.error('[worker] Job failed permanently', err, {
+      event: 'job_failed_permanently',
+      queue: QueueNames.PLATFORM_SYNC,
+      jobId: job?.id,
+      userId: job?.data.userId,
+      attempt: job?.attemptsMade,
+    });
+  });
+
+  _worker.on('error', (err: Error) => {
+    logger.error('[worker] Worker error', err, { event: 'worker_error' });
+  });
+
+  logger.info('[worker] Platform sync worker started', {
+    event: 'worker_started',
+    queue: QueueNames.PLATFORM_SYNC,
+    concurrency: 5,
+  });
+
+  return _worker;
+}
+
+export async function stopPlatformSyncWorker(): Promise<void> {
+  if (!_worker) return;
+
+  logger.info('[worker] Stopping platform sync worker', { event: 'worker_stopping' });
+  await _worker.close();
+  _worker = null;
+  logger.info('[worker] Platform sync worker stopped', { event: 'worker_stopped' });
+}
+
+export function getWorkerStatus(): { running: boolean } {
+  return { running: _worker !== null };
+}

@@ -12,6 +12,7 @@ import { AnnouncementSection } from '../components/dashboard/AnnouncementSection
 import { ActionsPanel } from '../components/dashboard/ActionsPanel';
 import { MissionCard } from '../components/dashboard/MissionCard';
 import { GithubOverviewCard } from '../components/dashboard/GithubOverviewCard';
+import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
 
 const DashboardPage: React.FC = () => {
   const { data, loading, error } = useDashboardData();
@@ -44,11 +45,8 @@ const DashboardPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] dt-fade-in">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-dt-primary to-dt-secondary animate-pulse flex items-center justify-center shadow-dt-glow" />
-          <p className="text-dt-textSecondary font-medium tracking-wide">Syncing your data...</p>
-        </div>
+      <div className="dt-fade-in">
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -114,8 +112,8 @@ const DashboardPage: React.FC = () => {
               <span className="text-xl">✨</span>
             </div>
             <div>
-              <h2 className="text-2xl font-black text-dt-text tracking-tighter">AI Intelligence</h2>
-              <p className="text-[13px] text-dt-textSecondary font-medium">Neural insights derived from your activity</p>
+              <h2 className="text-dashboard-title text-2xl uppercase">AI Intelligence</h2>
+              <p className="text-label text-[12px] !text-dt-textSecondary/70">Neural insights derived from your activity</p>
             </div>
           </div>
           <EnhancedInsightsCard />
@@ -127,8 +125,8 @@ const DashboardPage: React.FC = () => {
               <span className="text-xl">📊</span>
             </div>
             <div>
-              <h2 className="text-2xl font-black text-dt-text tracking-tighter">Platform Intel</h2>
-              <p className="text-[13px] text-dt-textSecondary font-medium">Performance across environments</p>
+              <h2 className="text-dashboard-title text-2xl uppercase">Platform Intel</h2>
+              <p className="text-label text-[12px] !text-dt-textSecondary/70">Performance across environments</p>
             </div>
           </div>
           <div className="dt-surface p-6 flex flex-col gap-6">
@@ -146,8 +144,8 @@ const DashboardPage: React.FC = () => {
             <span className="text-xl">🐙</span>
           </div>
           <div>
-            <h2 className="text-2xl font-black text-dt-text tracking-tighter">Developer Identity System</h2>
-            <p className="text-[13px] text-dt-textSecondary font-medium">Global open-source ecosystem</p>
+            <h2 className="text-dashboard-title text-2xl uppercase">Developer Identity System</h2>
+            <p className="text-label text-[12px] !text-dt-textSecondary/70">Global open-source ecosystem</p>
           </div>
         </div>
         <GithubOverviewCard data={data} />
@@ -162,8 +160,8 @@ const DashboardPage: React.FC = () => {
             <span className="text-xl">🎯</span>
           </div>
           <div>
-            <h2 className="text-2xl font-black text-dt-text tracking-tighter">Focus & Productivity</h2>
-            <p className="text-[13px] text-dt-textSecondary font-medium">Active missions and workflow shortcuts</p>
+            <h2 className="text-dashboard-title text-2xl uppercase">Focus & Productivity</h2>
+            <p className="text-label text-[12px] !text-dt-textSecondary/70">Active missions and workflow shortcuts</p>
           </div>
         </div>
 

@@ -89,6 +89,18 @@ export const env = {
   AUTH_RATE_LIMIT_WINDOW_MS: getEnvVarNumber('AUTH_RATE_LIMIT_WINDOW_MS', 900000), // 15 min
   AUTH_RATE_LIMIT_MAX_REQUESTS: getEnvVarNumber('AUTH_RATE_LIMIT_MAX_REQUESTS', 5), // 5 attempts
   AUTH_RATE_LIMIT_MAX_REQUESTS_WINDOW_1H: getEnvVarNumber('AUTH_RATE_LIMIT_MAX_REQUESTS_WINDOW_1H', 20),
+
+  // Platform Sync Scheduler
+  SYNC_ENABLED: getEnvVar('SYNC_ENABLED', 'true') === 'true',
+  SYNC_INTERVAL_MINUTES: getEnvVarNumber('SYNC_INTERVAL_MINUTES', NODE_ENV === 'development' ? 5 : 15),
+  SYNC_MAX_RETRIES: getEnvVarNumber('SYNC_MAX_RETRIES', 3),
+  SYNC_COOLDOWN_MS: getEnvVarNumber('SYNC_COOLDOWN_MS', NODE_ENV === 'development' ? 15_000 : 5 * 60 * 1000),
+
+  // Redis — required in production (BullMQ backend)
+  REDIS_HOST: getEnvVar('REDIS_HOST', 'localhost'),
+  REDIS_PORT: getEnvVarNumber('REDIS_PORT', 6379),
+  REDIS_PASSWORD: getEnvVar('REDIS_PASSWORD', ''),
+  REDIS_URL: getEnvVar('REDIS_URL', ''),
 };
 
 export default env;

@@ -26,6 +26,50 @@ export function setOnAuthInvalid(handler: AuthInvalidHandler) {
 }
 
 // ---------------------------------------------------------------------------
+// Refresh coordination — prevents concurrent refresh race condition
+// ---------------------------------------------------------------------------
+
+let isRefreshing = false;
+let refreshQueue: Array<(token?: string) => void> = [];
+
+function onRefreshSuccess(newToken: string) {
+  refreshQueue.forEach((cb) => cb(newToken));
+  refreshQueue = [];
+  isRefreshing = false;
+}
+
+function onRefreshFailure() {
+  refreshQueue.forEach((cb) => cb(undefined));
+  refreshQueue = [];
+  isRefreshing = false;
+}
+
+function waitForRefresh(): Promise<string> {
+  return new Promise((resolve) => {
+    refreshQueue.push((token?: string) => {
+      if (token) resolve(token);
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Multi-tab sync — broadcast channel for logout/session events
+// ---------------------------------------------------------------------------
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'devtrack_access_token' && e.newValue === null) {
+      // Token cleared in another tab — invalidate this tab's session
+      try {
+        onAuthInvalid?.();
+      } catch {
+        // ignore if handler throws
+      }
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Create Axios Instance
 // ---------------------------------------------------------------------------
 
@@ -54,7 +98,7 @@ axiosClient.interceptors.request.use(
 );
 
 // ---------------------------------------------------------------------------
-// Response Interceptor — Normalize Errors
+// Response Interceptor — Normalize Errors + Coordinated Refresh
 // ---------------------------------------------------------------------------
 
 axiosClient.interceptors.response.use(
@@ -62,11 +106,31 @@ axiosClient.interceptors.response.use(
   async (error: AxiosError<ApiError>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
+      _skipToast?: boolean;
     };
 
-    // Handle 401 — attempt token refresh
+    // Handle 401 — attempt coordinated token refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+
+      // If a refresh is already in-flight, wait for it instead of firing another
+      if (isRefreshing) {
+        try {
+          const newToken = await waitForRefresh();
+          if (!newToken) {
+            window.location.href = '/login';
+            return Promise.reject(error);
+          }
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          }
+          return axiosClient(originalRequest);
+        } catch {
+          return Promise.reject(error);
+        }
+      }
+
+      isRefreshing = true;
 
       try {
         const refreshToken = localStorage.getItem('devtrack_refresh_token');
@@ -84,15 +148,20 @@ axiosClient.interceptors.response.use(
         localStorage.setItem('devtrack_access_token', newAccessToken);
         localStorage.setItem('devtrack_refresh_token', newRefreshToken);
 
+        onRefreshSuccess(newAccessToken);
+
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         }
 
         return axiosClient(originalRequest);
       } catch {
-        // Refresh failed — clear tokens and redirect
+        onRefreshFailure();
+
+        // Clear tokens from this tab too — storage event handles other tabs
         localStorage.removeItem('devtrack_access_token');
         localStorage.removeItem('devtrack_refresh_token');
+
         try {
           onAuthInvalid?.();
         } catch {
@@ -116,14 +185,14 @@ axiosClient.interceptors.response.use(
       details: error.response?.data?.details,
     };
 
-    // Global Toast Notification (except for 401 which has custom logic)
-    if (normalized.statusCode !== 401) {
+    // Global Toast Notification (skip for 401 and requests marked to skip toast)
+    if (normalized.statusCode !== 401 && !originalRequest._skipToast) {
       const { addToast } = useUIStore.getState();
       addToast({
         type: 'error',
         title: 'System Connectivity Issue',
         message: normalized.message,
-        duration: 6000
+        duration: 6000,
       });
     }
 

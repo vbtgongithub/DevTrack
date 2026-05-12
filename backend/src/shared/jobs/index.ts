@@ -1,0 +1,5 @@
+// src/shared/jobs/index.ts — Jobs module barrel
+export * from './types.js';
+export { getOrCreateQueue, getQueue, getAllQueues, closeAllQueues, getPlatformSyncQueue, getRealtimeEventsQueue, getSystemMaintenanceQueue, getXpProcessingQueue } from './queueFactory.js';
+export { startPlatformSyncWorker, stopPlatformSyncWorker, getWorkerStatus } from './workers.js';
+export { startXpWorker, stopXpWorker, getXpWorkerStatus } from './xpWorker.js';

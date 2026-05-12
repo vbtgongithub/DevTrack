@@ -166,3 +166,26 @@ export async function fetchDsaTopics(): Promise<ApiResponse<ApiDsaTopicsListResp
   );
   return data;
 }
+
+// ---------------------------------------------------------------------------
+// Sync Status — returned by the backend scheduler singleton (no DB queries)
+// ---------------------------------------------------------------------------
+
+export interface SchedulerStatus {
+  status: 'idle' | 'running' | 'error';
+  lastSyncStartedAt: string | null;
+  lastSyncCompletedAt: string | null;
+  lastSyncStatus: 'success' | 'partial' | 'failed' | null;
+  lastSyncDurationMs: number | null;
+  totalSyncs: number;
+  failedSyncs: number;
+}
+
+/**
+ * Fetch global scheduler status — lightweight, no DB.
+ * Polled by the frontend to drive sync state indicators.
+ */
+export async function fetchSchedulerStatus(): Promise<ApiResponse<SchedulerStatus>> {
+  const { data } = await axiosClient.get<ApiResponse<SchedulerStatus>>('/platforms/sync-scheduler-status');
+  return data;
+}

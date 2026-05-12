@@ -47,11 +47,11 @@ export const TopicProgress: React.FC<TopicProgressProps> = React.memo(({ title, 
       <div className="flex flex-col gap-2 mb-8 relative z-10">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
-          <span className="text-[11px] font-black text-dt-textSecondary/80 uppercase tracking-[0.25em]">Algorithm Intelligence Matrix</span>
+          <span className="text-label !text-[10px] !text-dt-textSecondary/80">Algorithm Intelligence Matrix</span>
         </div>
         <div className="flex items-end justify-between">
-          <h3 className="text-2xl font-black tracking-tighter text-dt-text">{title}</h3>
-          <p className="text-[11px] font-bold text-dt-textSecondary/80 tracking-widest uppercase mb-1">
+          <h3 className="text-dashboard-title text-2xl">{title}</h3>
+          <p className="text-mono-metric text-[10px] font-bold text-dt-textSecondary/80 tracking-widest uppercase mb-1">
             {totalSolved} solutions <span className="opacity-50 mx-1">•</span> {topics.length} vectors
           </p>
         </div>
@@ -76,12 +76,12 @@ export const TopicProgress: React.FC<TopicProgressProps> = React.memo(({ title, 
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#10B981]/5 to-transparent -translate-x-full group-hover/item:animate-[shimmer_1.5s_infinite]" />
               <div className="mb-3 flex items-end justify-between relative z-10">
                 <div className="flex flex-col">
-                  <span className="text-[15px] font-black text-dt-text tracking-tight leading-none group-hover/item:text-[#10B981] transition-colors">{topic.name}</span>
-                  <span className="text-[10px] text-dt-textSecondary/80 font-black tracking-[0.2em] uppercase mt-2 opacity-60 group-hover/item:opacity-100 transition-opacity">
+                  <span className="text-[15px] font-bold text-dt-text tracking-tight leading-none group-hover/item:text-[#10B981] transition-colors">{topic.name}</span>
+                  <span className="text-label !text-[9px] !text-dt-textSecondary/60 mt-2 opacity-60 group-hover/item:opacity-100 transition-opacity">
                     {rank} Tier
                   </span>
                 </div>
-                <span className="text-[14px] font-black text-dt-text tabular-nums leading-none tracking-tight">{topic.progress}%</span>
+                <span className="text-mono-metric text-[14px] font-bold text-dt-text tabular-nums leading-none tracking-tight">{topic.progress}%</span>
               </div>
               <div className={['h-2 w-full rounded-full overflow-hidden transition-colors duration-500 shadow-inner relative z-10', barBg].join(' ')}>
                 <div

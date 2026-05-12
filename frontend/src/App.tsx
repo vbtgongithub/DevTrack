@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
 import { ToastContainer } from './components/shared/ToastContainer';
@@ -27,6 +28,19 @@ const PAGE_TITLES: Record<string, string> = {
   '/settings': 'Settings',
 };
 
+// ─── Page Transition Wrapper ──────────────────────────────────────────────
+const pageVariants = {
+  initial: { opacity: 0, y: 12 },
+  enter: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+};
+
+const pageTransition = {
+  type: 'spring',
+  stiffness: 300,
+  damping: 30,
+} as const;
+
 // ─── Boot Splash (shown while hydrating auth state) ────────────────────────
 const BootSplash: React.FC = () => (
   <div className="min-h-screen flex items-center justify-center bg-dt-bg">
@@ -43,55 +57,83 @@ const BootSplash: React.FC = () => (
 
 // ─── Authenticated App Shell ───────────────────────────────────────────────
 const AppShell: React.FC = () => {
+  // Start hidden so framer-motion layoutId doesn't cause hydration mismatch
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen w-full bg-dt-bg" />
+    );
+  }
+
   const location = useLocation();
   const navigate = useNavigate();
   const user = useUserStore((s) => s.user);
   const { data: dashboardData } = useDashboardData();
 
-  const navItems: SidebarNavItemVM[] = NAV_ITEMS.map((item) => ({
-    ...item,
-    isActive: location.pathname === item.path,
-  }));
+  // Memoize nav items to prevent sidebar re-renders on every location change
+  const navItems: SidebarNavItemVM[] = React.useMemo<SidebarNavItemVM[]>(
+    () =>
+      NAV_ITEMS.map((item) => ({
+        ...item,
+        isActive: location.pathname === item.path,
+      })),
+    [location.pathname]
+  );
 
   const currentPageTitle = PAGE_TITLES[location.pathname] || 'DevTrack';
 
-  const topbarData: TopbarVM = {
-    displayName: user?.displayName || 'User',
-    avatarUrl: user?.avatarUrl || null,
-    currentPageTitle,
-    breadcrumbs: [
-      { label: 'Home', path: '/' },
-      ...(location.pathname !== '/'
-        ? [{ label: currentPageTitle, path: location.pathname }]
-        : []),
-    ],
-    notifications: 0,
-  };
+  const topbarData: TopbarVM = React.useMemo<TopbarVM>(
+    () => ({
+      displayName: user?.displayName || 'User',
+      avatarUrl: user?.avatarUrl || null,
+      currentPageTitle,
+      breadcrumbs: [
+        { label: 'Home', path: '/' },
+        ...(location.pathname !== '/'
+          ? [{ label: currentPageTitle, path: location.pathname }]
+          : []),
+      ],
+      notifications: 0,
+    }),
+    [user, currentPageTitle, location.pathname]
+  );
 
   return (
-    <div className="flex min-h-screen w-full bg-dt-bg text-dt-text overflow-hidden">
-      <Sidebar
-        navItems={navItems}
-        isCollapsed={false}
-        onToggleCollapse={() => undefined}
-        currentPath={location.pathname}
-        onNavigate={(path) => navigate(path)}
-        streak={dashboardData?.streakData?.currentStreak ?? 0}
-      />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar
-          data={topbarData}
-          onNotificationsClick={() => { }}
-          onProfileClick={() => navigate('/settings')}
-          onSearchClick={() => { }}
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial="initial"
+        animate="enter"
+        exit="exit"
+        variants={pageVariants}
+        transition={pageTransition}
+        className="flex min-h-screen w-full bg-dt-bg text-dt-text overflow-hidden"
+      >
+        <Sidebar
+          navItems={navItems}
+          isCollapsed={false}
+          onToggleCollapse={() => undefined}
+          currentPath={location.pathname}
+          onNavigate={(path) => navigate(path)}
+          streak={dashboardData?.streakData?.currentStreak ?? 0}
         />
 
-        <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
-          <AppRouter />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Topbar
+            data={topbarData}
+            onNotificationsClick={() => { }}
+            onProfileClick={() => navigate('/settings')}
+            onSearchClick={() => { }}
+          />
+
+          <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+            <AppRouter />
+          </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
@@ -101,12 +143,14 @@ const AuthGate: React.FC = () => {
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const hydrate = useUserStore((s) => s.hydrate);
 
-  useEffect(() => {
-    hydrate();
+  // Mark as hydrated on first render so we never show inconsistent SSR vs client HTML
+  const [hydrated, setHydrated] = React.useState(false);
+  React.useEffect(() => {
+    hydrate().then(() => setHydrated(true));
   }, [hydrate]);
 
-  // Still determining auth state — show branded splash
-  if (status === 'idle' || status === 'loading') {
+  // Show boot splash until hydration is complete — avoids hydration mismatch
+  if (!hydrated || status === 'idle' || status === 'loading') {
     return <BootSplash />;
   }
 

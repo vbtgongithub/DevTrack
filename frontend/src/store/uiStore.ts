@@ -1,18 +1,27 @@
 // ============================================================================
 // uiStore.ts — Global UI State Store
 // ============================================================================
-// Transient UI state: sidebar, modals, toasts, theme.
+// Transient UI state: sidebar, modals, toasts, theme, connection status.
 // NOT cached data — purely ephemeral presentation state.
 // ============================================================================
 
 import { create } from 'zustand';
 
-interface Toast {
+export interface Toast {
   id: string;
   type: 'success' | 'error' | 'info' | 'warning';
   title: string;
   message?: string;
-  duration?: number; // ms, default 5000
+  duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+  progress?: {
+    current: number;
+    total: number;
+  };
+  icon?: string;
 }
 
 interface UIState {
@@ -36,6 +45,19 @@ interface UIState {
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   clearToasts: () => void;
+  addActionToast: (toast: Omit<Toast, 'id' | 'action'> & { action: Toast['action'] }) => void;
+
+  // Connection status
+  isOnline: boolean;
+  setOnline: (online: boolean) => void;
+
+  // SSE status
+  sseStatus: 'connected' | 'reconnecting' | 'disconnected';
+  setSseStatus: (status: 'connected' | 'reconnecting' | 'disconnected') => void;
+
+  // Infrastructure status (degraded mode)
+  isInfrastructureDegraded: boolean;
+  setInfrastructureDegraded: (degraded: boolean) => void;
 
   // Command Palette / Search
   isSearchOpen: boolean;
@@ -60,12 +82,9 @@ export const useUIStore = create<UIState>((set) => ({
   theme: 'dark',
   setTheme: (theme) => {
     set({ theme });
-    // Apply to document
     const root = document.documentElement;
     if (theme === 'system') {
-      const prefersDark = window.matchMedia(
-        '(prefers-color-scheme: dark)'
-      ).matches;
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
     } else {
       root.setAttribute('data-theme', theme);
@@ -81,28 +100,60 @@ export const useUIStore = create<UIState>((set) => ({
 
   // Toasts
   toasts: [],
-  addToast: (toast) =>
+  addToast: (toast) => {
+    const id = `toast-${++toastCounter}`;
+    const newToast: Toast = { ...toast, id };
+
+    const duration = toast.duration ?? 5000;
+    if (duration > 0) {
+      setTimeout(() => {
+        set((s) => ({
+          toasts: s.toasts.filter((t) => t.id !== id),
+        }));
+      }, duration);
+    }
+
     set((state) => {
-      const id = `toast-${++toastCounter}`;
-      const newToast: Toast = { ...toast, id };
-
-      // Auto-remove after duration
-      const duration = toast.duration ?? 5000;
-      if (duration > 0) {
-        setTimeout(() => {
-          set((s) => ({
-            toasts: s.toasts.filter((t) => t.id !== id),
-          }));
-        }, duration);
-      }
-
-      return { toasts: [...state.toasts, newToast] };
-    }),
+      // Limit to 4 toasts max
+      const trimmed = state.toasts.slice(-3);
+      return { toasts: [...trimmed, newToast] };
+    });
+  },
   removeToast: (id) =>
     set((state) => ({
       toasts: state.toasts.filter((t) => t.id !== id),
     })),
   clearToasts: () => set({ toasts: [] }),
+  addActionToast: (toast) => {
+    const id = `toast-${++toastCounter}`;
+    const newToast: Toast = { ...toast, id, duration: toast.duration ?? 8000 };
+
+    // Action toasts don't auto-dismiss unless duration > 0
+    if (newToast.duration && newToast.duration > 0) {
+      setTimeout(() => {
+        set((s) => ({
+          toasts: s.toasts.filter((t) => t.id !== id),
+        }));
+      }, newToast.duration);
+    }
+
+    set((state) => {
+      const trimmed = state.toasts.slice(-3);
+      return { toasts: [...trimmed, newToast] };
+    });
+  },
+
+  // Connection status
+  isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+  setOnline: (online) => set({ isOnline: online }),
+
+  // SSE status
+  sseStatus: 'disconnected',
+  setSseStatus: (status) => set({ sseStatus: status }),
+
+  // Infrastructure status
+  isInfrastructureDegraded: false,
+  setInfrastructureDegraded: (degraded) => set({ isInfrastructureDegraded: degraded }),
 
   // Search
   isSearchOpen: false,

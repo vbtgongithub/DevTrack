@@ -66,7 +66,7 @@ export interface TopbarProps {
 
 export interface PageShellProps {
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   children: React.ReactNode;
   actions?: React.ReactNode;
   status: DataStatus;
