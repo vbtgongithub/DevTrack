@@ -1,14 +1,14 @@
-// src/controllers/settings.controller.ts
+// src/modules/settings/controller.ts
 // Hardened settings controller — platform username/handle updates only.
 // Internal fields (userId, lastSyncedAt, timestamps) are never client-writable.
 
 import type { Response } from 'express';
 import { Types } from 'mongoose';
-import { UserSettings } from '../db/models/userSettings.model.js';
-import { ActivityEvent } from '../db/models/activityEvent.model.js';
-import { successResponse, commonErrors } from '../shared/response.js';
-import type { AuthenticatedRequest } from '../middleware/auth.js';
-import { logger } from '../shared/logger.js';
+import { UserSettings } from '../../db/models/userSettings.model.js';
+import { ActivityEvent } from '../../db/models/activityEvent.model.js';
+import { successResponse, commonErrors } from '../../shared/response.js';
+import type { AuthenticatedRequest } from '../../middleware/auth.js';
+import { logger } from '../../shared/logger.js';
 import { z } from 'zod';
 
 // ---------------------------------------------------------------------------
@@ -37,7 +37,7 @@ interface SettingsUpdateInput {
 const platformFieldSchema = z.object({
   username: z.string().max(100).optional(),
   handle:   z.string().max(100).optional(),
-}).strict();                              // rejects lastSyncedAt, userId, etc.
+}).strict();
 
 const updateSettingsSchema: z.ZodType<SettingsUpdateInput> = z.object({
   platforms: z.object({
@@ -45,14 +45,13 @@ const updateSettingsSchema: z.ZodType<SettingsUpdateInput> = z.object({
     codeforces: platformFieldSchema.optional(),
     leetcode:   platformFieldSchema.optional(),
     codechef:   platformFieldSchema.optional(),
-  }).strict().optional(),                 // rejects platforms not in the list
-}).strict();                              // rejects top-level unknowns
+  }).strict().optional(),
+}).strict();
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Build a mongo dot-notation $set object from validated input. */
 function buildDotNotationUpdate(
   platforms: NonNullable<SettingsUpdateInput['platforms']>,
 ): Record<string, string> {
@@ -71,7 +70,6 @@ function buildDotNotationUpdate(
   return update;
 }
 
-/** Produce a human-readable summary of what changed (for activity log). */
 function describeChanges(
   platforms: NonNullable<SettingsUpdateInput['platforms']>,
 ): string {
@@ -86,7 +84,6 @@ function describeChanges(
     : 'Settings update (no changes)';
 }
 
-/** Map Zod formatted errors to Record<string, string[]> for the API. */
 function mapZodErrors(error: z.ZodError): Record<string, string[]> {
   const details: Record<string, string[]> = {};
   for (const issue of error.issues) {
@@ -101,10 +98,6 @@ function mapZodErrors(error: z.ZodError): Record<string, string[]> {
 // GET /api/settings
 // ---------------------------------------------------------------------------
 
-/**
- * Retrieve the authenticated user's settings.
- * Creates a default document if none exists yet.
- */
 export async function getSettings(
   req: AuthenticatedRequest,
   res: Response,
@@ -128,11 +121,6 @@ export async function getSettings(
 // PUT /api/settings
 // ---------------------------------------------------------------------------
 
-/**
- * Partially update platform usernames / handles.
- * Only explicitly provided fields are touched — existing data is never wiped.
- * Internal fields (userId, lastSyncedAt, timestamps) are rejected by Zod.
- */
 export async function updateSettings(
   req: AuthenticatedRequest,
   res: Response,
@@ -143,7 +131,6 @@ export async function updateSettings(
     return;
   }
 
-  // 1. Validate — strict schemas reject unknown keys / internal fields
   const parseResult = updateSettingsSchema.safeParse(req.body);
   if (!parseResult.success) {
     commonErrors.validationError(res, mapZodErrors(parseResult.error));
@@ -152,27 +139,23 @@ export async function updateSettings(
 
   const { platforms } = parseResult.data;
 
-  // 2. Guard: nothing to do
   if (!platforms || Object.keys(platforms).length === 0) {
     commonErrors.badRequest(res, 'No valid fields provided for update');
     return;
   }
 
-  // 3. Build safe dot-notation update (never overwrites the whole object)
   const updateData = buildDotNotationUpdate(platforms);
   if (Object.keys(updateData).length === 0) {
     commonErrors.badRequest(res, 'No valid fields provided for update');
     return;
   }
 
-  // 4. Persist
   const updatedSettings = await UserSettings.findOneAndUpdate(
     { userId },
     { $set: updateData },
     { upsert: true, new: true, runValidators: true },
   );
 
-  // 5. Activity log (fire-and-forget — never blocks the response)
   const activityDescription = describeChanges(platforms);
   ActivityEvent.create({
     userId: new Types.ObjectId(userId),

@@ -59,7 +59,7 @@ export const DashboardHeader: React.FC = () => {
   return (
     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-dt-primary/5">
       <div className="flex flex-col gap-5">
-        <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-dt-text leading-[1.1] relative">
+        <h1 className="text-display text-4xl md:text-5xl text-dt-text leading-[1.1] relative">
           {greeting}, <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-dt-primary via-[#A78BFA] to-[#FF8B94] animate-gradient-x drop-shadow-sm">{displayName.split(' ')[0]}</span> <span className="text-3xl md:text-4xl align-middle ml-1 hover:animate-[wiggle_1s_ease-in-out_infinite] inline-block origin-bottom">{emoji}</span>
           <div className="absolute -z-10 -inset-4 bg-gradient-to-r from-dt-primary/10 to-[#FF8B94]/10 blur-2xl opacity-50 mix-blend-multiply rounded-full pointer-events-none" />
@@ -69,10 +69,10 @@ export const DashboardHeader: React.FC = () => {
           <div className="flex flex-wrap items-center gap-4 text-[14px]">
             <span className="flex items-center gap-2 px-1">
               <Icon name="calendar" size={16} className="text-dt-primary/60" />
-              <span className="font-bold text-dt-textSecondary/80 tracking-tight">{dateStr}</span>
+              <span className="text-mono-metric font-semibold text-dt-textSecondary/80 tracking-tight">{dateStr}</span>
             </span>
             <div className="w-1 h-1 rounded-full bg-dt-textDisabled/40 hidden sm:inline" />
-            <span className="group flex items-center gap-2.5 px-3 py-1 rounded-full bg-dt-success/5 text-dt-success text-[12px] font-black tracking-wider uppercase border border-dt-success/10 shadow-[0_0_15px_rgba(34,197,94,0.05)] backdrop-blur-md transition-all hover:bg-dt-success/10 cursor-default">
+            <span className="text-label !text-[10px] flex items-center gap-2 px-3 py-1 rounded-full bg-dt-success/5 !text-dt-success border border-dt-success/10 shadow-[0_0_15px_rgba(34,197,94,0.05)] backdrop-blur-md transition-all hover:bg-dt-success/10 cursor-default">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-dt-success opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-dt-success shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
@@ -81,7 +81,7 @@ export const DashboardHeader: React.FC = () => {
             </span>
           </div>
           
-          <div className="flex items-center gap-2 text-dt-textSecondary/70 text-[13px] font-medium h-5 overflow-hidden">
+          <div className="flex items-center gap-2 text-dt-textSecondary/70 text-[13px] font-medium h-5 overflow-hidden tracking-tight">
             <Icon name="sparkles" size={14} className="text-dt-primary/50 shrink-0" />
             <div className="relative w-full h-full">
               {MOTIVATIONAL_INSIGHTS.map((insight, idx) => (

@@ -45,9 +45,12 @@ export const queryKeys = {
   },
   dsa: {
     all: ['dsa'] as const,
+    dashboard: ['dsa', 'dashboard'] as const,
     submissions: (filters?: object) => ['dsa', 'submissions', filters] as const,
     contests: (filters?: object) => ['dsa', 'contests', filters] as const,
     topics: ['dsa', 'topics'] as const,
+    platformStats: ['dsa', 'platformStats'] as const,
+    syncStatus: ['dsa', 'syncStatus'] as const,
   },
   projects: {
     all: ['projects'] as const,

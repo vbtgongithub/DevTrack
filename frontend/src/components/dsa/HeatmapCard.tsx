@@ -30,8 +30,6 @@ const CELL = 12;
 const GAP = 4;
 const RADIUS = 4;
 
-const isLeapYear = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
-
 export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cells, className }) => {
   const totalDays = 365;
 
@@ -60,11 +58,17 @@ export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cell
   }, [leadingEmpty, yearDays]);
 
   const weeks = React.useMemo(() => {
+    // Pre-allocate array with exact size
     const weekCount = Math.ceil(padded.length / 7);
-    return Array.from({ length: weekCount }, (_, w) => {
-      const slice = padded.slice(w * 7, w * 7 + 7);
-      return slice.length < 7 ? [...slice, ...Array.from({ length: 7 - slice.length }, () => null)] : slice;
-    });
+    const result: Array<Array<HeatDay | null>> = new Array(weekCount);
+    for (let w = 0; w < weekCount; w++) {
+      const start = w * 7;
+      const slice = padded.slice(start, start + 7);
+      result[w] = slice.length < 7
+        ? [...slice, ...Array.from({ length: 7 - slice.length }, () => null)]
+        : slice;
+    }
+    return result;
   }, [padded]);
 
   const monthLabels = React.useMemo(() => {
@@ -127,13 +131,13 @@ export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cell
         <div>
            <div className="flex items-center gap-2 mb-1.5">
              <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse" />
-             <span className="text-[10px] font-black text-[#10B981] uppercase tracking-[0.2em]">Rolling 365-Day Matrix</span>
+             <span className="text-label !text-[10px] !text-[#10B981]">Rolling 365-Day Matrix</span>
            </div>
-           <h3 className="text-2xl font-black tracking-tighter text-dt-text">{title}</h3>
+           <h3 className="text-dashboard-title text-2xl">{title}</h3>
         </div>
         <div className="text-left sm:text-right flex flex-row sm:flex-col gap-2 sm:gap-1">
-          <div className="text-[14px] font-black text-dt-text"><span className="text-[#10B981] text-xl drop-shadow-sm">{total}</span> submissions in the last 365 days</div>
-          <div className="text-[11px] font-bold text-dt-textSecondary/80 tracking-wide uppercase">{activeDays} active days • Max streak: <span className="font-black text-[#10B981]">{maxStreak}</span></div>
+          <div className="text-[14px] font-bold text-dt-text"><span className="text-mono-metric text-[#10B981] text-xl drop-shadow-sm">{total}</span> submissions in the last 365 days</div>
+          <div className="text-label !text-[11px] !text-dt-textSecondary/80">{activeDays} active days • Max streak: <span className="text-mono-metric font-bold text-[#10B981]">{maxStreak}</span></div>
         </div>
       </div>
 
@@ -149,7 +153,7 @@ export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cell
             <div
               key={`m-${i}`}
               style={{ width: CELL, flexShrink: 0, overflow: 'visible' }}
-              className="text-[10px] font-black text-dt-textSecondary/50 leading-none whitespace-nowrap uppercase tracking-[0.1em]"
+              className="text-label !text-[10px] !text-dt-textSecondary/50 leading-none whitespace-nowrap !normal-case"
             >
               {m ?? ''}
             </div>
@@ -199,7 +203,7 @@ export const HeatmapCard: React.FC<HeatmapCardProps> = React.memo(({ title, cell
             className="pointer-events-none absolute z-30"
             style={{ left: tooltip.x, top: tooltip.y }}
           >
-            <div className="-translate-x-1/2 -translate-y-6 rounded-xl border border-[#10B981]/20 bg-white/95 backdrop-blur-xl px-3.5 py-2 text-[11px] font-black text-dt-text shadow-[0_8px_30px_rgba(16,185,129,0.15)] whitespace-nowrap uppercase tracking-widest animate-in fade-in zoom-in duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] relative">
+            <div className="text-label !text-[10px] !normal-case -translate-x-1/2 -translate-y-6 rounded-xl border border-[#10B981]/20 bg-white/95 backdrop-blur-xl px-3.5 py-2 text-dt-text shadow-[0_8px_30px_rgba(16,185,129,0.15)] whitespace-nowrap animate-in fade-in zoom-in duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] relative">
                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white/95 border-b border-r border-[#10B981]/20 rotate-45" />
               {tooltip.text}
             </div>

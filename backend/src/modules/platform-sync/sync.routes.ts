@@ -21,4 +21,7 @@ router.post('/sync/:platformName', authMiddleware, asyncHandler(controller.syncS
 // GET /platforms/sync-status — Read last sync state per platform
 router.get('/sync-status', authMiddleware, asyncHandler(controller.getSyncStatus));
 
+// GET /platforms/sync-scheduler-status — Read global scheduler state
+router.get('/sync-scheduler-status', authMiddleware, asyncHandler(controller.getSchedulerStatus));
+
 export default router;

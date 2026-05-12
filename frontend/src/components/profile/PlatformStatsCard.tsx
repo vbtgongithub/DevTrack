@@ -55,7 +55,7 @@ export const LeetCodeStatsCard: React.FC<{ state: PlatformState<LeetCodeStats>; 
   if (!state.data && !state.loading) return null;
 
   return (
-    <div className="platform-stats-card" style={{ '--accent': '#f59e0b' } as any}>
+    <div className="platform-stats-card" style={{ '--accent': '#f59e0b' } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center p-1.5">
@@ -99,7 +99,7 @@ export const CodeforcesStatsCard: React.FC<{ state: PlatformState<CodeforcesStat
   const color = state.data ? cfRankColor(state.data.rank) : '#94a3b8';
 
   return (
-    <div className="platform-stats-card" style={{ '--accent': color } as any}>
+    <div className="platform-stats-card" style={{ '--accent': color } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center p-1.5">
@@ -153,7 +153,7 @@ export const CodeChefStatsCard: React.FC<{ state: PlatformState<CodeChefStats>; 
   if (!state.data && !state.loading) return null;
 
   return (
-    <div className="platform-stats-card" style={{ '--accent': '#8B4513' } as any}>
+    <div className="platform-stats-card" style={{ '--accent': '#8B4513' } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center p-1.5">
@@ -203,7 +203,7 @@ export const GithubStatsCard: React.FC<{ state: PlatformState<GithubStats>; user
   if (!state.data && !state.loading) return null;
 
   return (
-    <div className="platform-stats-card" style={{ '--accent': '#0f172a' } as any}>
+    <div className="platform-stats-card" style={{ '--accent': '#0f172a' } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center p-1.5">

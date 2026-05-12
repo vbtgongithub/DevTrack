@@ -49,7 +49,7 @@ export const DsaHero: React.FC<DsaHeroProps> = ({ heatmap, stats }) => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
             </div>
-            <span className="text-[10px] font-black text-dt-textSecondary/70 tracking-[0.3em] uppercase">Neural Ingress: Stable</span>
+            <span className="text-label text-[10px] !text-dt-textSecondary/70">Neural Ingress: Stable</span>
           </motion.div>
 
           <div className="flex flex-col gap-4">
@@ -57,7 +57,7 @@ export const DsaHero: React.FC<DsaHeroProps> = ({ heatmap, stats }) => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="text-4xl lg:text-6xl font-black tracking-tight text-dt-text leading-[1.05]"
+              className="text-display text-4xl lg:text-6xl text-dt-text"
             >
               Welcome to the <br />
               <span className="relative inline-block mt-2">
@@ -72,9 +72,9 @@ export const DsaHero: React.FC<DsaHeroProps> = ({ heatmap, stats }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.8 }}
-              className="text-[17px] font-bold text-dt-textSecondary/80 leading-relaxed max-w-xl mt-2 tracking-wide"
+              className="text-[17px] font-medium text-dt-textSecondary/80 leading-relaxed max-w-xl mt-2 tracking-tight"
             >
-              Intelligence architecture is fully synchronized. Your current operational baseline sits at <strong className="font-black text-dt-text">{totalSolved} solutions</strong> with a verified <strong className="font-black text-dt-text">{activeDays}-day</strong> high-velocity streak.
+              Intelligence architecture is fully synchronized. Your current operational baseline sits at <strong className="font-bold text-dt-text">{totalSolved} solutions</strong> with a verified <strong className="font-bold text-dt-text">{activeDays}-day</strong> high-velocity streak.
             </motion.p>
           </div>
 
@@ -99,8 +99,8 @@ export const DsaHero: React.FC<DsaHeroProps> = ({ heatmap, stats }) => {
                     <Icon name={pill.icon} size={18} className={`text-${pill.color}-500`} />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[14px] font-black text-dt-text leading-none">{pill.label}</span>
-                    <span className={`text-[10px] font-black text-${pill.color}-500/70 tracking-widest uppercase mt-1.5`}>{pill.sub}</span>
+                    <span className="text-mono-metric text-[14px] font-bold text-dt-text leading-none">{pill.label}</span>
+                    <span className="text-label text-[9px] mt-1.5 opacity-70">{pill.sub}</span>
                   </div>
                 </div>
               </motion.div>
@@ -125,10 +125,10 @@ export const DsaHero: React.FC<DsaHeroProps> = ({ heatmap, stats }) => {
                 <div className="w-10 h-10 rounded-2xl bg-dt-primary/10 border border-dt-primary/20 flex items-center justify-center shadow-inner group-hover/ai:rotate-[15deg] transition-transform duration-700">
                   <Icon name="sparkles" size={20} className="text-dt-primary drop-shadow-[0_0_10px_rgba(124,92,252,0.8)]" />
                 </div>
-                <span className="text-[11px] font-black text-dt-primary uppercase tracking-[0.3em]">Neural Engine</span>
+                <span className="text-label !text-dt-primary">Neural Engine</span>
               </div>
               <div className="flex flex-col items-end">
-                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Active Scan</span>
+                <span className="text-label !text-emerald-500 !tracking-widest">Active Scan</span>
                 <div className="flex gap-0.5 mt-1">
                   {[...Array(3)].map((_, i) => (
                     <motion.div
@@ -147,10 +147,10 @@ export const DsaHero: React.FC<DsaHeroProps> = ({ heatmap, stats }) => {
                 <span className="px-2 py-0.5 rounded-md bg-dt-primary/10 text-[9px] font-black text-dt-primary uppercase tracking-widest">Priority: Ultra</span>
                 <span className="text-[9px] font-black text-dt-textSecondary/40 uppercase tracking-widest">Match: 98%</span>
               </div>
-              <h4 className="text-[20px] font-black text-dt-text leading-tight tracking-tight">
+              <h4 className="text-display text-[20px] text-dt-text">
                 Review DP bottom-up <br /> optimization patterns.
               </h4>
-              <p className="text-[13px] font-bold text-dt-textSecondary/80 opacity-70 group-hover/ai:opacity-100 transition-opacity tracking-wide leading-relaxed">
+              <p className="text-[13px] font-medium text-dt-textSecondary/80 opacity-70 group-hover/ai:opacity-100 transition-opacity tracking-tight leading-relaxed">
                 Critical velocity decay detected in competitive algorithmic vectors. Synthesis recommended.
               </p>
             </div>

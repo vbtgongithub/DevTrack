@@ -12,8 +12,8 @@ import type { SettingFieldConfig } from '../types';
 
 interface SettingsFieldRendererProps {
   field: SettingFieldConfig;
-  value: any;
-  onChange: (val: any) => void;
+  value: unknown;
+  onChange: (val: unknown) => void;
 }
 
 // === PHASE 2: ELITE TOGGLE WITH SPRING PHYSICS ===
@@ -79,9 +79,9 @@ const SpringToggle: React.FC<{
 
 // === PREMIUM SELECT PILLS ===
 const PremiumPills: React.FC<{
-  options: { label: string; value: any }[];
-  value: any;
-  onChange: (val: any) => void;
+  options: { label: string; value: unknown }[];
+  value: unknown;
+  onChange: (val: unknown) => void;
 }> = ({ options, value, onChange }) => {
   return (
     <div className="flex gap-2 flex-wrap">
@@ -257,7 +257,7 @@ export const SettingsFieldRenderer: React.FC<SettingsFieldRendererProps> = ({ fi
         {(type === 'input' || type === 'password' || type === 'textarea') && (
           <PremiumInput
             type={type}
-            value={value || ''}
+            value={(value as string) || ''}
             onChange={onChange}
             placeholder={placeholder}
             rows={type === 'textarea' ? 3 : undefined}
@@ -287,14 +287,14 @@ export const SettingsFieldRenderer: React.FC<SettingsFieldRendererProps> = ({ fi
             <div className="relative">
               <input
                 type="color"
-                value={value || '#7C5CFC'}
+                value={(value as string) || '#7C5CFC'}
                 onChange={(e) => onChange(e.target.value)}
                 className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0 bg-transparent"
               />
               <div className="absolute inset-0 rounded-lg border border-black/10 pointer-events-none" />
             </div>
             <span className="text-[12px] font-medium text-dt-textSecondary/70 uppercase tracking-widest">
-              {value || '#7C5CFC'}
+              {(value as string) || '#7C5CFC'}
             </span>
           </div>
         )}

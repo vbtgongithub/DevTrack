@@ -30,15 +30,20 @@ export async function fetchMe(): Promise<ApiUser> {
 }
 
 export async function logout(refreshToken: string): Promise<void> {
-  await axiosClient.post('/auth/logout', { refreshToken });
+  await axiosClient.post('/auth/logout', { refreshToken }, {
+    _skipToast: true,
+  } as never);
 }
 
 export function storeTokens(accessToken: string, refreshToken: string): void {
+  // Store atomically — if access succeeds, refresh should too
+  // Access token first (primary auth signal for multi-tab sync)
   localStorage.setItem('devtrack_access_token', accessToken);
   localStorage.setItem('devtrack_refresh_token', refreshToken);
 }
 
 export function clearTokens(): void {
+  // Clear atomically — both must go together
   localStorage.removeItem('devtrack_access_token');
   localStorage.removeItem('devtrack_refresh_token');
 }

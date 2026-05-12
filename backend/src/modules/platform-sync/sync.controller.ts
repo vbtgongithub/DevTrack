@@ -15,6 +15,7 @@ import { logger } from '../../shared/logger.js';
 import { UserSettings, ConnectedPlatform, PlatformStats } from '../../db/models/index.js';
 import { Types } from 'mongoose';
 import { createActivity } from '../activity/activity.service.js';
+import { syncState } from '../../shared/syncState.js';
 
 // Platforms that support sync
 const SUPPORTED_PLATFORMS = ['leetcode', 'codeforces', 'codechef', 'github'];
@@ -118,6 +119,24 @@ export async function syncSingle(req: AuthenticatedRequest, res: Response): Prom
     logger.error(`Sync failed for ${platformName}`, error);
     commonErrors.internalError(res, `Sync failed for ${platformName}`);
   }
+}
+
+/**
+ * GET /platforms/sync-scheduler-status
+ * Returns the global scheduler state (read-only snapshot).
+ * Lightweight — no database queries, just the in-memory singleton.
+ */
+export async function getSchedulerStatus(
+  _req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  const snapshot = syncState.getSnapshot();
+  logger.debug('[controller] Scheduler status requested', {
+    status: snapshot.status,
+    lastSyncStatus: snapshot.lastSyncStatus,
+    totalSyncs: snapshot.totalSyncs,
+  });
+  successResponse(res, snapshot, 'Scheduler status retrieved');
 }
 
 /**

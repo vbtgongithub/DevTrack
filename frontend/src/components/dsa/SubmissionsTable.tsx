@@ -83,8 +83,9 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
       const sortedDates = [...new Set(submissions.map(s => s.date))].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
       let count = 0;
-      const today = new Date().toISOString().split('T')[0];
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const yesterday = new Date(now.getTime() - 86400000).toISOString().split('T')[0];
 
       if (sortedDates[0] !== today && sortedDates[0] !== yesterday) return 0;
 
@@ -107,11 +108,11 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
         <div className="px-8 py-6 border-b border-dt-primary/10 bg-white/50 backdrop-blur-md flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
-            <span className="text-[11px] font-black text-dt-textSecondary/80 uppercase tracking-[0.25em]">Live Intelligence Feed</span>
+            <span className="text-label !text-[10px] !text-dt-textSecondary/80">Live Intelligence Feed</span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 group-hover/table:border-orange-500/30 transition-colors shadow-inner">
             <Icon name="fire" size={12} className="text-orange-500" />
-            <span className="text-[10px] font-black text-orange-600 uppercase tracking-widest">{streak} Day Momentum</span>
+            <span className="text-mono-metric text-[10px] font-bold text-orange-600 uppercase tracking-widest">{streak} Day Momentum</span>
           </div>
         </div>
 
@@ -122,7 +123,7 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
                 <div key={group.date} className="flex flex-col">
                   {/* Soft Day Divider */}
                   <div className="flex items-center gap-3 py-2 px-3">
-                    <span className="text-[9px] font-black text-dt-textSecondary/40 uppercase tracking-[0.15em] shrink-0">
+                    <span className="text-label !text-[9px] !text-dt-textSecondary/40 !tracking-[0.15em] shrink-0">
                       {group.label}
                     </span>
                     <div className="flex-1 h-[1px] bg-gradient-to-r from-dt-primary/5 via-dt-primary/5 to-transparent" />
@@ -143,11 +144,11 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
                             <PlatformLogo platform={submission.platform} iconSize={20} />
                           </div>
                           <div className="min-w-0">
-                            <span className="text-[15px] font-black text-dt-text group-hover/item:text-dt-primary transition-colors truncate block tracking-tight">
+                            <span className="text-[15px] font-bold text-dt-text group-hover/item:text-dt-primary transition-colors truncate block tracking-tight">
                               {submission.problem}
                             </span>
                             <div className="flex items-center gap-2.5 mt-1">
-                              <span className="text-[10px] text-dt-textSecondary/70 font-black uppercase tracking-[0.2em]">{submission.topic}</span>
+                              <span className="text-label !text-[9px] !text-dt-textSecondary/70 !tracking-[0.15em]">{submission.topic}</span>
                               <span className="w-1 h-1 rounded-full bg-dt-textSecondary/30" />
                               <span className="text-[10px] text-dt-textSecondary/70 font-black uppercase tracking-[0.2em]">{submission.platform}</span>
                             </div>

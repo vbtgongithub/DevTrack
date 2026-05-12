@@ -1,6 +1,7 @@
 // src/modules/dsa/dsa.service.ts
 import { Types } from 'mongoose';
 import { DsaProblem, DsaTopicProgress, DsaSubmission, DsaContest, DailyActivity, PlatformStats } from '../../db/models/index.js';
+import { logger } from '../../shared/logger.js';
 import type {
   ApiDsaListResponse,
   ApiDsaProblem,
@@ -100,6 +101,7 @@ export async function generateRollingHeatmap(
   start.setHours(0, 0, 0, 0);
 
   // 1. Get Codeforces submissions grouped by day (from DsaSubmission)
+  const t0 = Date.now();
   const cfSubmissions = await DsaSubmission.aggregate([
     {
       $match: {
@@ -115,6 +117,7 @@ export async function generateRollingHeatmap(
       },
     },
   ]);
+  logger.perf('cf_submissions_aggregate', Date.now() - t0, { userId, count: cfSubmissions.length });
 
   const cfMap = new Map<string, number>();
   for (const s of cfSubmissions) {
@@ -195,6 +198,7 @@ export async function getDashboard(userId: string): Promise<ApiDsaDashboardRespo
   const userObjId = new Types.ObjectId(userId);
 
   // Rolling 365-day DSA-only heatmap (LeetCode + Codeforces)
+  const t0 = Date.now();
   const [problemStats, topicProgress, recentSubmissions, platformStatsArr, heatmapData] = await Promise.all([
     DsaProblem.aggregate([
       { $match: { userId: userObjId } },
@@ -216,6 +220,7 @@ export async function getDashboard(userId: string): Promise<ApiDsaDashboardRespo
       .lean(),
     generateRollingHeatmap(userId),
   ]);
+  logger.perf('getDashboard_parallel_queries', Date.now() - t0, { userId });
 
   // Streaks derived from the DSA-only rolling heatmap
   const streaks = calculateStreaksFromHeatmap(heatmapData);
@@ -567,6 +572,7 @@ export async function getSubmissions(
 
   const skip = getSkipCount({ page, pageSize });
 
+  const t0 = Date.now();
   const [submissions, totalCount] = await Promise.all([
     DsaSubmission.find(query)
       .sort({ submittedAt: -1 })
@@ -576,6 +582,7 @@ export async function getSubmissions(
       .lean(),
     DsaSubmission.countDocuments(query),
   ]);
+  logger.perf('getSubmissions_query', Date.now() - t0, { userId, page, pageSize, totalCount });
 
   type PopulatedProblem = { title?: string; difficulty?: string; category?: string } | null;
 

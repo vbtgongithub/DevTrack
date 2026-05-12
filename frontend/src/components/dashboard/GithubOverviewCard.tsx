@@ -1,5 +1,6 @@
 import React from 'react';
 import type { DashboardData } from '../../hooks/useDashboardData';
+import { useNavigate } from 'react-router-dom';
 import githubLogo from '../../assets/logos/github.png';
 
 interface GithubOverviewCardProps {
@@ -7,10 +8,45 @@ interface GithubOverviewCardProps {
 }
 
 export const GithubOverviewCard: React.FC<GithubOverviewCardProps> = ({ data }) => {
+  const navigate = useNavigate();
   const ghStats = data?.githubStats;
 
   if (!ghStats) {
-    return null;
+    return (
+      <div className="bg-white/80 backdrop-blur-3xl border border-dt-primary/10 rounded-[32px] p-8 lg:p-10 relative overflow-hidden shadow-[0_8px_40px_rgba(124,92,252,0.06)]">
+        <div className="absolute -top-32 -left-32 w-80 h-80 bg-dt-primary/5 blur-[100px] rounded-full pointer-events-none" />
+        <div className="relative z-10">
+          <div className="flex items-start justify-between mb-10">
+            <div className="flex items-center gap-5">
+              <div className="w-16 h-16 rounded-[20px] bg-dt-bg flex items-center justify-center border border-dt-primary/10 shadow-sm">
+                <img src={githubLogo} alt="GitHub" className="w-8 h-8 opacity-40" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-dt-primary uppercase tracking-[0.2em] bg-dt-primary/10 px-2 py-0.5 rounded-md border border-dt-primary/20">Identity System</span>
+                <h3 className="text-xl font-black text-dt-text tracking-tighter mt-2">GitHub Identity</h3>
+                <p className="text-[13px] text-dt-textSecondary mt-0.5 font-bold">Connect your GitHub account to sync your developer profile</p>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:gap-5 mb-8">
+            {['Repos', 'Followers', 'Stars', 'Following'].map((label) => (
+              <div key={label} className="bg-dt-bg/60 backdrop-blur-md rounded-[20px] p-5 flex flex-col items-center justify-center border border-dt-primary/5 shadow-sm">
+                <span className="text-[10px] font-black text-dt-textSecondary/60 uppercase mb-2 tracking-[0.2em]">{label}</span>
+                <span className="text-3xl font-black text-dt-textMuted tabular-nums tracking-tighter">—</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4 pt-6 border-t border-dt-primary/10 relative z-10">
+          <button
+            onClick={() => navigate('/settings')}
+            className="w-full py-3 rounded-2xl bg-gradient-to-r from-dt-primary to-dt-secondary text-white font-bold text-[14px] shadow-dt-glow hover:shadow-dt-card-hover hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+          >
+            Connect GitHub
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

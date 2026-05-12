@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { ConnectedPlatform, PlatformStats, SyncJob, DsaSubmission, DsaContest, DsaTopicProgress, DsaProblem, DailyActivity } from '../../db/models/index.js';
 import { logger } from '../../shared/logger.js';
 import { createActivity, incrementDailyActivity } from '../activity/activity.service.js';
+import { eventBus } from '../../shared/sse/index.js';
 import * as cheerio from 'cheerio';
 import { env } from '../../config/env.js';
 
@@ -593,10 +594,12 @@ async function fetchUniqueSolvedProblems(handle: string): Promise<number> {
 }
 
 export async function syncAllPlatforms(userId: string): Promise<SyncResult[]> {
+  const t0 = Date.now();
   const platforms = await ConnectedPlatform.find({
     userId: new Types.ObjectId(userId),
     isConnected: true,
   });
+  logger.perf('syncAllPlatforms_find_connected', Date.now() - t0, { userId, count: platforms.length });
 
   const results: SyncResult[] = [];
 
@@ -771,6 +774,9 @@ export async function syncPlatform(userId: string, platformName: string): Promis
       errorMessage,
     });
 
+    // Emit SSE failure event so the frontend can reflect the failed sync
+    eventBus.emitSyncFailed(userId, platformName, errorMessage);
+
     return { platform: platformName, success: false, error: errorMessage };
   }
 }
@@ -798,6 +804,7 @@ export interface SyncStatusItem {
 }
 
 export async function getSyncStatus(userId: string): Promise<SyncStatusItem[]> {
+  const t0 = Date.now();
   const platforms = await ConnectedPlatform.find({
     userId: new Types.ObjectId(userId),
   });
@@ -831,6 +838,7 @@ export async function getSyncStatus(userId: string): Promise<SyncStatusItem[]> {
     });
   }
 
+  logger.perf('getSyncStatus', Date.now() - t0, { userId, platforms: platforms.length });
   return results;
 }
 
@@ -1139,7 +1147,7 @@ interface LeetCodeContest {
   participantCount: number;
 }
 
-async function ingestLeetCodeSubmissions(userId: string, username: string): Promise<number> {
+export async function ingestLeetCodeSubmissions(userId: string, username: string): Promise<number> {
   const userObjId = new Types.ObjectId(userId);
   let ingested = 0;
   let fetched = 0;
@@ -1147,10 +1155,13 @@ async function ingestLeetCodeSubmissions(userId: string, username: string): Prom
   let duplicates = 0;
   let failed = 0;
   let skipped = 0;
+  let latestTitle = '';
+  let latestTimestamp: number | null = null;
 
   try {
     logger.info('LeetCode submission ingestion started', { userId, username });
 
+    // Fetch last 500 accepted submissions — enough for ~3 months of daily activity
     const query = `
       query recentAcSubmissions($username: String!, $limit: Int!) {
         recentAcSubmissionList(username: $username, limit: $limit) {
@@ -1162,7 +1173,7 @@ async function ingestLeetCodeSubmissions(userId: string, username: string): Prom
       }
     `;
 
-    const response = await fetchLeetCodeGraphQL(query, { username, limit: 20 });
+    const response = await fetchLeetCodeGraphQL(query, { username, limit: 500 });
     const submissions = response.data?.recentAcSubmissionList;
 
     if (!Array.isArray(submissions)) {
@@ -1181,7 +1192,14 @@ async function ingestLeetCodeSubmissions(userId: string, username: string): Prom
 
       parsed++;
 
-      const submittedAt = new Date(parseInt(sub.timestamp) * 1000);
+      // Track latest submission for audit
+      const ts = parseInt(sub.timestamp);
+      if (!latestTimestamp || ts > latestTimestamp) {
+        latestTimestamp = ts;
+        latestTitle = sub.title;
+      }
+
+      const submittedAt = new Date(ts * 1000);
       if (isNaN(submittedAt.getTime())) {
         skipped++;
         continue;
@@ -1201,50 +1219,45 @@ async function ingestLeetCodeSubmissions(userId: string, username: string): Prom
       }
 
       const problemKey = sub.titleSlug;
-      let existingProblem = await DsaProblem.findOne({
-        userId: userObjId,
-        externalId: problemKey,
-        platform: 'leetcode',
-      });
 
-      const difficulty = 'medium';
-
-      try {
-        let problem = existingProblem;
-
-        if (!problem) {
-          problem = await DsaProblem.create({
-            userId: userObjId,
-            externalId: problemKey,
+      // Atomic upsert — single DB round-trip, dedup via unique index on failure
+      let upserted = await DsaProblem.findOneAndUpdate(
+        { userId: userObjId, externalId: problemKey, platform: 'leetcode' },
+        {
+          $setOnInsert: {
             title: sub.title,
-            platform: 'leetcode',
-            difficulty,
+            difficulty: 'medium',
             url: `https://leetcode.com/problems/${sub.titleSlug}`,
             tags: [],
             category: 'Data Structures & Algorithms',
             status: 'solved',
             submissionCount: 1,
             isFavorite: false,
-          });
-        } else {
-          if (problem.status !== 'solved') {
-            await DsaProblem.findByIdAndUpdate(problem._id, {
-              status: 'solved',
-              solvedAt: submittedAt,
-              lastSubmittedAt: submittedAt,
-              $inc: { submissionCount: 1 },
-            });
-          } else {
-            await DsaProblem.findByIdAndUpdate(problem._id, {
-              $inc: { submissionCount: 1 },
-              lastSubmittedAt: submittedAt,
-            });
-          }
-        }
+          },
+          $inc: { submissionCount: 1 },
+          $set: { lastSubmittedAt: submittedAt },
+        },
+        { upsert: true, new: true }
+      );
 
+      if (!upserted) {
+        failed++;
+        continue;
+      }
+
+      // If this is a newly upserted problem (wasn't solved), mark it solved
+      if (upserted.status !== 'solved') {
+        upserted = await DsaProblem.findByIdAndUpdate(upserted._id, {
+          status: 'solved',
+          solvedAt: submittedAt,
+        }, { new: true }) as typeof upserted;
+      }
+
+      // Atomic submission insert — skip duplicate key errors silently
+      try {
         await DsaSubmission.create({
           userId: userObjId,
-          problemId: problem._id,
+          problemId: upserted._id,
           platform: 'leetcode',
           externalId,
           status: 'accepted',
@@ -1262,14 +1275,18 @@ async function ingestLeetCodeSubmissions(userId: string, username: string): Prom
         }
 
         ingested++;
-      } catch (createErr) {
-        failed++;
-        logger.warn('Failed to create LeetCode submission', {
-          userId,
-          username,
-          problemKey,
-          error: createErr instanceof Error ? createErr.message : String(createErr),
-        });
+      } catch (createErr: any) {
+        if (createErr?.code === 11000) {
+          duplicates++;
+        } else {
+          failed++;
+          logger.warn('Failed to create LeetCode submission', {
+            userId,
+            username,
+            problemKey,
+            error: createErr instanceof Error ? createErr.message : String(createErr),
+          });
+        }
       }
     }
   } catch (err) {
@@ -1290,12 +1307,15 @@ async function ingestLeetCodeSubmissions(userId: string, username: string): Prom
     duplicates,
     failed,
     skipped,
+    latestSubmissionTitle: latestTitle,
+    latestSubmissionTimestamp: latestTimestamp ? new Date(latestTimestamp * 1000).toISOString() : null,
+    ingestRatio: fetched > 0 ? `${ingested}/${fetched} persisted` : 'no submissions fetched',
   });
 
   return ingested;
 }
 
-async function ingestLeetCodeContests(userId: string, fetched: FetchedPlatformStats): Promise<number> {
+export async function ingestLeetCodeContests(userId: string, fetched: FetchedPlatformStats): Promise<number> {
   const userObjId = new Types.ObjectId(userId);
   let ingested = 0;
 

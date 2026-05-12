@@ -42,11 +42,11 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, leading, highl
         ].join(' ')}>
           {leadingEl}
         </div>
-        <div className="text-xs font-semibold text-dt-textSecondary">{label}</div>
+        <div className="text-label !text-[10px]">{label}</div>
       </div>
       <div className="mt-2">
         <div className={[
-          'text-3xl font-extrabold tabular-nums tracking-tight leading-none',
+          'text-mono-metric text-3xl font-bold tracking-tightest leading-none',
           highlight ? 'text-dt-primary' : 'text-dt-text',
         ].join(' ')}>
           {typeof value === 'number' ? value.toLocaleString() : value}
