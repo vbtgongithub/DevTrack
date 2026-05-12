@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Sidebar } from './components/layout/Sidebar';
@@ -133,41 +133,43 @@ const AuthGate: React.FC = () => {
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const hydrate = useUserStore((s) => s.hydrate);
 
-  useEffect(() => {
-    hydrate();
+  // Mark as hydrated on first render so we never show inconsistent SSR vs client HTML
+  const [hydrated, setHydrated] = React.useState(false);
+  React.useEffect(() => {
+    hydrate().then(() => setHydrated(true));
   }, [hydrate]);
 
-  // Still determining auth state — show branded splash
-  if (status === 'idle' || status === 'loading') {
+  // Show boot splash until hydration is complete — avoids hydration mismatch
+  if (!hydrated || status === 'idle' || status === 'loading') {
     return <BootSplash />;
   }
 
   return (
     <Routes>
-        {/* Public route - Landing page */}
-        <Route
-          path="/"
-          element={
-            isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />
-          }
-        />
+      {/* Public route - Landing page */}
+      <Route
+        path="/"
+        element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />
+        }
+      />
 
-        {/* Public route - Login */}
-        <Route
-          path="/login"
-          element={
-            isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />
-          }
-        />
+      {/* Public route - Login */}
+      <Route
+        path="/login"
+        element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />
+        }
+      />
 
-        {/* Protected routes — redirect to /login if unauthenticated */}
-        <Route
-          path="/*"
-          element={
-            isAuthenticated ? <AppShell /> : <Navigate to="/login" replace />
-          }
-        />
-      </Routes>
+      {/* Protected routes — redirect to /login if unauthenticated */}
+      <Route
+        path="/*"
+        element={
+          isAuthenticated ? <AppShell /> : <Navigate to="/login" replace />
+        }
+      />
+    </Routes>
   );
 };
 
