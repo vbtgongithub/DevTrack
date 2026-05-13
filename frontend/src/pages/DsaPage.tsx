@@ -99,15 +99,14 @@ const DsaPage: React.FC = () => {
   if (loading) {
     return (
       <div className="dt-fade-in">
-        <div className="dt-card p-6 animate-pulse">
-          <div className="h-5 w-40 bg-dt-bg rounded" />
-          <div className="mt-3 h-3 w-72 bg-dt-bg rounded" />
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-6">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={`stat-skel-${i}`} className="h-[76px] bg-dt-bg/70 rounded-xl" />
-            ))}
-          </div>
+      <div className="dt-fade-in">
+        <div className="dt-card dt-card-pad-md dt-skeleton min-h-[120px]" />
+        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={`stat-skel-${i}`} className="dt-card dt-card-pad-sm dt-skeleton h-[80px]" />
+          ))}
         </div>
+      </div>
       </div>
     );
   }
@@ -115,18 +114,18 @@ const DsaPage: React.FC = () => {
   if (error && !data) {
     return (
       <div className="dt-fade-in">
-        <div className="dt-card p-10 text-center max-w-md mx-auto">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+        <div className="dt-card dt-card-pad-xl text-center max-w-md mx-auto shadow-dt-floating border-dt-error/10">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[20px] bg-red-50 border border-red-100 shadow-sm">
             <Icon name="exclamation-triangle" size={24} className="text-red-500" />
           </div>
-          <p className="text-base font-semibold text-gray-900">Failed to load DSA data</p>
-          <p className="mt-1 text-sm text-gray-500">{error}</p>
+          <h3 className="text-dashboard-title text-lg mb-2">Neural Link Failed</h3>
+          <p className="text-body-sm mb-8">{error}</p>
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 text-sm font-medium rounded-lg bg-gray-900 text-white hover:bg-black cursor-pointer transition-colors"
+            className="dt-btn dt-btn-primary dt-btn-md px-8"
           >
-            Retry
+            Retry Sync
           </button>
         </div>
       </div>
@@ -150,7 +149,7 @@ const DsaPage: React.FC = () => {
         actions={(
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-[14px] px-6 py-2.5 text-label !text-white bg-dt-text shadow-dt-floating hover:shadow-dt-card-hover hover:scale-[1.05] active:scale-[0.95] transition-all duration-500 cubic-bezier(0.22, 1, 0.36, 1)"
+            className="dt-btn dt-btn-primary dt-btn-md px-6 shadow-dt-floating"
           >
             <Icon name="plus" size={14} className="text-white" />
             Log Packet

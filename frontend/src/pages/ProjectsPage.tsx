@@ -102,23 +102,23 @@ const CreateProjectModal: React.FC<{
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="group/field">
-            <label className="block text-[10px] font-black tracking-widest uppercase text-dt-textSecondary/50 mb-2 transition-colors group-focus-within/field:text-dt-primary">Project Identity</label>
+            <label className="text-label mb-2 block">Project Identity</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-5 py-4 bg-dt-bg/40 border border-dt-primary/10 rounded-[16px] text-[15px] font-bold text-dt-text outline-none placeholder:text-dt-textSecondary/30 focus:border-dt-primary/30 focus:bg-white shadow-sm focus:shadow-dt-card transition-all duration-500"
+              className="dt-input w-full"
               placeholder="System name..."
               required
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black tracking-widest uppercase text-dt-textSecondary/50 mb-2">Description Matrix</label>
+            <label className="text-label mb-2 block">Description Matrix</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full px-5 py-4 bg-dt-bg/40 border border-dt-primary/10 rounded-[16px] text-[15px] font-bold text-dt-text outline-none placeholder:text-dt-textSecondary/30 focus:border-dt-primary/30 focus:bg-white shadow-sm focus:shadow-dt-card transition-all duration-500 resize-none"
+              className="dt-input w-full resize-none"
               rows={3}
               placeholder="Define project scope and architecture..."
             />
@@ -126,12 +126,12 @@ const CreateProjectModal: React.FC<{
 
           <div className="grid grid-cols-2 gap-5">
             <div>
-              <label className="block text-[10px] font-black tracking-widest uppercase text-dt-textSecondary/50 mb-2">Lifecycle</label>
+              <label className="text-label mb-2 block">Lifecycle</label>
               <div className="relative">
                 <select
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value as typeof form.status })}
-                  className="w-full px-5 py-4 bg-dt-bg/40 border border-dt-primary/10 rounded-[16px] text-[14px] font-bold text-dt-text outline-none focus:border-dt-primary/30 focus:bg-white shadow-sm transition-all duration-500 appearance-none cursor-pointer"
+                  className="dt-input w-full appearance-none cursor-pointer pr-10"
                 >
                   <option value="planning">Planning</option>
                   <option value="in_progress">In Progress</option>
@@ -162,23 +162,23 @@ const CreateProjectModal: React.FC<{
           </div>
 
           <div>
-            <label className="block text-[10px] font-black tracking-widest uppercase text-dt-textSecondary/50 mb-2">Tech Spectrum</label>
+            <label className="text-label mb-2 block">Tech Spectrum</label>
             <input
               type="text"
               value={form.techStack}
               onChange={(e) => setForm({ ...form, techStack: e.target.value })}
-              className="w-full px-5 py-4 bg-dt-bg/40 border border-dt-primary/10 rounded-[16px] text-[15px] font-bold text-dt-text outline-none placeholder:text-dt-textSecondary/30 focus:border-dt-primary/30 focus:bg-white shadow-sm focus:shadow-dt-card transition-all duration-500"
+              className="dt-input w-full"
               placeholder="React, TypeScript, GraphQL..."
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-black tracking-widest uppercase text-dt-textSecondary/50 mb-2">Repository Vector</label>
+            <label className="text-label mb-2 block">Repository Vector</label>
             <input
               type="url"
               value={form.repoUrl}
               onChange={(e) => setForm({ ...form, repoUrl: e.target.value })}
-              className="w-full px-5 py-4 bg-dt-bg/40 border border-dt-primary/10 rounded-[16px] text-[15px] font-bold text-dt-text outline-none placeholder:text-dt-textSecondary/30 focus:border-dt-primary/30 focus:bg-white shadow-sm focus:shadow-dt-card transition-all duration-500"
+              className="dt-input w-full"
               placeholder="https://github.com/..."
             />
           </div>
@@ -187,17 +187,14 @@ const CreateProjectModal: React.FC<{
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3.5 text-[12px] font-black tracking-[0.15em] uppercase rounded-[16px] border border-dt-primary/5 text-dt-textSecondary/60 hover:bg-white hover:text-dt-text hover:shadow-sm cursor-pointer transition-all duration-500"
+              className="dt-btn dt-btn-ghost dt-btn-md px-6"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving || !form.name.trim()}
-              className={[
-                'px-8 py-3.5 text-[12px] font-black tracking-[0.15em] uppercase rounded-[16px] text-white cursor-pointer transition-all duration-700 cubic-bezier(0.22,1,0.36,1)',
-                saving ? 'bg-dt-primary/40' : 'bg-dt-text hover:bg-dt-primary hover:shadow-dt-floating hover:-translate-y-1 active:scale-[0.98]',
-              ].join(' ')}
+              className="dt-btn dt-btn-primary dt-btn-md px-10 shadow-dt-floating"
             >
               {saving ? 'Processing…' : 'Initialize Project'}
             </button>
@@ -287,21 +284,17 @@ const ProjectsPage: React.FC = () => {
   const headerActions = (
     <div className="flex flex-col sm:flex-row items-center gap-6">
       {filterGroup}
-      <motion.button
-        whileHover={{ scale: 1.02, y: -2 }}
-        whileTap={{ scale: 0.98 }}
+      <button
         type="button"
         onClick={() => setShowCreate(true)}
-        className="group/new-btn relative inline-flex items-center gap-3 rounded-[20px] px-8 py-4 text-[12px] font-black tracking-[0.25em] uppercase cursor-pointer bg-dt-text text-white shadow-[0_12px_40px_rgba(0,0,0,0.12)] border border-white/5 overflow-hidden"
+        className="dt-btn dt-btn-primary dt-btn-lg px-8 shadow-dt-floating"
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-dt-primary/40 via-dt-secondary/40 to-dt-primary/40 opacity-0 group-hover/new-btn:opacity-100 transition-opacity duration-700 blur-xl" />
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/new-btn:animate-[shimmer_1.5s_infinite]" />
         <div className="relative flex h-2 w-2 z-10">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <Icon name="plus" size={14} className="relative text-white group-hover/new-btn:rotate-90 transition-transform duration-500" />
+          <Icon name="plus" size={14} className="relative text-white" />
         </div>
         <span className="relative z-10">Initialize Node</span>
-      </motion.button>
+      </button>
     </div>
   );
 
