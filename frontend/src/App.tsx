@@ -61,11 +61,12 @@ const AppShell: React.FC = () => {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => { setMounted(true); }, []);
 
-  if (!mounted) {
-    return (
-      <div className="flex min-h-screen w-full bg-dt-bg" />
-    );
-  }
+  // Temporarily disabled for debugging
+  // if (!mounted) {
+  //   return (
+  //     <div className="flex min-h-screen w-full bg-dt-bg" />
+  //   );
+  // }
 
   const location = useLocation();
   const navigate = useNavigate();

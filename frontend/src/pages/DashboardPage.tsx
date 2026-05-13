@@ -54,15 +54,15 @@ const DashboardPage: React.FC = () => {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] dt-fade-in">
-        <div className="text-center dt-card p-8 border border-dt-error/20 bg-white">
-          <div className="w-16 h-16 bg-dt-error/10 text-dt-error rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4 border border-dt-error/20">
+        <div className="text-center dt-card dt-card-pad-lg border border-dt-error/20 bg-white shadow-dt-floating">
+          <div className="w-16 h-16 bg-dt-error/10 text-dt-error rounded-[20px] flex items-center justify-center text-2xl mx-auto mb-6 border border-dt-error/20">
             !
           </div>
-          <h2 className="text-xl font-bold text-dt-text mb-2">Sync Failed</h2>
-          <p className="text-dt-textSecondary text-sm mb-6 max-w-sm mx-auto">{error}</p>
+          <h2 className="text-dashboard-title text-xl mb-2">Sync Failed</h2>
+          <p className="text-body-sm mb-8 max-w-sm mx-auto">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-2.5 bg-dt-text text-white font-semibold rounded-xl hover:bg-dt-text/90 transition-all shadow-sm"
+            className="dt-btn dt-btn-primary dt-btn-lg min-w-[160px]"
           >
             Try Again
           </button>

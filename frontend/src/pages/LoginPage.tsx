@@ -1,9 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
 
 type Mode = 'login' | 'register';
+
+// ─── Defer framer-motion layoutId animations past hydration ───────────────
+const MotionShield: React.FC<{ children: React.ReactNode; className?: string; active?: boolean }> = ({
+  children,
+  className,
+  active = false,
+}) => {
+  const [ready, setReady] = useState(false);
+  useEffect(() => { setReady(true); }, []);
+  if (!ready) return <div className={className}>{children}</div>;
+  return <motion.div className={className}>{children}</motion.div>;
+};
 
 interface FieldProps {
   id: string;
@@ -280,11 +292,12 @@ export const LoginPage: React.FC = () => {
                 `}
               >
                 {mode === m && (
-                  <motion.div
-                    layoutId="activeTab"
+                  <MotionShield
+                    active
                     className="absolute inset-0 bg-dt-surface rounded-xl border border-dt-primary/5"
-                    transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
-                  />
+                  >
+                    <div className="absolute inset-0 bg-dt-surface rounded-xl border border-dt-primary/5" />
+                  </MotionShield>
                 )}
                 <span className="relative z-10">{m === 'login' ? 'Sign In' : 'Create Account'}</span>
               </button>
