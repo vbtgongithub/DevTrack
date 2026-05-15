@@ -1,0 +1,10 @@
+[railway]
+name = "devtrack-backend"
+runtime = "node22"
+
+[deploy]
+  builder = "nixpacks"
+  runCommand = "node dist/index.js"
+
+[env]
+  PORT = 3001
