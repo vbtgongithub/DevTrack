@@ -2,14 +2,4 @@
 name = "devtrack-backend"
 
 [deploy]
-buildCommand = "npm run build"
-startCommand = "node dist/index.js"
-minInstances = 1
-maxInstances = 1
-
-[build]
-builder = "nixpacks"
-builderVersion = "v1"
-
-[nixpacks]
-node_version = "22"
+dockerfilePath = "Dockerfile"
