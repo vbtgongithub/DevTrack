@@ -1,6 +1,8 @@
 // ============================================================================
 // SkeletonHeatmap.tsx — Loading Skeleton Heatmap
 // ============================================================================
+// Unified Design System
+// ============================================================================
 
 import React from 'react';
 import type { SkeletonHeatmapProps } from '../../types/ui.types';
@@ -10,12 +12,12 @@ export const SkeletonHeatmap: React.FC<SkeletonHeatmapProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`rounded-2xl border border-gray-200 bg-white shadow-sm p-5 ${className}`}>
+    <div className={`dt-card-base dt-card-pad-md ${className}`}>
       <div className="flex flex-wrap gap-[3px]">
         {Array.from({ length: weeks * 7 }).map((_, i) => (
           <div
             key={i}
-            className="h-3 w-3 rounded-[2px] bg-gray-200/80 animate-pulse"
+            className="h-3 w-3 rounded-[2px] dt-skeleton"
           />
         ))}
       </div>

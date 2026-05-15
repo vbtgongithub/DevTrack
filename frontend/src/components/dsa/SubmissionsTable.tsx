@@ -102,15 +102,15 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
     }, [submissions]);
 
     return (
-      <section className={['bg-white/80 backdrop-blur-3xl rounded-[32px] border border-dt-primary/10 shadow-[0_8px_40px_rgba(124,92,252,0.06)] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_16px_60px_rgba(124,92,252,0.12)] group/table relative', className].filter(Boolean).join(' ')}>
+      <section className={['dt-card-base dt-radius-2xl shadow-dt-card overflow-hidden dt-transition-slow group/table relative', className].filter(Boolean).join(' ')}>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,92,252,0.03),transparent_50%)] pointer-events-none" />
         {/* Intelligence Header */}
-        <div className="px-8 py-6 border-b border-dt-primary/10 bg-white/50 backdrop-blur-md flex items-center justify-between relative z-10">
+        <div className="px-6 py-4 border-b border-dt-primary/10 bg-white/50 backdrop-blur-md flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
             <span className="text-label !text-[10px] !text-dt-textSecondary/80">Live Intelligence Feed</span>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 group-hover/table:border-orange-500/30 transition-colors shadow-inner">
+          <div className="flex items-center gap-2 px-3 py-1.5 dt-radius-full bg-orange-500/10 border border-orange-500/20 group-hover/table:border-orange-500/30 transition-colors shadow-inner">
             <Icon name="fire" size={12} className="text-orange-500" />
             <span className="text-mono-metric text-[10px] font-bold text-orange-600 uppercase tracking-widest">{streak} Day Momentum</span>
           </div>
@@ -134,17 +134,17 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
                     {group.submissions.map((submission, idx) => (
                       <div
                         key={submission.id}
-                        className="group/item relative flex items-center justify-between gap-4 p-4 rounded-[20px] bg-white/40 hover:bg-white/80 shadow-sm hover:shadow-[0_8px_30px_rgba(124,92,252,0.08)] border border-dt-primary/5 hover:border-dt-primary/20 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden"
+                        className="group/item relative flex items-center justify-between gap-4 p-4 dt-radius-lg bg-white/40 hover:bg-white/80 shadow-sm hover:shadow-dt-card-hover border border-dt-primary/5 hover:border-dt-primary/20 dt-transition-slower overflow-hidden"
                         style={{ animation: `dtFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) ${(groupIndex * 80 + idx * 40)}ms both` }}
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-dt-primary/5 to-transparent -translate-x-full group-hover/item:animate-[shimmer_1.5s_infinite]" />
                         <div className="flex items-center gap-4 min-w-0 relative z-10">
-                          <div className={['w-2 h-2 rounded-full shrink-0 group-hover/item:scale-[1.5] transition-transform duration-500', statusGlow(submission.status)].join(' ')} />
-                          <div className="w-10 h-10 rounded-[14px] bg-white border border-dt-primary/10 flex items-center justify-center shrink-0 shadow-sm group-hover/item:shadow-md group-hover/item:border-dt-primary/30 transition-all duration-500 group-hover/item:-translate-y-0.5">
+                          <div className={['w-2 h-2 rounded-full shrink-0 group-hover/item:scale-[1.5] dt-transition-slower', statusGlow(submission.status)].join(' ')} />
+                          <div className="w-10 h-10 dt-radius-md bg-white border border-dt-primary/10 flex items-center justify-center shrink-0 shadow-sm group-hover/item:shadow-md group-hover/item:border-dt-primary/30 dt-transition-slower group-hover/item:-translate-y-0.5">
                             <PlatformLogo platform={submission.platform} iconSize={20} />
                           </div>
                           <div className="min-w-0">
-                            <span className="text-[15px] font-bold text-dt-text group-hover/item:text-dt-primary transition-colors truncate block tracking-tight">
+                            <span className="text-[15px] font-bold text-dt-text group-hover/item:text-dt-primary dt-transition-normal truncate block tracking-tight">
                               {submission.problem}
                             </span>
                             <div className="flex items-center gap-2.5 mt-1">
@@ -155,11 +155,11 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 shrink-0 opacity-60 group-hover/item:opacity-100 transition-opacity duration-500 relative z-10">
-                          <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-xl bg-dt-bg text-dt-textSecondary border border-dt-primary/10 group-hover/item:bg-white group-hover/item:text-dt-primary group-hover/item:shadow-sm transition-all duration-300">
+                        <div className="flex items-center gap-3 shrink-0 opacity-60 group-hover/item:opacity-100 dt-transition-slower relative z-10">
+                          <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest dt-radius-md bg-dt-bg text-dt-textSecondary border border-dt-primary/10 group-hover/item:bg-white group-hover/item:text-dt-primary group-hover/item:shadow-sm dt-transition-normal">
                             {submission.difficulty || '—'}
                           </span>
-                          <button className="w-8 h-8 rounded-xl bg-dt-bg flex items-center justify-center border border-dt-primary/10 hover:bg-dt-primary hover:text-white hover:border-dt-primary hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+                          <button className="w-8 h-8 dt-radius-md bg-dt-bg flex items-center justify-center border border-dt-primary/10 hover:bg-dt-primary hover:text-white hover:border-dt-primary hover:shadow-md hover:-translate-y-0.5 dt-transition-normal">
                             <Icon name="arrow-up-right" size={14} />
                           </button>
                         </div>
@@ -171,7 +171,7 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
             </div>
           ) : (
             <div className="py-16 flex flex-col items-center justify-center text-center">
-              <div className="w-14 h-14 rounded-[24px] bg-dt-primary/5 flex items-center justify-center border border-dt-primary/10 mb-5 group-hover/table:scale-110 transition-transform duration-700">
+              <div className="w-14 h-14 dt-radius-xl bg-dt-primary/5 flex items-center justify-center border border-dt-primary/10 mb-5 group-hover/table:scale-110 dt-transition-slow">
                 <Icon name="code-bracket" size={24} className="text-dt-primary/20" />
               </div>
               <p className="text-[14px] font-bold text-dt-textSecondary tracking-tight">Zero recent activity packets</p>

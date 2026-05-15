@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { fetchDsaContests } from '../services/dsaService';
+import { useUserStore } from '../store/userStore';
 import { type ApiDsaContestEntry } from '../types/api.types';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { StatsGrid } from '../components/dashboard/StatsGrid';
@@ -16,7 +18,14 @@ import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
 
 const DashboardPage: React.FC = () => {
   const { data, loading, error } = useDashboardData();
+  const navigate = useNavigate();
+  const logout = useUserStore((s) => s.logout);
   const [contests, setContests] = React.useState<{ name: string; platform: string; time: string }[]>([]);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   React.useEffect(() => {
     const loadContests = async () => {
@@ -60,12 +69,20 @@ const DashboardPage: React.FC = () => {
           </div>
           <h2 className="text-xl font-bold text-dt-text mb-2">Sync Failed</h2>
           <p className="text-dt-textSecondary text-sm mb-6 max-w-sm mx-auto">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2.5 bg-dt-text text-white font-semibold rounded-xl hover:bg-dt-text/90 transition-all shadow-sm"
-          >
-            Try Again
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2.5 bg-dt-text text-white font-semibold rounded-xl hover:bg-dt-text/90 transition-all shadow-sm"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-6 py-2.5 bg-dt-error text-white font-semibold rounded-xl hover:bg-dt-error/90 transition-all shadow-sm"
+            >
+              Log Out
+            </button>
+          </div>
         </div>
       </div>
     );

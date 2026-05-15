@@ -39,13 +39,13 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
     <div
       className={[
         'h-full min-h-[140px]',
-        'dt-card',
+        'dt-card-base dt-card-interactive',
         'bg-white backdrop-blur-xl',
         'border border-dt-primary/5',
-        'p-5 lg:p-6',
+        'dt-card-pad-md lg:dt-card-pad-lg',
         'flex flex-col justify-between gap-4 min-w-0 cursor-pointer',
         'relative overflow-hidden group',
-        'transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
+        'dt-transition-slow',
         'hover:-translate-y-1',
         accent.glow
       ].join(' ')}
@@ -60,13 +60,13 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
         'absolute top-0 left-0 right-0 h-1.5',
         'bg-gradient-to-r',
         accent.bar,
-        'opacity-70 group-hover:opacity-100 transition-opacity duration-500',
+        'opacity-70 group-hover:opacity-100 dt-transition-slow',
       ].join(' ')} />
 
       <div className="flex items-center justify-between min-w-0 pt-1 gap-3">
         <div className="flex items-center gap-3">
           <div className={[
-            'shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border transition-transform duration-300',
+            'shrink-0 w-10 h-10 dt-radius-md flex items-center justify-center border dt-transition-normal',
             accent.bg,
             accent.border,
             'group-hover:scale-110',
@@ -79,7 +79,7 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
         </div>
         {!connected && (
           <div className="ml-auto shrink-0">
-            <span className="text-[10px] font-semibold px-2.5 py-1 rounded-md bg-dt-textDisabled/20 text-dt-textSecondary">
+            <span className="text-[10px] font-semibold px-2.5 py-1 dt-radius-sm bg-dt-textDisabled/20 text-dt-textSecondary">
               Link Account
             </span>
           </div>
@@ -87,7 +87,7 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
       </div>
 
       <div className="min-w-0 flex-1 flex flex-col justify-end relative z-10">
-        <div className="text-4xl lg:text-5xl font-black text-dt-text leading-none tabular-nums whitespace-nowrap tracking-tighter drop-shadow-sm group-hover:scale-[1.02] origin-left transition-transform duration-500">
+        <div className="text-4xl lg:text-5xl font-black text-dt-text leading-none tabular-nums whitespace-nowrap tracking-tighter drop-shadow-sm group-hover:scale-[1.02] origin-left dt-transition-slow">
           {problems.toLocaleString()}
         </div>
         <div className="mt-2 text-[11px] text-dt-textSecondary/70 whitespace-nowrap font-black tracking-[0.15em] uppercase">{label}</div>
@@ -97,7 +97,7 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
         <div className="min-w-0 pt-4 border-t border-dt-primary/5 flex items-center justify-between gap-4 relative z-10">
           <span className="text-[10px] text-dt-textMuted font-black uppercase tracking-[0.2em]">{ratingLabel}</span>
           <span className={[
-            'text-[11px] font-black px-2.5 py-1 rounded-md border tabular-nums tracking-wide',
+            'text-[11px] font-black px-2.5 py-1 dt-radius-sm border tabular-nums tracking-wide',
             accent.badge,
           ].join(' ')}>
             {rating}
@@ -107,11 +107,11 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
 
       {/* Subtle hover glow background */}
       <div className={[
-        'absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none mix-blend-multiply',
+        'absolute inset-0 opacity-0 group-hover:opacity-10 dt-transition-slow pointer-events-none mix-blend-multiply',
         accent.bg,
       ].join(' ')} />
       <div className={[
-        'absolute -inset-20 opacity-0 group-hover:opacity-[0.03] blur-3xl transition-opacity duration-1000 pointer-events-none',
+        'absolute -inset-20 opacity-0 group-hover:opacity-[0.03] blur-3xl dt-transition-slower pointer-events-none',
         accent.bg.replace('/5', '') // strip opacity for raw color glow
       ].join(' ')} />
     </div>

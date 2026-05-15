@@ -28,7 +28,7 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, leading, highl
     <div
       className={[
         'h-[110px] lg:h-[120px]',
-        'dt-card border-dt-primary/5 dt-pop flex flex-col justify-between p-5 relative overflow-hidden',
+        'dt-card-base dt-card-interactive dt-card-pad-md flex flex-col justify-between relative overflow-hidden',
         highlight ? 'bg-gradient-to-br from-dt-primary/5 to-dt-secondary/10 border-dt-primary/20' : 'bg-gradient-to-br from-white to-dt-bg/50',
       ].join(' ')}
       style={{
@@ -37,7 +37,7 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, leading, highl
     >
       <div className="flex items-center justify-between">
         <div className={[
-          'w-10 h-10 rounded-xl flex items-center justify-center shadow-sm',
+          'w-10 h-10 dt-radius-md flex items-center justify-center shadow-sm',
           highlight ? 'bg-white text-dt-primary' : 'bg-white border border-dt-primary/10 text-dt-textMuted',
         ].join(' ')}>
           {leadingEl}
