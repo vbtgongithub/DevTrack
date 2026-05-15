@@ -1,5 +1,0 @@
-[railway]
-name = "devtrack-backend"
-
-[deploy]
-dockerfilePath = "Dockerfile"

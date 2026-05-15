@@ -5,9 +5,9 @@
   "description": "DevTrack: All-in-one developer productivity + tracking platform",
   "scripts": {
     "dev": "concurrently -k -n FRONTEND,BACKEND -c blue,green \"npm run dev --prefix frontend\" \"npm run dev --prefix backend\"",
-    "build": "npm run build:frontend && npm run build:backend",
-    "build:frontend": "npm run build --prefix frontend",
-    "build:backend": "npm run build --prefix backend",
+    "build": "echo 'Use frontend/ or backend/ directories'",
+    "build:frontend": "echo 'Use --prefix frontend'",
+    "build:backend": "echo 'Use --prefix backend'",
     "lint": "npm run lint --prefix frontend",
     "test": "npm test --prefix backend",
     "install-all": "npm install && npm run install:frontend && npm run install:backend",
