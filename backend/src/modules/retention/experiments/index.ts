@@ -1,0 +1,2 @@
+// src/modules/retention/experiments/index.ts — Experimentation barrel export
+export { experimentationService, EXPERIMENTS, type Experiment, type ExperimentVariant, type ExperimentAssignment } from './experimentation.service.js';

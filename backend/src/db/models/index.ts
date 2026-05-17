@@ -17,3 +17,24 @@ export { Mission, type IMission } from './mission.model.js';
 export { SyncJob, type ISyncJob } from './syncJob.model.js';
 export { UserXp, type IUserXp } from './userXp.model.js';
 export { XpTransaction, type IXpTransaction, type XpSourceType } from './xpTransaction.model.js';
+export { UserStreakLog, type IUserStreakLog, type StreakType } from './userStreakLog.model.js';
+export { UserAnalytics, type IUserAnalytics } from './userAnalytics.model.js';
+export { ProcessedEvent, type IProcessedEvent } from './processedEvent.model.js';
+
+// Phase-I Validation Models
+export { BehavioralTelemetry } from './behavioralTelemetry.model.js';
+export { OnboardingAnalytics } from './onboardingAnalytics.model.js';
+export { FeatureUsageAnalytics } from './featureUsageAnalytics.model.js';
+
+// Phase-J Beta Models
+export { BetaUser } from './betaUser.model.js';
+export { BetaCohort } from './betaCohort.model.js';
+export { SessionReplay } from './sessionReplay.model.js';
+
+// Retention module models (imported directly from modules)
+export { Goal, type IGoal, type GoalType, type GoalCategory, type GoalDifficulty, type GoalStatus } from '../../modules/retention/goals/goal.model.js';
+export { Challenge, type IChallenge, type ChallengeType, type ChallengeRarity, type ChallengeStatus } from '../../modules/retention/challenges/challenge.model.js';
+export { Achievement, type IAchievement, type AchievementRarity, type AchievementCategory } from '../../modules/retention/achievements/achievement.model.js';
+
+// Unified Runtime State model
+export { UnifiedRuntimeState, type IUnifiedRuntimeState, type MomentumState, type FatigueState, type EmotionalState, type RecoveryState, type OnboardingStage, type EngagementPressure, type ActiveGoalRef, type ActiveChallengeRef, type ActiveAchievementRef, type NearMilestoneRef, type ProgressionPacing } from './unifiedRuntimeState.model.js';

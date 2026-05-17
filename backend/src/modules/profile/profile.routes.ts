@@ -36,6 +36,7 @@ router.post('/platforms/connect', authMiddleware, validateBody(z.object({
   username: z.string().min(1),
 })), asyncHandler(controller.connectPlatform));
 router.get('/platforms/stats', authMiddleware, asyncHandler(controller.getPlatformStats));
+router.get('/achievements', authMiddleware, asyncHandler(controller.getAchievements));
 router.post('/tech-stack', authMiddleware, validateBody(techStackSchema), asyncHandler(controller.addTechStack));
 router.delete('/tech-stack/:tag', authMiddleware, asyncHandler(controller.removeTechStack));
 

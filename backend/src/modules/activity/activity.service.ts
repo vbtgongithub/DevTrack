@@ -4,6 +4,7 @@ import { ActivityEvent, DailyActivity } from '../../db/models/index.js';
 import type { ApiActivityHeatmapResponse, ApiActivityFeedResponse, ApiActivityFilters, ApiActivityEntry, ApiActivitySummary } from '../../types/api.types.js';
 import { getDateRangeForYear, formatISODate, getStartOfDay, getLast365Days, calculateStreaks } from '../../shared/date.js';
 import { parsePaginationParams, createPagination, getSkipCount } from '../../shared/pagination.js';
+import { logger } from '../../shared/logger.js';
 
 export async function getHeatmap(userId: string, year: number): Promise<ApiActivityHeatmapResponse> {
   const { start, end } = getDateRangeForYear(year);
@@ -181,6 +182,22 @@ export async function createActivity(
     },
     { upsert: true, new: true }
   );
+
+  // ── Phase-C: Hook into retention system ────────────────────────────────
+  try {
+    const { retentionRuntimeOrchestrator } = await import('../runtime-orchestration/orchestrator/retentionRuntimeOrchestrator.service.js');
+    if (retentionRuntimeOrchestrator) {
+      retentionRuntimeOrchestrator.processActivityEvent(userId, activity._id.toString(), {
+        type: payload.type,
+        xp: (payload.metadata as any)?.xp || 0,
+        problemDifficulty: (payload.metadata as any)?.difficulty || 'easy',
+        duration: (payload.metadata as any)?.duration || 0,
+      }).catch(err => logger.error('[activity] Retention hook failed', { error: err }));
+    }
+  } catch (err) {
+    // Retention system linkage failed or module missing - fail silently to preserve core flow
+    logger.debug('[activity] Retention hook skipped', { reason: 'module_unavailable' });
+  }
 
   return {
     id: activity._id.toString(),

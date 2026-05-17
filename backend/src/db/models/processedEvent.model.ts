@@ -1,0 +1,125 @@
+// src/db/models/processedEvent.model.ts — Global event idempotency layer
+// Prevents duplicate processing across all workers
+
+import mongoose, { Schema, type Document } from 'mongoose';
+
+export interface IProcessedEvent extends Document {
+  eventId: string;
+  eventType: string;
+  userId: Schema.Types.ObjectId;
+  processedAt: Date;
+  ttlExpiresAt: Date;
+  result?: {
+    success: boolean;
+    details?: string;
+  };
+}
+
+const processedEventSchema = new Schema<IProcessedEvent>(
+  {
+    eventId: { type: String, required: true },
+    eventType: { type: String, required: true },
+    userId: { type: Schema.Types.ObjectId, required: true, index: true },
+    processedAt: { type: Date, required: true, default: Date.now },
+    ttlExpiresAt: { type: Date, required: true },
+    result: {
+      success: { type: Boolean, required: true },
+      details: { type: String },
+    },
+  },
+  {
+    timestamps: false,
+    optimisticConcurrency: true,
+  }
+);
+
+// Compound unique index for fast deduplication checks
+processedEventSchema.index(
+  { eventId: 1, eventType: 1 },
+  { unique: true }
+);
+
+// TTL index for automatic cleanup (events expire after 7 days)
+processedEventSchema.index(
+  { ttlExpiresAt: 1 },
+  { expireAfterSeconds: 0 }
+);
+
+// Query indexes
+processedEventSchema.index({ userId: 1, processedAt: -1 });
+processedEventSchema.index({ eventType: 1, processedAt: -1 });
+
+// Static methods for idempotency checks
+processedEventSchema.statics.checkAndMark = async function (
+  eventId: string,
+  eventType: string,
+  userId: string | mongoose.Types.ObjectId,
+  ttlDays = 7
+): Promise<{ alreadyProcessed: boolean; existingEvent?: IProcessedEvent }> {
+  const userObjId = typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId;
+
+  // Try to find existing event
+  const existing = await this.findOne({ eventId, eventType });
+
+  if (existing) {
+    return { alreadyProcessed: true, existingEvent: existing };
+  }
+
+  // Create new processed event atomically
+  const ttlExpiresAt = new Date();
+  ttlExpiresAt.setDate(ttlExpiresAt.getDate() + ttlDays);
+
+  try {
+    await this.create({
+      eventId,
+      eventType,
+      userId: userObjId,
+      processedAt: new Date(),
+      ttlExpiresAt,
+      result: { success: true },
+    });
+    return { alreadyProcessed: false };
+  } catch (err: unknown) {
+    // Duplicate key error means another worker already processed this
+    if ((err as { code?: number })?.code === 11000) {
+      const concurrentEvent = await this.findOne({ eventId, eventType });
+      return { alreadyProcessed: true, existingEvent: concurrentEvent };
+    }
+    throw err;
+  }
+};
+
+processedEventSchema.statics.markFailed = async function (
+  eventId: string,
+  eventType: string,
+  userId: string | mongoose.Types.ObjectId,
+  errorDetails: string
+): Promise<void> {
+  const userObjId = typeof userId === 'string' ? new mongoose.Types.ObjectId(userId) : userId;
+
+  const ttlExpiresAt = new Date();
+  ttlExpiresAt.setDate(ttlExpiresAt.getDate() + 7);
+
+  try {
+    await this.findOneAndUpdate(
+      { eventId, eventType },
+      {
+        $setOnInsert: {
+          eventId,
+          eventType,
+          userId: userObjId,
+          processedAt: new Date(),
+          ttlExpiresAt,
+        },
+        $set: {
+          result: { success: false, details: errorDetails },
+        },
+      },
+      { upsert: true, lean: true }
+    );
+  } catch {
+    // Ignore errors on failure marking
+  }
+};
+
+export const ProcessedEvent = mongoose.model<IProcessedEvent>('ProcessedEvent', processedEventSchema);

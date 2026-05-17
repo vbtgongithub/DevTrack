@@ -12,6 +12,10 @@ import { settingsRoutes } from '../modules/settings/index.js';
 import { syncRoutes } from '../modules/platform-sync/index.js';
 import { handleSseRequest } from '../shared/sse/index.js';
 import { xpRoutes } from '../modules/xp/xp.routes.js';
+import { streakRoutes } from '../modules/streak/index.js';
+import { opsRoutes } from '../modules/ops/ops.routes.js';
+import { runtimeStateRoutes } from '../modules/runtime-state/index.js';
+import { observationRoutes } from '../modules/observation/index.js';
 
 const router = Router();
 
@@ -40,5 +44,9 @@ router.use('/profile', profileRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/platforms', syncRoutes);
 router.use('/xp', xpRoutes);
+router.use('/streak', streakRoutes);
+router.use('/ops', opsRoutes);
+router.use('/runtime-state', runtimeStateRoutes);
+router.use('/observation', observationRoutes);
 
 export default router;

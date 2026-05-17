@@ -19,12 +19,10 @@ const dailyActivitySchema = new Schema<IDailyActivity>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     date: {
       type: Date,
       required: true,
-      index: true,
     },
     count: {
       type: Number,

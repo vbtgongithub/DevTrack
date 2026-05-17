@@ -101,6 +101,9 @@ export const env = {
   REDIS_PORT: getEnvVarNumber('REDIS_PORT', 6379),
   REDIS_PASSWORD: getEnvVar('REDIS_PASSWORD', ''),
   REDIS_URL: getEnvVar('REDIS_URL', ''),
+
+  // Beta Controls
+  CLOSED_BETA: getEnvVar('CLOSED_BETA', 'false') === 'true',
 };
 
 export default env;

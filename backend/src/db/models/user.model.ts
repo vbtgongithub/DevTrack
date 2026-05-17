@@ -92,9 +92,7 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Indexes
-userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ username: 1 }, { unique: true });
+// Indexes - unique indexes already defined via index:true in field definitions
 
 // Methods
 userSchema.methods.comparePassword = async function (password: string): Promise<boolean> {

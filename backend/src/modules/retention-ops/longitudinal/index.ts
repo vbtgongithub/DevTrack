@@ -1,0 +1,2 @@
+export { longitudinalIntelligence, type LongitudinalMetrics, type BehavioralTrajectory, type AdaptationMemory } from './longitudinalIntelligence.service.js';
+export { default } from './longitudinalIntelligence.service.js';

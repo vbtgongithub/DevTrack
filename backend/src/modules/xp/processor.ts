@@ -3,7 +3,7 @@
 // All XP awards MUST flow through this module — no direct UserXp writes elsewhere.
 
 import { Types } from 'mongoose';
-import { UserXp, XpTransaction, type IUserXp } from '../../db/models/index.js';
+import { UserXp, XpTransaction, UserAnalytics, type IUserXp } from '../../db/models/index.js';
 import { eventBus } from '../../shared/sse/index.js';
 import { logger } from '../../shared/logger.js';
 import {
@@ -149,6 +149,9 @@ export async function processXpEvent(payload: XpEventPayload): Promise<XpProcess
     eventBus.emitLevelUp(userId, levelAfter, newTotalXp);
   }
 
+  // ── Step 7: Sync to UserAnalytics ────────────────────────────────────────
+  await syncUserAnalytics(userId, newTotalXp, levelAfter, sourceType);
+
   logger.info('[xp] XP awarded', {
     event: 'xp_awarded',
     userId,
@@ -264,4 +267,75 @@ export async function getUserXp(userId: string): Promise<{
     progressPercent: xpProgressPercent(userXp.totalXp, userXp.currentLevel),
     lifetimeStats: userXp.lifetimeStats,
   };
+}
+
+// ─── UserAnalytics sync ───────────────────────────────────────────────────
+
+async function syncUserAnalytics(
+  userId: string,
+  totalXp: number,
+  currentLevel: number,
+  sourceType: XpSourceType
+): Promise<void> {
+  try {
+    const userObjId = new Types.ObjectId(userId);
+
+    // Get DSA solve count from lifetime stats
+    const userXp = await UserXp.findOne({ userId: userObjId });
+    const dsaSolveCount = userXp?.lifetimeStats?.totalProblemsSolved ?? 0;
+
+    // Get weekly XP for history
+    const weekStart = getWeekStart(new Date());
+    const analytics = await UserAnalytics.findOne({ userId: userObjId });
+
+    let weeklyXPHistory = analytics?.weeklyXPHistory ?? [];
+
+    // Update or add current week
+    const weekIndex = weeklyXPHistory.findIndex(
+      (w) => w.weekStart.getTime() === weekStart.getTime()
+    );
+
+    if (weekIndex >= 0) {
+      weeklyXPHistory[weekIndex].xp += totalXp;
+    } else {
+      weeklyXPHistory.push({ weekStart, xp: totalXp });
+    }
+
+    // Keep only last 12 weeks
+    if (weeklyXPHistory.length > 12) {
+      weeklyXPHistory = weeklyXPHistory
+        .sort((a, b) => b.weekStart.getTime() - a.weekStart.getTime())
+        .slice(0, 12);
+    }
+
+    // Calculate weekly consistency score
+    const activeWeeks = weeklyXPHistory.filter((w) => w.xp > 0).length;
+    const weeklyConsistencyScore = Math.round((activeWeeks / 12) * 100);
+
+    await UserAnalytics.findOneAndUpdate(
+      { userId: userObjId },
+      {
+        $set: {
+          totalXp,
+          currentLevel,
+          dsaSolveCount,
+          weeklyXPHistory,
+          weeklyConsistencyScore,
+          updatedAt: new Date(),
+        },
+      },
+      { upsert: true }
+    );
+  } catch (err) {
+    logger.warn('[xp] Failed to sync UserAnalytics', { error: err, userId });
+  }
+}
+
+function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday as first day
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }

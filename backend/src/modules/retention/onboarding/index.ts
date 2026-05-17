@@ -1,0 +1,2 @@
+// src/modules/retention/onboarding/index.ts — Onboarding Calibration barrel export
+export { onboardingService, type OnboardingState, type OnboardingPhase, type DopaminePacingSchedule } from './onboarding.service.js';

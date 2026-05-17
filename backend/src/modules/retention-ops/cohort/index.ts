@@ -1,0 +1,2 @@
+export { cohortIntelligence, type CohortDimension, type CohortSegment, type CohortTrend, type CohortEvolution } from './cohortIntelligence.service.js';
+export { default } from './cohortIntelligence.service.js';

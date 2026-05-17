@@ -1,0 +1,2 @@
+// src/modules/retention/economy/index.ts — Progression Economy barrel export
+export { progressionEconomy, DEFAULT_ECONOMY_CONFIG, type EconomyConfig, type UserEconomyState } from './progression.service.js';

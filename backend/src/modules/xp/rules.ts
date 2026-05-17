@@ -117,3 +117,20 @@ export function xpForDifficulty(difficulty: DifficultyLevel | null | undefined):
   if (!difficulty) return XP_REWARDS.dsaAccepted.medium;
   return XP_REWARDS.dsaAccepted[difficulty] ?? XP_REWARDS.dsaAccepted.medium;
 }
+
+// ─── Streak bonus calculator ────────────────────────────────────────────────
+
+export function calculateStreakBonus(currentStreak: number): number {
+  if (currentStreak < 7) return 0; // No bonus for streaks under 7 days
+
+  // Weekly milestone bonuses
+  const weeklyBonus = Math.floor(currentStreak / 7) * XP_REWARDS.weeklyStreak;
+  return weeklyBonus;
+}
+
+export function calculateStreakMultiplier(currentStreak: number): number {
+  // Base multiplier + bonus per week of streak
+  const baseMultiplier = 1.0;
+  const weeklyBonus = Math.floor(currentStreak / 7) * 0.1; // 10% per week
+  return Math.min(baseMultiplier + weeklyBonus, 2.0); // Cap at 2x
+}

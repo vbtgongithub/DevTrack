@@ -2,6 +2,7 @@
 import type { Response } from 'express';
 import type { AuthenticatedRequest } from '../../middleware/auth.js';
 import * as service from './profile.service.js';
+import { achievementService } from '../retention/achievements/achievement.service.js';
 import { successResponse, commonErrors } from '../../shared/response.js';
 
 export async function getProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -48,4 +49,14 @@ export async function connectPlatform(req: AuthenticatedRequest, res: Response):
   const { platformName, username } = req.body;
   const platform = await service.connectPlatform(req.user!.id, platformName, username);
   successResponse(res, platform, 'Platform connected successfully');
+}
+
+export async function getAchievements(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const unlocked = await achievementService.getUnlockedAchievements(req.user!.id);
+  const available = await achievementService.getAvailableAchievements(req.user!.id);
+  
+  successResponse(res, {
+    unlocked,
+    available,
+  }, 'Achievements retrieved successfully');
 }

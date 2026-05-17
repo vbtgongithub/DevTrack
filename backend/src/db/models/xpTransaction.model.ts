@@ -27,7 +27,7 @@ export interface IXpTransaction extends Document {
 
 const xpTransactionSchema = new Schema<IXpTransaction>(
   {
-    userId: { type: Schema.Types.ObjectId, required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, required: true },
     sourceType: {
       type: String,
       required: true,

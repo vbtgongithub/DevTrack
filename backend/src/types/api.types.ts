@@ -70,11 +70,13 @@ export interface ApiAuthTokens {
 export interface ApiLoginResponse {
   user: ApiUser;
   tokens: ApiAuthTokens;
+  featureFlags: Record<string, boolean>;
 }
 
 export interface ApiRegisterResponse {
   user: ApiUser;
   tokens: ApiAuthTokens;
+  featureFlags: Record<string, boolean>;
 }
 
 // Dashboard Types

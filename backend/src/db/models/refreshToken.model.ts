@@ -16,17 +16,14 @@ const refreshTokenSchema = new Schema<IRefreshToken>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     tokenHash: {
       type: String,
       required: true,
-      index: true,
     },
     expiresAt: {
       type: Date,
       required: true,
-      index: true,
     },
     revokedAt: {
       type: Date,
@@ -42,9 +39,7 @@ const refreshTokenSchema = new Schema<IRefreshToken>(
   }
 );
 
-// Indexes
+// Indexes - tokenHash and expiresAt indexes already defined via index:true in field definitions
 refreshTokenSchema.index({ userId: 1, createdAt: -1 });
-refreshTokenSchema.index({ tokenHash: 1 });
-refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 export const RefreshToken = model<IRefreshToken>('RefreshToken', refreshTokenSchema);

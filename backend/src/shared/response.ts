@@ -1,9 +1,9 @@
 // src/shared/response.ts - API response builders
 import type { Response } from 'express';
-import type { ApiResponse, ApiPaginatedResponse, ApiPagination, ApiError, ApiMutationResponse, ApiDeleteResponse } from '../types/api.types.js';
+import type { ApiPaginatedResponse, ApiPagination, ApiError, ApiMutationResponse, ApiDeleteResponse } from '../types/api.types.js';
 
 export function successResponse<T>(res: Response, data: T, message = 'Success', statusCode = 200): void {
-  const response: ApiResponse<T> = {
+  const response = {
     success: true,
     data,
     message,
@@ -87,4 +87,31 @@ export const commonErrors = {
 
   internalError: (res: Response, message = 'Internal server error') =>
     errorResponse(res, message, 'INTERNAL_ERROR', 500),
+};
+
+// Unified API response interface
+export const ApiResponse = {
+  success: (res: Response, data: unknown, message = 'Success') => {
+    successResponse(res, data, message);
+  },
+
+  error: (res: Response, message: string, statusCode = 500) => {
+    errorResponse(res, message, 'ERROR', statusCode);
+  },
+
+  badRequest: (res: Response, message: string) => {
+    errorResponse(res, message, 'BAD_REQUEST', 400);
+  },
+
+  unauthorized: (res: Response, message = 'Unauthorized') => {
+    errorResponse(res, message, 'UNAUTHORIZED', 401);
+  },
+
+  forbidden: (res: Response, message = 'Forbidden') => {
+    errorResponse(res, message, 'FORBIDDEN', 403);
+  },
+
+  notFound: (res: Response, message = 'Not found') => {
+    errorResponse(res, message, 'NOT_FOUND', 404);
+  },
 };
