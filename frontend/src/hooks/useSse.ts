@@ -23,16 +23,43 @@ const HEARTBEAT_INTERVAL_MS = 30_000;
 const MAX_CONSECUTIVE_FAILURES = 5;
 
 // ---------------------------------------------------------------------------
-// Event types — mirrors backend SseEvent
+// Event types — mirrors backend SseEvent (full taxonomy)
 // ---------------------------------------------------------------------------
 
 export type SseEventType =
+  // Runtime state (primary)
+  | 'runtime_state_patch'
+  | 'runtime_state_full'
+  // Behavioral
+  | 'behavioral_message'
+  | 'notification_created'
+  // Progression moments
+  | 'level_up'
+  | 'streak_milestone'
+  | 'streak_at_risk'
+  | 'achievement_unlocked'
+  | 'goal_completed'
+  | 'challenge_completed'
+  | 'near_milestone'
+  // Sync
   | 'sync_started'
   | 'sync_completed'
   | 'sync_failed'
   | 'new_submission'
+  // Legacy (for backwards compatibility)
   | 'xp_updated'
-  | 'level_up';
+  | 'badge_earned'
+  // System
+  | 'heartbeat';
+
+export interface SseEventEnvelope {
+  id: string;
+  type: SseEventType;
+  sequence: number;
+  timestamp: string;
+  userId: string;
+  payload: Record<string, unknown>;
+}
 
 export interface SseEvent {
   type: SseEventType;
@@ -71,6 +98,7 @@ interface UseSseResult {
   lastEvent: SseEvent | null;
   reconnectAttempt: number;
   diagnostics: SseDiagnostics;
+  eventHistory: SseEvent[];
 }
 
 export interface SseDiagnostics {
@@ -125,6 +153,8 @@ interface StoreState {
   totalReconnects: number;
   consecutiveFailures: number;
   reconnectDelays: number[];
+  eventHistory: SseEvent[];
+  lastEventId: string | null;
 }
 
 const store: StoreState = {
@@ -137,7 +167,16 @@ const store: StoreState = {
   totalReconnects: 0,
   consecutiveFailures: 0,
   reconnectDelays: [],
+  eventHistory: [],
+  lastEventId: null,
 };
+
+const MAX_HISTORY = 50;
+const seenEventIds = new Set<string>();
+
+function eventKey(event: SseEvent): string {
+  return `${event.type}:${event.timestamp}:${JSON.stringify(event.stats)}`;
+}
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -167,7 +206,7 @@ export function useSse(options: UseSseOptions = {}): UseSseResult {
   const heartbeatTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastMessageRef = useRef<number>(0);
   const consecutiveFailuresRef = useRef<number>(0);
-  const connectFnRef = useRef<() => void>(() => {});
+  const connectFnRef = useRef<() => void>(() => { });
 
   // Derived state via useSyncExternalStore — re-renders only when snapshot changes
   const { connectionStatus, lastEvent, reconnectAttempt } = useSyncExternalStore(
@@ -216,7 +255,12 @@ export function useSse(options: UseSseOptions = {}): UseSseResult {
 
     setStatus('connecting');
 
-    const url = `${SSE_BASE_URL}${SSE_PATH}?token=${encodeURIComponent(token)}`;
+    // Build URL with Last-Event-ID for reconnection
+    const urlParams = new URLSearchParams({ token });
+    if (store.lastEventId) {
+      urlParams.set('lastEventId', store.lastEventId);
+    }
+    const url = `${SSE_BASE_URL}${SSE_PATH}?${urlParams.toString()}`;
     const es = new EventSource(url);
     eventSourceRef.current = es;
 
@@ -243,12 +287,39 @@ export function useSse(options: UseSseOptions = {}): UseSseResult {
 
       let event: SseEvent;
       try {
-        event = JSON.parse(ev.data) as SseEvent;
+        // Try to parse as envelope first (new format)
+        const parsed = JSON.parse(ev.data) as SseEventEnvelope | SseEvent;
+        
+        if ('id' in parsed && 'sequence' in parsed) {
+          // It's an envelope - convert to legacy event format for compatibility
+          event = {
+            type: parsed.type,
+            timestamp: parsed.timestamp,
+            userId: parsed.userId,
+            stats: parsed.payload as SseEvent['stats'],
+          };
+          store.lastEventId = parsed.id;
+        } else {
+          // Legacy format
+          event = parsed as SseEvent;
+        }
       } catch {
         console.warn('[SSE] Failed to parse event', { raw: ev.data });
         return;
       }
 
+      // Deduplication
+      const key = eventKey(event);
+      if (seenEventIds.has(key)) return;
+      seenEventIds.add(key);
+      if (seenEventIds.size > 200) {
+        const first = seenEventIds.values().next().value;
+        if (first) seenEventIds.delete(first);
+      }
+
+      // Update event history
+      store.eventHistory = [event, ...store.eventHistory].slice(0, MAX_HISTORY);
+      
       store.lastEvent = event;
       store.lastEventAt = Date.now();
       store.totalEventsReceived++;
@@ -300,7 +371,7 @@ export function useSse(options: UseSseOptions = {}): UseSseResult {
         connectFnRef.current();
       }, delay);
     }
-  }, [enabled, onEvent, queryClient, extraInvalidateKeys, setStatus, setLastEvent]);
+  }, [enabled, onEvent, queryClient, extraInvalidateKeys, setStatus, setLastEvent]); // eslint-disable-line react-hooks/exhaustive-deps -- reconnectAttempt is from external store
 
   // Keep connectFnRef.current fresh so reconnect closures work correctly
   useEffect(() => {
@@ -328,6 +399,8 @@ export function useSse(options: UseSseOptions = {}): UseSseResult {
       }
       store.reconnectAttempt = 0;
       store.lastEvent = null;
+      store.eventHistory = [];
+      store.lastEventId = null;
       emitChange();
       return;
     }
@@ -366,5 +439,42 @@ export function useSse(options: UseSseOptions = {}): UseSseResult {
       consecutiveFailures: store.consecutiveFailures,
       avgReconnectDelay: Math.round(avgDelay),
     },
+    eventHistory: store.eventHistory,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Compatibility shims for old sse-manager exports (migration period)
+// ---------------------------------------------------------------------------
+
+export const useXpUpdates = () => {
+  const latestEvent = store.eventHistory.find((e) => e.type === 'xp_updated' || e.type === 'runtime_state_patch');
+  return {
+    latestXp: latestEvent?.stats?.totalSolved as number | undefined,
+    delta: latestEvent?.stats?.easySolved as number | undefined,
+  };
+};
+
+export const useStreakUpdates = () => {
+  const latestEvent = store.eventHistory.find(
+    (e) => e.type === 'streak_milestone' || e.type === 'streak_at_risk'
+  );
+  return {
+    streak: latestEvent?.stats?.totalSolved as number | undefined,
+    atRisk: latestEvent?.type === 'streak_at_risk',
+  };
+};
+
+export const useAchievementUnlocks = () => {
+  const latestEvent = store.eventHistory.find((e) => e.type === 'badge_earned' || e.type === 'achievement_unlocked');
+  return {
+    achievement: latestEvent?.stats as { name?: string; rarity?: string } | undefined,
+  };
+};
+
+export const useConnectionState = () => ({
+  connected: store.connectionStatus === 'connected',
+  reconnecting: store.connectionStatus === 'reconnecting',
+  lastEvent: store.lastEvent?.type ?? null,
+  error: store.connectionStatus === 'disconnected' ? 'Connection unavailable' : null,
+});

@@ -13,13 +13,15 @@ export async function register(
   email: string,
   username: string,
   displayName: string,
-  password: string
+  password: string,
+  inviteCode?: string
 ): Promise<ApiRegisterResponse> {
   const { data } = await axiosClient.post<ApiResponse<ApiRegisterResponse>>('/auth/register', {
     email,
     username,
     displayName,
     password,
+    inviteCode,
   });
   return data.data;
 }

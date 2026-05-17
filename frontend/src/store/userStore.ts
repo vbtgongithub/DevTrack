@@ -27,7 +27,7 @@ interface UserState {
   /** Login with email/username + password. Stores tokens and user. */
   login: (emailOrUsername: string, password: string) => Promise<void>;
   /** Register a new account. Stores tokens and user. */
-  register: (email: string, username: string, displayName: string, password: string) => Promise<void>;
+  register: (email: string, username: string, displayName: string, password: string, inviteCode?: string) => Promise<void>;
   /** Logout: revoke refresh token on backend, clear local state + tokens. */
   logout: () => Promise<void>;
   /** Fetch /auth/me to rehydrate user from a valid access token. */
@@ -85,10 +85,10 @@ export const useUserStore = create<UserState>((set, get) => ({
     }
   },
 
-  register: async (email, username, displayName, password) => {
+  register: async (email, username, displayName, password, inviteCode) => {
     set({ status: 'loading' });
     try {
-      const result = await authService.register(email, username, displayName, password);
+      const result = await authService.register(email, username, displayName, password, inviteCode);
       authService.storeTokens(result.tokens.accessToken, result.tokens.refreshToken);
       set({
         user: result.user,

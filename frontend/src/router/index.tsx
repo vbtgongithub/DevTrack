@@ -5,27 +5,12 @@ import { SkeletonCard } from '../components/skeletons/SkeletonCard';
 import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
 
-const DashboardPage = lazy(
-  () => import('../pages/DashboardPage')
-);
+const DashboardPage = lazy(() => import('../pages/DashboardPage'));
+const DsaPage = lazy(() => import('../pages/DsaPage'));
+const SettingsPage = lazy(() => import('../pages/SettingsPage'));
+const ProfilePage = lazy(() => import('../pages/ProfilePage'));
+const AdminPage = lazy(() => import('../pages/AdminPage'));
 
-const DsaPage = lazy(
-  () => import('../pages/DsaPage')
-);
-
-const ProjectsPage = lazy(
-  () => import('../pages/ProjectsPage')
-);
-
-const SettingsPage = lazy(
-  () => import('../pages/SettingsPage')
-);
-
-const ProfilePage = lazy(
-  () => import('../pages/ProfilePage')
-);
-
-// ─── Page Fallback Variants ───
 const skeletonVariants = {
   initial: { opacity: 0 },
   animate: { opacity: 1 },
@@ -43,7 +28,7 @@ const PageFallback: React.FC<{ useDashboardSkeleton?: boolean }> = ({ useDashboa
     {useDashboardSkeleton ? (
       <DashboardSkeleton />
     ) : (
-      <div className="px-6 py-6 flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         <SkeletonCard lines={2} />
         <SkeletonCard lines={4} />
         <SkeletonCard lines={3} />
@@ -55,6 +40,7 @@ const PageFallback: React.FC<{ useDashboardSkeleton?: boolean }> = ({ useDashboa
 export const AppRouter: React.FC = () => {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route
         path="/dashboard"
         element={
@@ -68,7 +54,7 @@ export const AppRouter: React.FC = () => {
       <Route
         path="/dsa"
         element={
-          <ErrorBoundary pageName="DSA Tracker">
+          <ErrorBoundary pageName="DSA Workspace">
             <Suspense fallback={<PageFallback />}>
               <DsaPage />
             </Suspense>
@@ -76,11 +62,11 @@ export const AppRouter: React.FC = () => {
         }
       />
       <Route
-        path="/projects"
+        path="/profile"
         element={
-          <ErrorBoundary pageName="Projects">
+          <ErrorBoundary pageName="Progress">
             <Suspense fallback={<PageFallback />}>
-              <ProjectsPage />
+              <ProfilePage />
             </Suspense>
           </ErrorBoundary>
         }
@@ -96,16 +82,23 @@ export const AppRouter: React.FC = () => {
         }
       />
       <Route
-        path="/profile"
+        path="/admin"
         element={
-          <ErrorBoundary pageName="Profile">
+          <ErrorBoundary pageName="Admin">
             <Suspense fallback={<PageFallback />}>
-              <ProfilePage />
+              <AdminPage />
             </Suspense>
           </ErrorBoundary>
         }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Legacy routes — consolidated into core surfaces */}
+      <Route path="/projects" element={<Navigate to="/dsa" replace />} />
+      <Route path="/goals" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/challenges" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/achievements" element={<Navigate to="/profile" replace />} />
+      <Route path="/leaderboard" element={<Navigate to="/profile" replace />} />
+      <Route path="/notifications" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 };
