@@ -6,6 +6,7 @@ import { createActivity, incrementDailyActivity } from '../activity/activity.ser
 import { eventBus } from '../../shared/sse/index.js';
 import * as cheerio from 'cheerio';
 import { env } from '../../config/env.js';
+import { circuitBreakers, CircuitOpenError } from '../../shared/circuit-breaker/circuitBreaker.js';
 
 const SYNC_TIMEOUT_MS = 15000;
 
@@ -544,12 +545,19 @@ async function fetchGithubRealStats(username: string): Promise<FetchedPlatformSt
 }
 
 async function fetchRealStats(platformName: string, username: string): Promise<FetchedPlatformStats> {
+  // All external fetches are wrapped in their circuit breaker so we fail fast
+  // when a provider is down, instead of blocking the worker pool with timeouts.
   switch (platformName) {
-    case 'leetcode': return fetchLeetCodeRealStats(username);
-    case 'codeforces': return fetchCodeforcesRealStats(username);
-    case 'codechef': return fetchCodeChefRealStats(username);
-    case 'github': return fetchGithubRealStats(username);
-    default: throw new Error(`Platform "${platformName}" sync not supported`);
+    case 'leetcode':
+      return circuitBreakers.leetcode.execute(() => fetchLeetCodeRealStats(username));
+    case 'codeforces':
+      return circuitBreakers.codeforces.execute(() => fetchCodeforcesRealStats(username));
+    case 'codechef':
+      return circuitBreakers.codechef.execute(() => fetchCodeChefRealStats(username));
+    case 'github':
+      return circuitBreakers.github.execute(() => fetchGithubRealStats(username));
+    default:
+      throw new Error(`Platform "${platformName}" sync not supported`);
   }
 }
 

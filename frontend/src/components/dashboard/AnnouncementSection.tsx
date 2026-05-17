@@ -36,7 +36,7 @@ const ContestRow: React.FC<{ contest: Contest; index: number }> = ({ contest, in
 export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ contests = [] }) => {
   if (contests.length === 0) {
     return (
-      <section className="bg-white/40 backdrop-blur-2xl border border-dt-primary/10 rounded-[24px] p-7 shadow-[0_8px_30px_rgba(124,92,252,0.05)] relative overflow-hidden h-full flex flex-col group transition-all duration-500 hover:shadow-[0_12px_40px_rgba(124,92,252,0.08)] hover:-translate-y-1 cubic-bezier(0.22, 1, 0.36, 1)">
+      <section className="bg-white/40 backdrop-blur-2xl border border-gray-300 rounded-[24px] p-7 shadow-[0_8px_30px_rgba(124,92,252,0.05)] relative overflow-hidden h-full flex flex-col group transition-all duration-500 hover:shadow-[0_12px_40px_rgba(124,92,252,0.08)] hover:-translate-y-1 hover:border-dt-primary/35 cubic-bezier(0.22, 1, 0.36, 1)">
         <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none transform translate-x-4 -translate-y-4 group-hover:scale-[1.3] group-hover:rotate-12 transition-transform duration-700">
           <Icon name="calendar" size={100} className="text-dt-text" />
         </div>
@@ -60,7 +60,7 @@ export const AnnouncementSection: React.FC<AnnouncementSectionProps> = ({ contes
   }
 
   return (
-    <section className="bg-white/40 backdrop-blur-2xl border border-dt-primary/10 rounded-[24px] p-7 shadow-[0_8px_30px_rgba(124,92,252,0.05)] relative overflow-hidden h-full flex flex-col group transition-all duration-500 hover:shadow-[0_12px_40px_rgba(124,92,252,0.08)] hover:-translate-y-1 cubic-bezier(0.22, 1, 0.36, 1)">
+    <section className="bg-white/40 backdrop-blur-2xl border border-gray-300 rounded-[24px] p-7 shadow-[0_8px_30px_rgba(124,92,252,0.05)] relative overflow-hidden h-full flex flex-col group transition-all duration-500 hover:shadow-[0_12px_40px_rgba(124,92,252,0.08)] hover:-translate-y-1 hover:border-dt-primary/35 cubic-bezier(0.22, 1, 0.36, 1)">
       <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none transform translate-x-4 -translate-y-4 group-hover:scale-[1.3] group-hover:rotate-12 transition-transform duration-700">
         <Icon name="calendar" size={100} className="text-dt-text" />
       </div>

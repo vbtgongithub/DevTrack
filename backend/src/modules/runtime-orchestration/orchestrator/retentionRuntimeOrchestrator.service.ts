@@ -5,6 +5,7 @@ import { getRedisClient } from '../../../shared/redis/client.js';
 import { logger } from '../../../shared/logger.js';
 import { getXpProcessingQueue } from '../../../shared/jobs/index.js';
 import { eventBus } from '../../../shared/sse/index.js';
+import { traceSpan, getTraceContext } from '../../../shared/tracing/tracing.js';
 
 export type OrchestrationStage =
   | 'xp_processing'
@@ -27,6 +28,8 @@ export interface OrchestrationContext {
   results: Partial<Record<OrchestrationStage, unknown>>;
   errors: Array<{ stage: OrchestrationStage; error: string }>;
   suppressed: OrchestrationStage[];
+  correlationId?: string;
+  causationId?: string;
 }
 
 export interface OrchestrationCheckpoint {
@@ -65,6 +68,16 @@ export const retentionRuntimeOrchestrator = {
       duration?: number;
     }
   ): Promise<OrchestrationContext> {
+    // Idempotency check: if event has already been processed, return the cached checkpoint immediately
+    const cachedCheckpoint = await this.getCheckpoint(eventId);
+    if (cachedCheckpoint) {
+      logger.info('[orchestrator] Event already processed, returning cached checkpoint (idempotent)', {
+        userId,
+        eventId,
+      });
+      return cachedCheckpoint.context;
+    }
+
     const context = await this.createContext(userId, eventId, activityData);
 
     // Check activation level
@@ -86,7 +99,11 @@ export const retentionRuntimeOrchestrator = {
       }
 
       try {
-        const result = await this.executeStage(stage, context, activityData);
+        // Wrap each stage in a trace span for distributed tracing
+        const result = await traceSpan(`orchestration.${stage}`, async () => {
+          return this.executeStage(stage, context, activityData);
+        }, { userId, eventId });
+
         context.results[stage] = result;
       } catch (error) {
         context.errors.push({
@@ -117,6 +134,7 @@ export const retentionRuntimeOrchestrator = {
     activityEventId: string,
     _activityData: { type: string; xp?: number; problemDifficulty?: string; duration?: number }
   ): Promise<OrchestrationContext> {
+    const traceCtx = getTraceContext();
     return {
       userId,
       activityEventId,
@@ -127,6 +145,8 @@ export const retentionRuntimeOrchestrator = {
       results: {},
       errors: [],
       suppressed: [],
+      correlationId: traceCtx?.correlationId || traceCtx?.traceId || activityEventId,
+      causationId: traceCtx?.spanId || activityEventId,
     };
   },
 

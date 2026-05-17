@@ -44,10 +44,10 @@ function onRefreshFailure() {
   isRefreshing = false;
 }
 
-function waitForRefresh(): Promise<string> {
+function waitForRefresh(): Promise<string | undefined> {
   return new Promise((resolve) => {
     refreshQueue.push((token?: string) => {
-      if (token) resolve(token);
+      resolve(token);
     });
   });
 }
@@ -155,19 +155,25 @@ axiosClient.interceptors.response.use(
         }
 
         return axiosClient(originalRequest);
-      } catch {
+      } catch (refreshError: any) {
         onRefreshFailure();
 
-        // Clear tokens from this tab too — storage event handles other tabs
-        localStorage.removeItem('devtrack_access_token');
-        localStorage.removeItem('devtrack_refresh_token');
+        const status = refreshError.response?.status;
 
-        try {
-          onAuthInvalid?.();
-        } catch {
-          // ignore — redirect should still happen
+        // ONLY clear credentials and redirect if the server explicitly tells us the refresh token is invalid (4xx)
+        // If it's a network error (no status) or server error (5xx), do NOT log the user out!
+        if (status && status >= 400 && status < 500) {
+          localStorage.removeItem('devtrack_access_token');
+          localStorage.removeItem('devtrack_refresh_token');
+
+          try {
+            onAuthInvalid?.();
+          } catch {
+            // ignore — redirect should still happen
+          }
+          window.location.href = '/login';
         }
-        window.location.href = '/login';
+
         return Promise.reject(error);
       }
     }

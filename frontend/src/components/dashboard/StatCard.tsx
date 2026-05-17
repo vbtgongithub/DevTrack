@@ -28,8 +28,10 @@ export const StatCard: React.FC<StatCardProps> = ({ label, value, leading, highl
     <div
       className={[
         'h-[110px] lg:h-[120px]',
-        'dt-card border-dt-primary/5 dt-pop flex flex-col justify-between p-5 relative overflow-hidden',
-        highlight ? 'bg-gradient-to-br from-dt-primary/5 to-dt-secondary/10 border-dt-primary/20' : 'bg-gradient-to-br from-white to-dt-bg/50',
+        'dt-card flex flex-col justify-between p-5 relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-[2px]',
+        highlight
+          ? 'bg-gradient-to-br from-dt-primary/5 to-dt-secondary/10 border-2 border-dt-primary/20 hover:border-dt-primary/45 shadow-[0_4px_20px_rgba(124,92,252,0.06)]'
+          : 'bg-gradient-to-br from-white to-dt-bg/50 border border-gray-300 hover:border-dt-primary/30',
       ].join(' ')}
       style={{
         animation: `dtFadeIn 400ms ease-out ${delay}ms both`,

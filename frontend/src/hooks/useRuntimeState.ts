@@ -8,6 +8,7 @@
 import { useQuery } from '@tanstack/react-query';
 import axiosClient from '../utils/axiosClient';
 import { useSse } from './useSse';
+import { useUserStore } from '../store/userStore';
 
 export interface RuntimeState {
   userId: string;
@@ -93,6 +94,7 @@ async function fetchRuntimeState(): Promise<RuntimeState> {
 }
 
 export function useRuntimeState() {
+  const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const query = useQuery<RuntimeState>({
     queryKey: ['runtime-state'],
     queryFn: fetchRuntimeState,
@@ -102,6 +104,7 @@ export function useRuntimeState() {
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
     retry: 2,
+    enabled: isAuthenticated,
   });
 
   const invalidateRuntimeState = () => {

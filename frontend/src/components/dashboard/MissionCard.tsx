@@ -21,7 +21,7 @@ export const MissionCard: React.FC<MissionCardProps> = ({ missions = [] }) => {
 
   if (dailyMissions.length === 0) {
     return (
-      <div className="h-full dt-card bg-gradient-to-br from-white to-dt-bg/50 border-dt-primary/10 rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 ease-out flex flex-col relative overflow-hidden group">
+      <div className="h-full dt-card bg-gradient-to-br from-white to-dt-bg/50 border border-gray-300 rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-dt-primary/30 transition-all duration-300 ease-out flex flex-col relative overflow-hidden group">
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-dt-primary to-dt-secondary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-3">
@@ -44,7 +44,7 @@ export const MissionCard: React.FC<MissionCardProps> = ({ missions = [] }) => {
   }
 
   return (
-    <div className="h-full bg-white/40 backdrop-blur-2xl border border-dt-primary/10 rounded-[24px] p-7 shadow-[0_8px_30px_rgba(124,92,252,0.05)] hover:shadow-[0_12px_40px_rgba(124,92,252,0.08)] hover:-translate-y-1 transition-all duration-500 cubic-bezier(0.22, 1, 0.36, 1) flex flex-col relative overflow-hidden group">
+    <div className="h-full bg-white/40 backdrop-blur-2xl border border-gray-300 rounded-[24px] p-7 shadow-[0_8px_30px_rgba(124,92,252,0.05)] hover:shadow-[0_12px_40px_rgba(124,92,252,0.08)] hover:-translate-y-1 hover:border-dt-primary/30 transition-all duration-500 cubic-bezier(0.22, 1, 0.36, 1) flex flex-col relative overflow-hidden group">
       <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none transform translate-x-4 -translate-y-4 group-hover:scale-[1.3] group-hover:rotate-12 transition-transform duration-700">
         <Icon name="target" size={100} className="text-dt-text" />
       </div>
@@ -76,7 +76,7 @@ export const MissionCard: React.FC<MissionCardProps> = ({ missions = [] }) => {
               className={[
                 'flex items-center gap-4 py-3.5 px-4 rounded-[16px] border',
                 'transition-all duration-300 hover:border-dt-primary/30 cursor-pointer',
-                isCompleted ? 'bg-dt-primary/5 border-transparent opacity-80' : 'bg-white/80 border-dt-primary/10 shadow-sm hover:shadow-md hover:-translate-y-0.5',
+                isCompleted ? 'bg-dt-primary/5 border-transparent opacity-80' : 'bg-white/80 border border-gray-300 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:border-dt-primary/30',
               ].join(' ')}
               style={{ animation: `dtFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 80}ms both` }}
             >

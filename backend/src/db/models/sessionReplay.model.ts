@@ -121,5 +121,7 @@ SessionReplaySchema.index({ betaUserId: 1 });
 SessionReplaySchema.index({ cohortId: 1 });
 SessionReplaySchema.index({ startTime: -1 });
 SessionReplaySchema.index({ 'frictionEvents.timestamp': -1 });
+// TTL: auto-delete session replays after 30 days to prevent storage explosion
+SessionReplaySchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
 
 export const SessionReplay = mongoose.model<ISessionReplay>('SessionReplay', SessionReplaySchema);

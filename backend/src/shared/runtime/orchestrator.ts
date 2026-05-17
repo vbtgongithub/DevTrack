@@ -118,6 +118,13 @@ function bootWorkers(redisOk: boolean): { platformSync: boolean; xp: boolean } {
   let platformSync = false;
   let xp = false;
 
+  if (process.env.ENABLE_WORKERS === 'false') {
+    setPlatformSyncWorkerStatus('stopped', 'Disabled by ENABLE_WORKERS=false');
+    setXpWorkerStatus('stopped', 'Disabled by ENABLE_WORKERS=false');
+    logger.info('[startup] Workers disabled via ENABLE_WORKERS=false env flag', { event: 'workers_disabled' });
+    return { platformSync, xp };
+  }
+
   if (!redisOk) {
     setPlatformSyncWorkerStatus('degraded', 'Redis unavailable');
     setXpWorkerStatus('degraded', 'Redis unavailable');

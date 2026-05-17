@@ -1,11 +1,14 @@
 // src/shared/jobs/xpWorker.ts — BullMQ XP processing worker
 // Processes XP events from the xp-processing queue with idempotency protection.
+// Trace context is restored from the originating sync job for full distributed correlation.
 
 import { Worker, Job } from 'bullmq';
 import { getRedisClient } from '../redis/index.js';
 import { logger } from '../logger.js';
 import { processXpEvent } from '../../modules/xp/processor.js';
 import { QueueNames, JobRetryConfig, XpProcessingJobData } from './types.js';
+import { dlqService } from './dlq.service.js';
+import { runJobInTrace } from '../tracing/tracing.js';
 
 // Operational metrics
 const metrics = {
@@ -26,60 +29,63 @@ export function startXpWorker(): Worker<XpProcessingJobData> {
   _worker = new Worker<XpProcessingJobData>(
     QueueNames.XP_PROCESSING,
     async (job: Job<XpProcessingJobData>) => {
-      const { userId, sourceType, sourceId, difficulty, metadata, requestId } = job.data;
-      const jobId = job.id ?? 'unknown';
-      const startTime = Date.now();
+      // Restore distributed trace context from the originating sync worker
+      return runJobInTrace(job.data as unknown as Record<string, unknown>, async () => {
+        const { userId, sourceType, sourceId, difficulty, metadata, requestId } = job.data;
+        const jobId = job.id ?? 'unknown';
+        const startTime = Date.now();
 
-      logger.info('[xp-worker] Processing XP job', {
-        event: 'xp_job_started',
-        queue: QueueNames.XP_PROCESSING,
-        jobId,
-        userId,
-        sourceType,
-        sourceId,
-        difficulty,
-        requestId: requestId ?? jobId,
-        attempt: job.attemptsMade + 1,
-      });
-
-      try {
-        const result = await processXpEvent({ userId, sourceType, sourceId, difficulty, metadata, requestId });
-
-        const durationMs = Date.now() - startTime;
-        metrics.processed++;
-        if (result.awarded) metrics.awarded++;
-        if (result.duplicate) metrics.duplicates++;
-
-        logger.info('[xp-worker] XP job completed', {
-          event: 'xp_job_completed',
+        logger.info('[xp-worker] Processing XP job', {
+          event: 'xp_job_started',
           queue: QueueNames.XP_PROCESSING,
           jobId,
           userId,
           sourceType,
-          durationMs,
-          awarded: result.awarded,
-          duplicate: result.duplicate,
-          xpAwarded: result.xpAwarded,
-          leveledUp: result.leveledUp,
-        });
-
-        return result;
-      } catch (err) {
-        const durationMs = Date.now() - startTime;
-        metrics.failed++;
-
-        logger.error('[xp-worker] XP job failed', err as Error, {
-          event: 'xp_job_failed',
-          queue: QueueNames.XP_PROCESSING,
-          jobId,
-          userId,
-          sourceType,
+          sourceId,
+          difficulty,
           requestId: requestId ?? jobId,
-          durationMs,
+          attempt: job.attemptsMade + 1,
         });
 
-        throw err;
-      }
+        try {
+          const result = await processXpEvent({ userId, sourceType, sourceId, difficulty, metadata, requestId });
+
+          const durationMs = Date.now() - startTime;
+          metrics.processed++;
+          if (result.awarded) metrics.awarded++;
+          if (result.duplicate) metrics.duplicates++;
+
+          logger.info('[xp-worker] XP job completed', {
+            event: 'xp_job_completed',
+            queue: QueueNames.XP_PROCESSING,
+            jobId,
+            userId,
+            sourceType,
+            durationMs,
+            awarded: result.awarded,
+            duplicate: result.duplicate,
+            xpAwarded: result.xpAwarded,
+            leveledUp: result.leveledUp,
+          });
+
+          return result;
+        } catch (err) {
+          const durationMs = Date.now() - startTime;
+          metrics.failed++;
+
+          logger.error('[xp-worker] XP job failed', err as Error, {
+            event: 'xp_job_failed',
+            queue: QueueNames.XP_PROCESSING,
+            jobId,
+            userId,
+            sourceType,
+            requestId: requestId ?? jobId,
+            durationMs,
+          });
+
+          throw err;
+        }
+      });
     },
     {
       connection: redis,
@@ -97,6 +103,7 @@ export function startXpWorker(): Worker<XpProcessingJobData> {
     });
   });
 
+  // Route permanently-failed XP jobs to the DLQ
   _worker.on('failed', (job: Job<XpProcessingJobData> | undefined, err: Error) => {
     logger.error('[xp-worker] Job failed permanently', err, {
       event: 'xp_job_failed_permanently',
@@ -104,6 +111,23 @@ export function startXpWorker(): Worker<XpProcessingJobData> {
       jobId: job?.id,
       userId: job?.data.userId,
     });
+
+    if (job && job.attemptsMade >= JobRetryConfig.xpProcessing.attempts) {
+      dlqService
+        .quarantineJob(
+          QueueNames.XP_PROCESSING,
+          job as unknown as import('bullmq').Job,
+          err.message,
+          job.attemptsMade,
+          JobRetryConfig.xpProcessing.attempts
+        )
+        .catch((dlqErr) => {
+          logger.error('[xp-worker] Failed to quarantine job in DLQ', dlqErr, {
+            event: 'dlq_quarantine_failed',
+            jobId: job?.id,
+          });
+        });
+    }
   });
 
   _worker.on('error', (err: Error) => {

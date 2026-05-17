@@ -41,12 +41,12 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
         'h-full min-h-[140px]',
         'dt-card',
         'bg-white backdrop-blur-xl',
-        'border border-dt-primary/5',
+        'border border-gray-300 hover:border-dt-primary/35',
         'p-5 lg:p-6',
         'flex flex-col justify-between gap-4 min-w-0 cursor-pointer',
         'relative overflow-hidden group',
         'transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
-        'hover:-translate-y-1',
+        'hover:-translate-y-1 hover:shadow-lg',
         accent.glow
       ].join(' ')}
       style={{
@@ -94,7 +94,7 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
       </div>
 
       {hasData && (
-        <div className="min-w-0 pt-4 border-t border-dt-primary/5 flex items-center justify-between gap-4 relative z-10">
+        <div className="min-w-0 pt-4 border-t border-gray-200 flex items-center justify-between gap-4 relative z-10">
           <span className="text-[10px] text-dt-textMuted font-black uppercase tracking-[0.2em]">{ratingLabel}</span>
           <span className={[
             'text-[11px] font-black px-2.5 py-1 rounded-md border tabular-nums tracking-wide',

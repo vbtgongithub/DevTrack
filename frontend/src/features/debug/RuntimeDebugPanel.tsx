@@ -5,6 +5,7 @@ import { useRuntimeState, type RuntimeState } from '../../hooks/useRuntimeState'
 import { useSse, type SseDiagnostics, type SseEvent } from '../../hooks/useSse';
 import { cn } from '../../lib/design-system/tokens.css';
 import { springCalm } from '../../lib/motion';
+import { useUserStore } from '../../store/userStore';
 
 interface RuntimeDebugPanelProps {
   /** Only renders in development or when feature flag is enabled */
@@ -19,8 +20,9 @@ interface RuntimeDebugPanelProps {
 export function RuntimeDebugPanel({ enabled = import.meta.env.DEV }: RuntimeDebugPanelProps) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'state' | 'sse' | 'events'>('state');
+  const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const { data: runtimeState, loading, error } = useRuntimeState();
-  const { connectionStatus, diagnostics, eventHistory, reconnectAttempt } = useSse();
+  const { connectionStatus, diagnostics, eventHistory, reconnectAttempt } = useSse({ enabled: isAuthenticated });
 
   if (!enabled) return null;
 
@@ -36,8 +38,8 @@ export function RuntimeDebugPanel({ enabled = import.meta.env.DEV }: RuntimeDebu
           'text-zinc-400 hover:text-zinc-200',
           open && 'hidden'
         )}
-        aria-label="Open runtime debug panel"
-        title="Runtime Debug Panel"
+        aria-label="Open runtime diagnostics panel"
+        title="Runtime Diagnostics Panel"
       >
         <Bug className="w-4 h-4" />
       </button>
@@ -55,7 +57,7 @@ export function RuntimeDebugPanel({ enabled = import.meta.env.DEV }: RuntimeDebu
             <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/60">
               <div className="flex items-center gap-2">
                 <Bug className="w-4 h-4 text-amber-400" />
-                <span className="text-sm font-semibold text-zinc-200">Runtime Debug</span>
+                <span className="text-sm font-semibold text-zinc-200">Runtime Diagnostics</span>
                 <ConnectionDot status={connectionStatus} />
               </div>
               <button

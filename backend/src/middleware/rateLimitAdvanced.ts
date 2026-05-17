@@ -67,6 +67,11 @@ export function createRateLimiter(endpointType: string) {
     res: Response,
     next: NextFunction
   ): Promise<void> {
+    if (process.env.NODE_ENV === 'development') {
+      next();
+      return;
+    }
+
     const redis = getRedisClient();
     const identifier = getIdentifier(req);
     const now = Date.now();

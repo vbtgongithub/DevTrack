@@ -13,7 +13,7 @@ const MotionShield: React.FC<{ children: React.ReactNode; className?: string; ac
 }) => {
   const [ready, setReady] = useState(false);
   useEffect(() => { setReady(true); }, []);
-  if (!ready) return <div className={className}>{children}</div>;
+  if (!ready || !active) return <div className={className}>{children}</div>;
   return <motion.div className={className}>{children}</motion.div>;
 };
 

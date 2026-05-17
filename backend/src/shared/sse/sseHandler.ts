@@ -201,7 +201,9 @@ export async function handleSseRequest(req: Request, res: Response): Promise<voi
 
   stream.pipeTo(
     new WritableStream({
-      write(_chunk) {},
+      write(chunk) {
+        res.write(chunk);
+      },
       close() {
         eventBus.unregister(clientId);
       },

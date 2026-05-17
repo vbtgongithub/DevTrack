@@ -1,11 +1,14 @@
 // src/shared/logger.ts — Structured logger with performance monitoring
 import { env } from '../config/env.js';
+import { getTraceMetadata } from './tracing/tracing.js';
 
 interface LogEntry {
   timestamp: string;
   level: string;
   service: string;
   event: string;
+  traceId?: string;
+  correlationId?: string;
   durationMs?: number;
   requestId?: string;
   userId?: string;
@@ -18,6 +21,12 @@ function formatEntry(entry: LogEntry): string {
 }
 
 function emit(entry: LogEntry): void {
+  // Automatically attach trace context if available (AsyncLocalStorage)
+  const traceCtx = getTraceMetadata();
+  if (traceCtx.traceId && !entry.traceId) entry.traceId = traceCtx.traceId;
+  if (traceCtx.correlationId && !entry.correlationId) entry.correlationId = traceCtx.correlationId;
+  if (traceCtx.userId && !entry.userId) entry.userId = traceCtx.userId;
+
   const line = formatEntry(entry);
   switch (entry.level) {
     case 'ERROR':
@@ -57,16 +66,34 @@ export const logger = {
   },
 
   error(event: string, error?: unknown, meta?: Record<string, unknown>): void {
-    const errorMsg = error instanceof Error ? error.message : String(error ?? '');
+    let errorMsg = '';
+    let stack: string | undefined = undefined;
+    let finalMeta = meta;
+
+    if (error instanceof Error) {
+      errorMsg = error.message;
+      stack = error.stack;
+    } else if (error && typeof error === 'object') {
+      const errObj = error as Record<string, unknown>;
+      errorMsg = typeof errObj.message === 'string' ? errObj.message : String(errObj.error || JSON.stringify(errObj));
+      stack = typeof errObj.stack === 'string' ? errObj.stack : undefined;
+      finalMeta = { ...errObj, ...meta };
+    } else {
+      errorMsg = String(error ?? '');
+    }
+
     emit({
       timestamp: new Date().toISOString(),
       level: 'ERROR',
       service: SERVICE_NAME,
       event,
-      requestId: meta?.requestId as string | undefined,
-      userId: meta?.userId as string | undefined,
+      requestId: (finalMeta?.requestId || finalMeta?.metadata?.requestId) as string | undefined,
+      userId: (finalMeta?.userId || finalMeta?.metadata?.userId) as string | undefined,
       error: errorMsg || undefined,
-      metadata: excludeMeta(meta),
+      metadata: {
+        ...excludeMeta(finalMeta),
+        ...(stack ? { stack } : {}),
+      },
     });
   },
 

@@ -93,7 +93,7 @@ const DashboardPage: React.FC = () => {
         {/* Productivity & Gamification Core */}
         <div className="grid grid-cols-1 gap-6 items-stretch mt-2">
           <div className="flex flex-col gap-6">
-            <div className="bg-white/40 backdrop-blur-3xl p-8 lg:p-10 flex flex-col gap-8 shadow-[0_8px_40px_rgba(124,92,252,0.06)] border border-dt-primary/10 rounded-[36px]">
+            <div className="bg-white/40 backdrop-blur-3xl p-8 lg:p-10 flex flex-col gap-8 shadow-[0_8px_40px_rgba(124,92,252,0.06)] border border-gray-300 rounded-[36px]">
               <TodaySummaryBar streakData={data?.streakData} missions={data?.missions ?? []} />
               <div className="h-px bg-gradient-to-r from-transparent via-dt-primary/15 to-transparent w-full opacity-60" />
               <GamificationPanel streakData={data?.streakData} missions={data?.missions ?? []} />
@@ -129,7 +129,7 @@ const DashboardPage: React.FC = () => {
               <p className="text-label text-[12px] !text-dt-textSecondary/70">Performance across environments</p>
             </div>
           </div>
-          <div className="dt-surface p-6 flex flex-col gap-6">
+          <div className="dt-surface border border-gray-300 p-6 flex flex-col gap-6">
             <ProgressCards platformStats={data?.platformStats ?? null} />
           </div>
         </section>

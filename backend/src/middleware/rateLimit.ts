@@ -28,6 +28,11 @@ export function rateLimit(options: RateLimitOptions) {
   const { windowMs, maxRequests, message = 'Too many requests. Please try again later.' } = options;
 
   return (req: Request, res: Response, next: NextFunction): void => {
+    if (process.env.NODE_ENV === 'development') {
+      next();
+      return;
+    }
+
     const authReq = req as AuthenticatedRequest;
     const key = authReq.user?.id || req.ip || 'anonymous';
     const now = Date.now();

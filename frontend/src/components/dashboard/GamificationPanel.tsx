@@ -117,7 +117,7 @@ const DailyGoalCard: React.FC<DailyGoalProps> = ({ missions }) => {
 
   return (
     <div
-      className="dt-card p-4 flex flex-col justify-between bg-white rounded-[28px] border border-dt-primary/10 shadow-dt-floating hover:shadow-dt-card-hover transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative overflow-hidden"
+      className="dt-card p-4 flex flex-col justify-between bg-white rounded-[28px] border border-gray-300 shadow-dt-floating hover:shadow-dt-card-hover hover:border-dt-primary/30 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative overflow-hidden"
       style={{ animation: 'dtFadeIn 800ms cubic-bezier(0.16,1,0.3,1) 100ms both' }}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(124,92,252,0.03),transparent_40%)]" />
@@ -170,7 +170,7 @@ const AchievementsCard: React.FC<AchievementsProps> = () => {
 
   return (
     <div
-      className="dt-card p-4 flex flex-col justify-between bg-white rounded-[28px] border border-dt-success/10 shadow-dt-floating hover:shadow-dt-card-hover transition-all duration-700 relative overflow-hidden"
+      className="dt-card p-4 flex flex-col justify-between bg-white rounded-[28px] border border-gray-300 shadow-dt-floating hover:shadow-dt-card-hover hover:border-dt-success/30 transition-all duration-700 relative overflow-hidden"
       style={{ animation: 'dtFadeIn 800ms cubic-bezier(0.16,1,0.3,1) 200ms both' }}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,0.03),transparent_40%)]" />

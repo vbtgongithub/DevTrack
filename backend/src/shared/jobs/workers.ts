@@ -10,6 +10,8 @@ import { syncState } from '../syncState.js';
 import { syncPlatform } from '../../modules/platform-sync/sync.service.js';
 import { PlatformSyncJobData, QueueNames, JobRetryConfig } from './types.js';
 import { getXpProcessingQueue } from './queueFactory.js';
+import { dlqService } from './dlq.service.js';
+import { injectTraceIntoJob, runJobInTrace } from '../tracing/tracing.js';
 
 let _worker: Worker<PlatformSyncJobData> | null = null;
 
@@ -21,100 +23,104 @@ export function startPlatformSyncWorker(): Worker<PlatformSyncJobData> {
   _worker = new Worker<PlatformSyncJobData>(
     QueueNames.PLATFORM_SYNC,
     async (job: Job<PlatformSyncJobData>) => {
-      const { userId, platformName, requestId } = job.data;
-      const jobId = job.id ?? 'unknown';
-      const startTime = Date.now();
+      // Restore distributed trace context from job data so all logs/spans are correlated
+      return runJobInTrace(job.data as unknown as Record<string, unknown>, async () => {
+        const { userId, platformName, requestId } = job.data;
+        const jobId = job.id ?? 'unknown';
+        const startTime = Date.now();
 
-      logger.info('[worker] Processing platform sync job', {
-        event: 'job_started',
-        queue: QueueNames.PLATFORM_SYNC,
-        jobId,
-        userId,
-        platform: platformName,
-        requestId: requestId ?? jobId,
-        attempt: job.attemptsMade + 1,
-      });
-
-      syncState.beginSync();
-      eventBus.emitSyncStarted(userId);
-
-      try {
-        const result = await syncPlatform(userId, platformName);
-
-        const durationMs = Date.now() - startTime;
-        logger.info('[worker] Platform sync job completed', {
-          event: 'job_completed',
+        logger.info('[worker] Processing platform sync job', {
+          event: 'job_started',
           queue: QueueNames.PLATFORM_SYNC,
           jobId,
           userId,
           platform: platformName,
           requestId: requestId ?? jobId,
-          durationMs,
-          success: result.success,
-          stats: result.stats ?? null,
-          error: result.error ?? null,
+          attempt: job.attemptsMade + 1,
         });
 
-        syncState.completeSync(result.success ? 'success' : 'failed', durationMs);
+        syncState.beginSync();
+        eventBus.emitSyncStarted(userId);
 
-        if (result.success) {
-          eventBus.emitSyncCompleted(userId, platformName, result.stats);
+        try {
+          const result = await syncPlatform(userId, platformName);
 
-          // Enqueue sync completion XP award
-          try {
-            const xpQueue = getXpProcessingQueue();
-            const syncSourceId = `sync_${userId}_${platformName}_${Date.now()}`;
-            await xpQueue.add(
-              'sync-completed-xp',
-              {
+          const durationMs = Date.now() - startTime;
+          logger.info('[worker] Platform sync job completed', {
+            event: 'job_completed',
+            queue: QueueNames.PLATFORM_SYNC,
+            jobId,
+            userId,
+            platform: platformName,
+            requestId: requestId ?? jobId,
+            durationMs,
+            success: result.success,
+            stats: result.stats ?? null,
+            error: result.error ?? null,
+          });
+
+          syncState.completeSync(result.success ? 'success' : 'failed', durationMs);
+
+          if (result.success) {
+            eventBus.emitSyncCompleted(userId, platformName, result.stats);
+
+            // Enqueue XP award — inject current trace so XP worker logs are correlated
+            try {
+              const xpQueue = getXpProcessingQueue();
+              const syncSourceId = `sync_${userId}_${platformName}_${Date.now()}`;
+              const xpJobData = injectTraceIntoJob({
                 userId,
                 sourceType: 'sync_completed',
                 sourceId: syncSourceId,
                 metadata: { platform: platformName, stats: result.stats },
                 requestId: requestId ?? jobId,
-              },
-              { jobId: `xp-sync-${platformName}-${userId}-${Date.now()}` }
-            );
-            logger.debug('[worker] XP job enqueued for sync completion', {
-              event: 'xp_job_enqueued',
-              userId,
-              platform: platformName,
-            });
-          } catch (xpErr) {
-            // XP failure must NOT fail the sync pipeline
-            logger.warn('[worker] XP enqueue failed (non-fatal)', {
-              event: 'xp_enqueue_failed',
-              userId,
-              platform: platformName,
-              error: xpErr instanceof Error ? xpErr.message : String(xpErr),
-            });
+              });
+              await xpQueue.add(
+                'sync-completed-xp',
+                xpJobData,
+                { jobId: `xp-sync-${platformName}-${userId}-${Date.now()}` }
+              );
+              logger.debug('[worker] XP job enqueued for sync completion', {
+                event: 'xp_job_enqueued',
+                userId,
+                platform: platformName,
+              });
+            } catch (xpErr) {
+              // XP failure must NOT fail the sync pipeline
+              logger.warn('[worker] XP enqueue failed (non-fatal)', {
+                event: 'xp_enqueue_failed',
+                userId,
+                platform: platformName,
+                error: xpErr instanceof Error ? xpErr.message : String(xpErr),
+              });
+            }
+          } else {
+            eventBus.emitSyncFailed(userId, platformName, result.error ?? 'Unknown error');
           }
-        } else {
-          eventBus.emitSyncFailed(userId, platformName, result.error ?? 'Unknown error');
+
+          return result;
+        } catch (err) {
+          const durationMs = Date.now() - startTime;
+          const errorMessage = err instanceof Error ? err.message : String(err);
+
+          logger.error('[worker] Platform sync job failed', err, {
+            event: 'job_failed',
+            queue: QueueNames.PLATFORM_SYNC,
+            jobId,
+            userId,
+            platform: platformName,
+            requestId: requestId ?? jobId,
+            durationMs,
+            attempt: job.attemptsMade + 1,
+            maxAttempts: JobRetryConfig.platformSync.attempts,
+          });
+
+          syncState.completeSync('failed', durationMs);
+          eventBus.emitSyncFailed(userId, platformName, errorMessage);
+
+          throw err;
         }
-
-        return result;
-      } catch (err) {
-        const durationMs = Date.now() - startTime;
-        const errorMessage = err instanceof Error ? err.message : String(err);
-
-        logger.error('[worker] Platform sync job failed', err, {
-          event: 'job_failed',
-          queue: QueueNames.PLATFORM_SYNC,
-          jobId,
-          userId,
-          platform: platformName,
-          requestId: requestId ?? jobId,
-          durationMs,
-          attempt: job.attemptsMade + 1,
-          maxAttempts: job.opts.backoff ? JobRetryConfig.platformSync.attempts : undefined,
-        });
-
-        syncState.completeSync('failed', durationMs);
-        eventBus.emitSyncFailed(userId, platformName, errorMessage);
-
-        throw err;
-      }
+      });
     },
     {
       connection: redis,
@@ -132,6 +138,7 @@ export function startPlatformSyncWorker(): Worker<PlatformSyncJobData> {
     });
   });
 
+  // Route permanently-failed jobs to the DLQ — previously this only logged
   _worker.on('failed', (job: Job<PlatformSyncJobData> | undefined, err: Error) => {
     logger.error('[worker] Job failed permanently', err, {
       event: 'job_failed_permanently',
@@ -140,6 +147,23 @@ export function startPlatformSyncWorker(): Worker<PlatformSyncJobData> {
       userId: job?.data.userId,
       attempt: job?.attemptsMade,
     });
+
+    if (job && job.attemptsMade >= JobRetryConfig.platformSync.attempts) {
+      dlqService
+        .quarantineJob(
+          QueueNames.PLATFORM_SYNC,
+          job as unknown as import('bullmq').Job,
+          err.message,
+          job.attemptsMade,
+          JobRetryConfig.platformSync.attempts
+        )
+        .catch((dlqErr) => {
+          logger.error('[worker] Failed to quarantine job in DLQ', dlqErr, {
+            event: 'dlq_quarantine_failed',
+            jobId: job?.id,
+          });
+        });
+    }
   });
 
   _worker.on('error', (err: Error) => {

@@ -25,7 +25,7 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ title, progress, insight, i
 
   return (
     <div
-      className="dt-card bg-white/80 backdrop-blur-3xl border border-dt-primary/10 p-6 rounded-[28px] shadow-[0_8px_30px_rgba(124,92,252,0.06)] hover:shadow-[0_12px_40px_rgba(124,92,252,0.1)] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col gap-5 relative overflow-hidden group"
+      className="dt-card bg-white/80 backdrop-blur-3xl border border-gray-300 p-6 rounded-[28px] shadow-[0_8px_30px_rgba(124,92,252,0.06)] hover:shadow-[0_12px_40px_rgba(124,92,252,0.1)] hover:border-dt-primary/30 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col gap-5 relative overflow-hidden group"
       style={{ animation: `dtFadeIn 600ms cubic-bezier(0.16,1,0.3,1) ${index * 80}ms both` }}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none" />
@@ -111,7 +111,7 @@ export const ProgressCards: React.FC<ProgressCardsProps> = ({ platformStats }) =
   // If no data, show empty state
   if (progressItems.length === 0) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-5 lg:gap-8">
         {[
           { title: 'Weekly Problem Goal', icon: 'target' },
           { title: 'Easy/Medium Ratio', icon: 'chart-bar' },
@@ -119,7 +119,7 @@ export const ProgressCards: React.FC<ProgressCardsProps> = ({ platformStats }) =
         ].map((item, index) => (
           <div
             key={item.title}
-            className="bg-white/60 backdrop-blur-3xl border border-dt-primary/10 p-7 rounded-[28px] shadow-[0_8px_30px_rgba(124,92,252,0.05)] hover:shadow-[0_12px_40px_rgba(124,92,252,0.08)] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col gap-5 relative overflow-hidden group"
+            className="bg-white/60 backdrop-blur-3xl border border-gray-300 p-7 rounded-[28px] shadow-[0_8px_30px_rgba(124,92,252,0.05)] hover:shadow-[0_12px_40px_rgba(124,92,252,0.08)] hover:border-dt-primary/30 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col gap-5 relative overflow-hidden group"
             style={{ animation: `dtFadeIn 600ms cubic-bezier(0.16,1,0.3,1) ${index * 80}ms both` }}
           >
             <div className="absolute top-0 right-0 p-4 opacity-[0.02] pointer-events-none transform translate-x-4 -translate-y-4 group-hover:scale-[1.3] group-hover:rotate-12 transition-transform duration-1000">

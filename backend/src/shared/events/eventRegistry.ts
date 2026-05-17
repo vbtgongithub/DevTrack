@@ -1,5 +1,8 @@
-// src/shared/events/eventRegistry.ts — Event versioning system
-// All emitted events must support schema evolution
+// src/shared/events/eventRegistry.ts — Event versioning and central in-memory subscription bus
+// All emitted events support schema evolution, Redis Streams replication, and replay capabilities
+
+import { logger } from '../logger.js';
+import { getRedisClient } from '../redis/index.js';
 
 export const EVENT_VERSION = 1;
 
@@ -16,10 +19,13 @@ export type EventType =
 
 // Base event structure
 export interface BaseEvent<T = unknown> {
+  id?: string;
   version: number;
   type: EventType;
   timestamp: string;
   userId?: string;
+  correlationId?: string;
+  causationId?: string;
   payload: T;
 }
 
@@ -93,13 +99,19 @@ export interface HeartbeatPayload {
 export function createEvent<T>(
   type: EventType,
   payload: T,
-  userId?: string
+  userId?: string,
+  correlationId?: string
 ): BaseEvent<T> {
+  const crypto = require('crypto');
+  const id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
   return {
+    id,
     version: EVENT_VERSION,
     type,
     timestamp: new Date().toISOString(),
     userId,
+    correlationId: correlationId || id,
+    causationId: id,
     payload,
   };
 }
@@ -203,15 +215,151 @@ export const EVENT_SCHEMA_REGISTRY: Record<EventType, {
   },
 };
 
-const logger = {
-  warn: (message: string, meta: Record<string, unknown>) => {
-    console.warn(`[events] ${message}`, meta);
-  },
-};
+// ---------------------------------------------------------------------------
+// EventRegistry: Centralized PubSub and Persistent Store (Redis Streams)
+// ---------------------------------------------------------------------------
+
+export type EventCallback<T extends EventType = EventType, P = any> = (
+  event: BaseEvent<P>
+) => Promise<void> | void;
+
+class EventRegistryClass {
+  private handlers = new Map<string, Set<EventCallback>>();
+
+  // Register a subscriber for a given event type
+  subscribe<T extends EventType>(type: T, callback: EventCallback<T>): () => void {
+    if (!this.handlers.has(type)) {
+      this.handlers.set(type, new Set());
+    }
+    this.handlers.get(type)!.add(callback);
+
+    logger.debug('[event-registry] Subscribed to event type', { type });
+
+    return () => {
+      const typeHandlers = this.handlers.get(type);
+      if (typeHandlers) {
+        typeHandlers.delete(callback);
+        if (typeHandlers.size === 0) {
+          this.handlers.delete(type);
+        }
+      }
+      logger.debug('[event-registry] Unsubscribed from event type', { type });
+    };
+  }
+
+  // Publish an event to registered callbacks and Redis Streams for persistence
+  async publish<T extends EventType>(event: BaseEvent<T>): Promise<void> {
+    const { id, type, version, userId, correlationId } = event;
+
+    logger.info('[event-registry] Publishing event', {
+      eventId: id,
+      type,
+      version,
+      userId,
+      correlationId,
+    });
+
+    // Append to Redis Streams for system auditing and replay reliability
+    try {
+      const redis = getRedisClient();
+      await redis.xadd(
+        'devtrack:events:stream',
+        '*',
+        'id', id || '',
+        'type', type,
+        'version', String(version),
+        'userId', userId || '',
+        'correlationId', correlationId || '',
+        'timestamp', event.timestamp,
+        'payload', JSON.stringify(event.payload)
+      );
+      // Retain the last 100k events to bound Redis memory growth
+      await redis.xtrim('devtrack:events:stream', 'MAXLEN', '~', 100000);
+    } catch (redisErr) {
+      logger.error('[event-registry] Failed to append event to Redis stream', redisErr, { eventId: id });
+    }
+
+    // Trigger registered subscribers
+    const callbacks = this.handlers.get(type);
+    if (callbacks && callbacks.size > 0) {
+      for (const callback of callbacks) {
+        try {
+          await callback(event);
+        } catch (err) {
+          logger.error('[event-registry] Subscriber execution failed', err, {
+            eventId: id,
+            type,
+            userId,
+          });
+        }
+      }
+    }
+  }
+
+  // Replay events starting from a specific timeframe
+  async replayEvents(
+    since: Date,
+    onEvent: (event: BaseEvent) => Promise<void>
+  ): Promise<number> {
+    const redis = getRedisClient();
+    const startTimeMs = since.getTime();
+    logger.info('[event-registry] Replaying events from stream', { since: since.toISOString() });
+
+    let count = 0;
+    const results = await redis.xrange('devtrack:events:stream', String(startTimeMs), '+');
+
+    for (const entry of results) {
+      try {
+        const fields = entry[1];
+        let id = '';
+        let type = '' as EventType;
+        let version = 1;
+        let userId = '';
+        let correlationId = '';
+        let timestamp = '';
+        let payload = {};
+
+        for (let i = 0; i < fields.length; i += 2) {
+          const key = fields[i];
+          const val = fields[i + 1];
+          if (key === 'id') id = val;
+          else if (key === 'type') type = val as EventType;
+          else if (key === 'version') version = parseInt(val, 10);
+          else if (key === 'userId') userId = val;
+          else if (key === 'correlationId') correlationId = val;
+          else if (key === 'timestamp') timestamp = val;
+          else if (key === 'payload') payload = JSON.parse(val);
+        }
+
+        const envelope: BaseEvent = {
+          id,
+          version,
+          type,
+          timestamp,
+          userId: userId || undefined,
+          correlationId: correlationId || undefined,
+          causationId: id,
+          payload,
+        };
+
+        await onEvent(envelope);
+        count++;
+      } catch (err) {
+        logger.error('[event-registry] Failed parsing event entry during replay', err);
+      }
+    }
+
+    logger.info('[event-registry] Event replay finished', { count });
+    return count;
+  }
+}
+
+export const eventRegistry = new EventRegistryClass();
 
 export default {
   EVENT_VERSION,
   createEvent,
   validateEvent,
   EVENT_SCHEMA_REGISTRY,
+  eventRegistry,
 };

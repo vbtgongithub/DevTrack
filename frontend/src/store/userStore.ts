@@ -147,16 +147,21 @@ export const useUserStore = create<UserState>((set, get) => ({
     set({ status: 'loading' });
     try {
       await get().fetchMe();
-    } catch {
-      // Token expired/invalid — interceptor may have already tried refresh.
-      // If we're here, nothing worked — clear everything.
-      authService.clearTokens();
-      set({
-        user: null,
-        isAuthenticated: false,
-        status: 'unauthenticated',
-        lastFetchedAt: null,
-      });
+    } catch (err: any) {
+      // ONLY clear tokens if the server explicitly tells us the session is unauthorized (401)
+      // Otherwise, keep the tokens so the user doesn't get logged out on a simple network hiccup or 502!
+      if (err?.statusCode === 401 || err?.status === 401) {
+        authService.clearTokens();
+        set({
+          user: null,
+          isAuthenticated: false,
+          status: 'unauthenticated',
+          lastFetchedAt: null,
+        });
+      } else {
+        // Keep tokens, just transition status back to unauthenticated/idle
+        set({ status: 'unauthenticated' });
+      }
     }
   },
 }));
@@ -164,3 +169,28 @@ export const useUserStore = create<UserState>((set, get) => ({
 setOnAuthInvalid(() => {
   useUserStore.getState().clearUser();
 });
+
+// ---------------------------------------------------------------------------
+// Cross-tab auth synchronization
+// ---------------------------------------------------------------------------
+// When a user logs in or out in a different browser tab, this listener
+// detects the localStorage change and re-hydrates state so all tabs
+// stay in sync. Without this, stale auth state causes ghost sessions
+// where one tab thinks the user is logged in but the token is gone.
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event: StorageEvent) => {
+    // authService stores tokens under these keys
+    if (event.key === 'devtrack_access_token' || event.key === 'devtrack_refresh_token') {
+      const store = useUserStore.getState();
+
+      if (event.newValue === null && store.isAuthenticated) {
+        // Token was removed in another tab → logout locally
+        store.clearUser();
+      } else if (event.newValue && !store.isAuthenticated) {
+        // Token was added in another tab → re-hydrate
+        store.hydrate();
+      }
+    }
+  });
+}

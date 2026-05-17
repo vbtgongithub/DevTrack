@@ -58,6 +58,8 @@ export interface SseEventEnvelope {
   timestamp: string;
   userId: string;
   payload: Record<string, unknown>;
+  correlationId?: string;
+  schemaVersion?: number;
 }
 
 export interface SseEvent {
@@ -514,13 +516,17 @@ class EventBus extends EventEmitter {
   async publishEnvelope(
     userId: string,
     type: SseEventType,
-    payload: Record<string, unknown>
+    payload: Record<string, unknown>,
+    correlationId?: string,
+    schemaVersion?: number
   ): Promise<void> {
     const redis = getRedisClient();
     
     // Get next sequence number for this user
     const sequenceKey = `sse:seq:${userId}`;
     const sequence = await redis.incr(sequenceKey);
+    // Keep sequence key alive as long as the stream — prevents unbounded key accumulation
+    await redis.expire(sequenceKey, 300);
     
     // Generate event ID
     const eventId = `${userId}-${sequence}-${Date.now()}`;
@@ -532,6 +538,8 @@ class EventBus extends EventEmitter {
       timestamp: new Date().toISOString(),
       userId,
       payload,
+      correlationId: correlationId || eventId,
+      schemaVersion: schemaVersion || 1,
     };
     
     // Log to Redis stream for backfill (5 min retention, max 100 entries)
@@ -546,7 +554,11 @@ class EventBus extends EventEmitter {
       'payload',
       JSON.stringify(payload),
       'timestamp',
-      envelope.timestamp
+      envelope.timestamp,
+      'correlationId',
+      envelope.correlationId || '',
+      'schemaVersion',
+      (envelope.schemaVersion || 1).toString()
     );
     await redis.expire(streamKey, 300); // 5 minutes
     await redis.xtrim(streamKey, 'MAXLEN', '~', 100);

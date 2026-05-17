@@ -41,6 +41,7 @@ export const QueueNames = {
   STREAK_RECALC: 'streak-recalc',
   ANALYTICS_SYNC: 'analytics-sync',
   NOTIFICATIONS: 'notifications',
+  ORCHESTRATION_COMPENSATION: 'orchestration-compensation',
 } as const;
 
 // Retry configuration

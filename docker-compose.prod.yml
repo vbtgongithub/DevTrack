@@ -1,0 +1,166 @@
+# docker-compose.prod.yml — Production deployment topology
+# Splits the monolith into isolated services for blast-radius containment.
+#
+# Services:
+#   api            — Express HTTP server + SSE gateway (no workers)
+#   worker-sync    — Platform sync BullMQ worker
+#   worker-xp      — XP processing BullMQ worker
+#   worker-orch    — Orchestration compensation worker
+#   worker-maint   — Maintenance/cleanup worker
+#   redis          — Redis 7 for queues, caching, SSE pub/sub
+#   mongo          — MongoDB 7 for persistent storage
+#
+# Each worker container runs worker-entrypoint.ts with WORKER_TYPE set to
+# the appropriate value. The API container runs the main index.ts with
+# ENABLE_WORKERS=false so no BullMQ workers compete with HTTP handlers.
+
+version: '3.9'
+
+x-backend-base: &backend-base
+  build:
+    context: ./backend
+    dockerfile: Dockerfile
+  env_file: .env.production
+  depends_on:
+    redis:
+      condition: service_healthy
+    mongo:
+      condition: service_healthy
+  restart: unless-stopped
+  networks:
+    - devtrack
+
+services:
+  # ─── API Server ─────────────────────────────────────────────────────────
+  api:
+    <<: *backend-base
+    command: ["node", "dist/index.js"]
+    ports:
+      - "${API_PORT:-4000}:4000"
+    environment:
+      - ENABLE_WORKERS=false
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+
+  # ─── Sync Worker ────────────────────────────────────────────────────────
+  worker-sync:
+    <<: *backend-base
+    command: ["node", "dist/worker-entrypoint.js"]
+    environment:
+      - WORKER_TYPE=sync
+      - NODE_ENV=production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+
+  # ─── XP Worker ──────────────────────────────────────────────────────────
+  worker-xp:
+    <<: *backend-base
+    command: ["node", "dist/worker-entrypoint.js"]
+    environment:
+      - WORKER_TYPE=xp
+      - NODE_ENV=production
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+
+  # ─── Orchestration Worker ───────────────────────────────────────────────
+  worker-orch:
+    <<: *backend-base
+    command: ["node", "dist/worker-entrypoint.js"]
+    environment:
+      - WORKER_TYPE=orchestration
+      - NODE_ENV=production
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+
+  # ─── Maintenance Worker ─────────────────────────────────────────────────
+  worker-maint:
+    <<: *backend-base
+    command: ["node", "dist/worker-entrypoint.js"]
+    environment:
+      - WORKER_TYPE=maintenance
+      - NODE_ENV=production
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+
+  # ─── Redis ──────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: >
+      redis-server
+        --appendonly yes
+        --maxmemory 256mb
+        --maxmemory-policy allkeys-lru
+        --save 60 1000
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+          cpus: '0.5'
+    networks:
+      - devtrack
+
+  # ─── MongoDB ────────────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-devtrack}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASS:-devtrack}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+    networks:
+      - devtrack
+
+volumes:
+  redis_data:
+  mongo_data:
+
+networks:
+  devtrack:
+    driver: bridge

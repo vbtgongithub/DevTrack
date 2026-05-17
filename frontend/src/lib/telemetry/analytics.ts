@@ -53,12 +53,18 @@ class TelemetryManager {
     this.sessionId = crypto.randomUUID();
   }
 
+  private hasToken(): boolean {
+    return !!localStorage.getItem('devtrack_access_token');
+  }
+
   async initialize() {
     if (this.isInitialized) return;
     this.isInitialized = true;
 
     // Start periodic flush (every 30 seconds)
     this.flushInterval = window.setInterval(() => this.flush(), 30000);
+
+    if (!this.hasToken()) return;
 
     // Track session start in local buffer
     this.track('session_start', {
@@ -82,6 +88,7 @@ class TelemetryManager {
 
     // Track session end on unload
     window.addEventListener('beforeunload', () => {
+      if (!this.hasToken()) return;
       this.track('session_end', {
         duration: Date.now() - this.sessionStartTime,
       });
@@ -147,6 +154,10 @@ class TelemetryManager {
 
   private async flush() {
     if (this.queue.length === 0) return;
+    if (!this.hasToken()) {
+      this.queue = [];
+      return;
+    }
 
     const eventsToSend = [...this.queue];
     this.queue = [];
@@ -167,14 +178,22 @@ class TelemetryManager {
   destroy() {
     if (this.flushInterval) {
       clearInterval(this.flushInterval);
+      this.flushInterval = null;
     }
+    
     // Notify end of session
-    try {
-      axiosClient.post('/observation/session/end', { sessionId: this.sessionId });
-    } catch {
-      // Ignore
+    if (this.hasToken()) {
+      try {
+        axiosClient.post('/observation/session/end', { sessionId: this.sessionId });
+      } catch {
+        // Ignore
+      }
+      this.flush();
+    } else {
+      this.queue = [];
     }
-    this.flush();
+    
+    this.isInitialized = false;
   }
 }
 

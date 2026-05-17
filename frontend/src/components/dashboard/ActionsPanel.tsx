@@ -3,7 +3,7 @@ import { Icon } from '../shared/Icon';
 
 export const ActionsPanel: React.FC = () => {
   return (
-    <div className="flex flex-col gap-5 flex-1 bg-white/40 backdrop-blur-2xl border border-dt-primary/10 rounded-[24px] p-7 shadow-[0_8px_30px_rgba(124,92,252,0.05)] relative overflow-hidden group">
+    <div className="flex flex-col gap-5 flex-1 bg-white/40 backdrop-blur-2xl border border-gray-300 rounded-[24px] p-7 shadow-[0_8px_30px_rgba(124,92,252,0.05)] hover:border-dt-primary/30 transition-all duration-500 relative overflow-hidden group">
       <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none transform translate-x-4 -translate-y-4 group-hover:scale-[1.3] group-hover:rotate-12 transition-transform duration-700">
         <Icon name="bolt" size={100} className="text-dt-text" />
       </div>
