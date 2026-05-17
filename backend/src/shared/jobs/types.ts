@@ -38,6 +38,9 @@ export const QueueNames = {
   REALTIME_EVENTS: 'realtime-events',
   SYSTEM_MAINTENANCE: 'system-maintenance',
   XP_PROCESSING: 'xp-processing',
+  STREAK_RECALC: 'streak-recalc',
+  ANALYTICS_SYNC: 'analytics-sync',
+  NOTIFICATIONS: 'notifications',
 } as const;
 
 // Retry configuration
@@ -57,5 +60,9 @@ export const JobRetryConfig = {
   xpProcessing: {
     attempts: 2,
     backoff: { type: 'fixed' as const, delay: 500 },
+  },
+  standard: {
+    attempts: 3,
+    backoff: { type: 'exponential' as const, delay: 1000 },
   },
 } as const;

@@ -1,24 +1,113 @@
 // src/shared/sse/sseHandler.ts — SSE endpoint handler with correlation IDs
 // Protected by auth middleware, userId-scoped, with heartbeat and cleanup.
+// Supports Last-Event-ID reconnection with Redis stream backfill.
 
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { eventBus, SseClient } from './eventBus.js';
 import { logger } from '../logger.js';
 import { env } from '../../config/env.js';
+import { getRedisClient } from '../redis/client.js';
 
 const encoder = new TextEncoder();
+
+async function replayMissedEvents(
+  userId: string,
+  lastEventId: string,
+  controller: ReadableStreamDefaultController<Uint8Array>
+): Promise<void> {
+  const redis = getRedisClient();
+  const streamKey = `sse:stream:${userId}`;
+  
+  try {
+    // Parse last event ID to get sequence number
+    const lastSequence = parseInt(lastEventId.split('-')[1] || '0', 10);
+    
+    // Read events from Redis stream after the last sequence
+    const events = await redis.xrange(
+      streamKey,
+      `(${lastSequence}`,
+      '+',
+      'COUNT', 50
+    );
+    
+    if (events.length > 0) {
+      logger.info('[sse] Replaying missed events', {
+        userId,
+        lastSequence,
+        eventCount: events.length,
+      });
+      
+      for (const event of events) {
+        // event is [id, [field1, value1, field2, value2, ...]]
+        const [id, fields] = event as [string, string[]];
+        const fieldsObj: Record<string, string> = {};
+        for (let i = 0; i < fields.length; i += 2) {
+          fieldsObj[fields[i]] = fields[i + 1];
+        }
+        
+        const envelope = {
+          id,
+          type: fieldsObj.type as string,
+          sequence: parseInt(fieldsObj.sequence, 10),
+          timestamp: fieldsObj.timestamp,
+          userId,
+          payload: JSON.parse(fieldsObj.payload),
+        };
+        
+        const payload = `id: ${envelope.id}\ndata: ${JSON.stringify(envelope)}\n\n`;
+        controller.enqueue(new TextEncoder().encode(payload));
+      }
+    } else {
+      // If no events in stream or gap too large, send full state
+      logger.info('[sse] No events to replay, sending full state', {
+        userId,
+        lastSequence,
+      });
+      
+      // Import runtime state service to get full state
+      const { unifiedRuntimeStateService } = await import('../../modules/runtime-state/unifiedRuntimeState.service.js');
+      const state = await unifiedRuntimeStateService.getRuntimeState(userId);
+      
+      if (state) {
+        const fullStateEvent = {
+          id: `${userId}-full-${Date.now()}`,
+          type: 'runtime_state_full' as const,
+          sequence: 0,
+          timestamp: new Date().toISOString(),
+          userId,
+          payload: { state: state.toObject() },
+        };
+        
+        const payload = `id: ${fullStateEvent.id}\ndata: ${JSON.stringify(fullStateEvent)}\n\n`;
+        controller.enqueue(new TextEncoder().encode(payload));
+      }
+    }
+  } catch (error) {
+    logger.warn('[sse] Failed to replay missed events', {
+      userId,
+      lastEventId,
+      error,
+    });
+  }
+}
 
 function createSseStream(
   userId: string,
   clientId: string,
-  requestId: string
+  requestId: string,
+  lastEventId?: string
 ): ReadableStream<Uint8Array> {
   let controllerRef: ReadableStreamDefaultController<Uint8Array> | null = null;
 
   const stream = new ReadableStream<Uint8Array>({
-    start(controller) {
+    async start(controller) {
       controllerRef = controller;
+
+      // Replay missed events if Last-Event-ID header present
+      if (lastEventId) {
+        await replayMissedEvents(userId, lastEventId, controller);
+      }
 
       const client: SseClient = {
         id: clientId,
@@ -65,8 +154,9 @@ function createSseStream(
   return stream;
 }
 
-export function handleSseRequest(req: Request, res: Response): void {
+export async function handleSseRequest(req: Request, res: Response): Promise<void> {
   const requestId = req.context?.requestId ?? `sse-${Date.now()}`;
+  const lastEventId = (req.headers['last-event-id'] || req.headers['Last-Event-ID']) as string | undefined;
 
   const token = (req.query.token as string) || (req.headers.authorization?.split(' ')[1]);
 
@@ -107,7 +197,7 @@ export function handleSseRequest(req: Request, res: Response): void {
 
   eventBus.startHeartbeat();
 
-  const stream = createSseStream(userId, clientId, requestId);
+  const stream = createSseStream(userId, clientId, requestId, lastEventId);
 
   stream.pipeTo(
     new WritableStream({
@@ -150,5 +240,6 @@ export function handleSseRequest(req: Request, res: Response): void {
     clientId,
     userId,
     requestId,
+    lastEventId,
   });
 }

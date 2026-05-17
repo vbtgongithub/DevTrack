@@ -1,8 +1,11 @@
-// src/shared/sse/eventBus.ts — Lightweight in-memory event broadcaster with metrics
-// No Redis, no BullMQ — just eventEmitter with userId-scoped broadcasting + observability.
+// src/shared/sse/eventBus.ts — In-memory event broadcaster with optional Redis pub/sub for horizontal scaling
+// Local events for same-instance, Redis pub/sub for cross-instance event distribution.
 
 import { EventEmitter } from 'events';
 import { logger } from '../logger.js';
+import { getRedisClient } from '../redis/client.js';
+
+const SSE_CHANNEL = 'devtrack:sse:events';
 
 // ---------------------------------------------------------------------------
 // SSE Operational Metrics
@@ -19,17 +22,43 @@ export interface SseMetricsSnapshot {
 }
 
 // ---------------------------------------------------------------------------
-// Event types
+// Event types - Expanded taxonomy for unified runtime state
 // ---------------------------------------------------------------------------
 
 export type SseEventType =
+  // Runtime state (primary)
+  | 'runtime_state_patch'
+  | 'runtime_state_full'
+  // Behavioral
+  | 'behavioral_message'
+  | 'notification_created'
+  // Progression moments
+  | 'level_up'
+  | 'streak_milestone'
+  | 'streak_at_risk'
+  | 'achievement_unlocked'
+  | 'goal_completed'
+  | 'challenge_completed'
+  | 'near_milestone'
+  // Sync
   | 'sync_started'
   | 'sync_completed'
   | 'sync_failed'
   | 'new_submission'
+  // Legacy (for backwards compatibility)
   | 'xp_updated'
-  | 'level_up'
+  | 'badge_earned'
+  // System
   | 'heartbeat';
+
+export interface SseEventEnvelope {
+  id: string;
+  type: SseEventType;
+  sequence: number;
+  timestamp: string;
+  userId: string;
+  payload: Record<string, unknown>;
+}
 
 export interface SseEvent {
   type: SseEventType;
@@ -74,6 +103,7 @@ class EventBus extends EventEmitter {
   private heartbeatInterval: NodeJS.Timeout | null = null;
   private readonly HEARTBEAT_INTERVAL_MS = 25_000;
   private readonly MAX_CLIENTS = 10_000;
+  private redisSubscriber: ReturnType<typeof getRedisClient>['duplicate'] | null = null;
 
   // Operational metrics
   private totalConnections = 0;
@@ -83,9 +113,83 @@ class EventBus extends EventEmitter {
   private eventsPublished = 0;
   private readonly startedAt = Date.now();
 
+  // Event coalescing for runtime_state_patch
+  private patchCoalesceTimer: NodeJS.Timeout | null = null;
+  private pendingPatch: { userId: string; delta: Record<string, unknown> } | null = null;
+  private readonly PATCH_COALESCE_MS = 3000; // 3 seconds
+
   constructor() {
     super();
     this.setMaxListeners(this.MAX_CLIENTS);
+    this.initRedisPubSub();
+  }
+
+  // ─── Redis pub/sub for horizontal scaling ─────────────────────────────────
+  private async initRedisPubSub(): Promise<void> {
+    try {
+      const Redis = (await import('ioredis')).default;
+      const subscriber = new (Redis as unknown as { new(options: Record<string, unknown>): unknown })({
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+        password: process.env.REDIS_PASSWORD || undefined,
+        lazyConnect: true,
+      });
+
+      (subscriber as unknown as { on(event: string, cb: (channel: string, message: string) => void): void }).on('message', (_channel: string, message: string) => {
+        try {
+          const event = JSON.parse(message) as SseEvent;
+          this.publishLocal(event, event.userId);
+        } catch (err) {
+          logger.warn('[sse] Failed to parse Redis message', { error: err });
+        }
+      });
+
+      await (subscriber as unknown as { subscribe(channel: string): Promise<void> }).subscribe(SSE_CHANNEL);
+      this.redisSubscriber = subscriber as typeof this.redisSubscriber;
+      logger.info('[sse] Redis pub/sub initialized', { channel: SSE_CHANNEL });
+    } catch (err) {
+      logger.warn('[sse] Redis pub/sub unavailable, using local only', { error: err });
+    }
+  }
+
+  private async publishToRedis(event: SseEvent): Promise<void> {
+    try {
+      const Redis = (await import('ioredis')).default;
+      const publisher = new (Redis as unknown as { new(options: Record<string, unknown>): unknown })({
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+        password: process.env.REDIS_PASSWORD || undefined,
+      });
+      await (publisher as unknown as { publish(channel: string, message: string): Promise<number> }).publish(SSE_CHANNEL, JSON.stringify(event));
+      await (publisher as unknown as { quit(): Promise<void> }).quit();
+    } catch (err) {
+      logger.debug('[sse] Redis publish failed', { error: err });
+    }
+  }
+
+  private publishLocal(event: SseEvent, targetUserId?: string): void {
+    const payload = `data: ${JSON.stringify(event)}\n\n`;
+    const encoded = encoder.encode(payload);
+
+    if (targetUserId) {
+      for (const client of this.clients.values()) {
+        if (client.userId === targetUserId) {
+          try {
+            client.controller.enqueue(encoded);
+          } catch {
+            this.unregister(client.id);
+          }
+        }
+      }
+    } else {
+      for (const client of this.clients.values()) {
+        try {
+          client.controller.enqueue(encoded);
+        } catch {
+          this.unregister(client.id);
+        }
+      }
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -138,29 +242,13 @@ class EventBus extends EventEmitter {
   // ---------------------------------------------------------------------------
 
   publish(event: SseEvent, targetUserId?: string): void {
-    const payload = `data: ${JSON.stringify(event)}\n\n`;
-    const encoded = encoder.encode(payload);
     this.eventsPublished++;
 
-    if (targetUserId) {
-      for (const client of this.clients.values()) {
-        if (client.userId === targetUserId) {
-          try {
-            client.controller.enqueue(encoded);
-          } catch {
-            this.unregister(client.id);
-          }
-        }
-      }
-    } else {
-      for (const client of this.clients.values()) {
-        try {
-          client.controller.enqueue(encoded);
-        } catch {
-          this.unregister(client.id);
-        }
-      }
-    }
+    // Local delivery (same instance)
+    this.publishLocal(event, targetUserId);
+
+    // Cross-instance delivery via Redis pub/sub
+    void this.publishToRedis(event);
 
     logger.debug('[sse] Event published', {
       event: 'sse_event_published',
@@ -321,6 +409,165 @@ class EventBus extends EventEmitter {
       },
       userId
     );
+  }
+
+  emitStreakMilestone(userId: string, streakDays: number, streakType: string): void {
+    this.publish(
+      {
+        type: 'streak_milestone',
+        timestamp: new Date().toISOString(),
+        userId,
+        stats: {
+          totalSolved: streakDays,
+          easySolved: streakType === 'dsa' ? 1 : 0,
+          mediumSolved: streakType === 'github' ? 1 : 0,
+          hardSolved: streakType === 'unified' ? 1 : 0,
+        },
+      },
+      userId
+    );
+  }
+
+  emitBadgeEarned(userId: string, badgeId: string, badgeName: string): void {
+    this.publish(
+      {
+        type: 'badge_earned',
+        timestamp: new Date().toISOString(),
+        userId,
+        stats: {
+          totalSolved: 0,
+          easySolved: 0,
+          mediumSolved: 0,
+          hardSolved: 0,
+        },
+      },
+      userId
+    );
+  }
+
+  // ─── New SSE event emitters for unified runtime state ─────────────────────
+
+  async emitRuntimeStatePatch(userId: string, delta: Record<string, unknown>): Promise<void> {
+    // Coalesce patches - max 1 per 3 seconds
+    if (this.pendingPatch && this.pendingPatch.userId === userId) {
+      // Merge with pending patch
+      this.pendingPatch.delta = { ...this.pendingPatch.delta, ...delta };
+      return;
+    }
+
+    if (this.patchCoalesceTimer) {
+      clearTimeout(this.patchCoalesceTimer);
+    }
+
+    this.pendingPatch = { userId, delta };
+    this.patchCoalesceTimer = setTimeout(async () => {
+      if (this.pendingPatch) {
+        await this.publishEnvelope(userId, 'runtime_state_patch', this.pendingPatch.delta);
+        this.pendingPatch = null;
+      }
+    }, this.PATCH_COALESCE_MS);
+  }
+
+  async emitRuntimeStateFull(userId: string, state: Record<string, unknown>): Promise<void> {
+    // Bypass coalescing for full state (e.g., on reconnect)
+    await this.publishEnvelope(userId, 'runtime_state_full', { state });
+  }
+
+  async emitBehavioralMessage(
+    userId: string,
+    messageId: string,
+    tone: 'encouraging' | 'calm' | 'celebratory' | 'gentle-nudge' | 'supportive' | 'silent',
+    text: string,
+    action?: { label: string; route: string },
+    expiresAt?: Date
+  ): Promise<void> {
+    await this.publishEnvelope(userId, 'behavioral_message', {
+      messageId,
+      tone,
+      text,
+      action,
+      expiresAt: expiresAt?.toISOString(),
+    });
+  }
+
+  async emitNotificationCreated(
+    userId: string,
+    notificationId: string,
+    type: string,
+    title: string,
+    body: string,
+    tone: string,
+    priority: string
+  ): Promise<void> {
+    await this.publishEnvelope(userId, 'notification_created', {
+      notificationId,
+      type,
+      title,
+      body,
+      tone,
+      priority,
+    });
+  }
+
+  // ─── Helper to publish envelope with sequence number ─────────────────────
+
+  async publishEnvelope(
+    userId: string,
+    type: SseEventType,
+    payload: Record<string, unknown>
+  ): Promise<void> {
+    const redis = getRedisClient();
+    
+    // Get next sequence number for this user
+    const sequenceKey = `sse:seq:${userId}`;
+    const sequence = await redis.incr(sequenceKey);
+    
+    // Generate event ID
+    const eventId = `${userId}-${sequence}-${Date.now()}`;
+    
+    const envelope: SseEventEnvelope = {
+      id: eventId,
+      type,
+      sequence,
+      timestamp: new Date().toISOString(),
+      userId,
+      payload,
+    };
+    
+    // Log to Redis stream for backfill (5 min retention, max 100 entries)
+    const streamKey = `sse:stream:${userId}`;
+    await redis.xadd(
+      streamKey,
+      '*',
+      'type',
+      type,
+      'sequence',
+      sequence.toString(),
+      'payload',
+      JSON.stringify(payload),
+      'timestamp',
+      envelope.timestamp
+    );
+    await redis.expire(streamKey, 300); // 5 minutes
+    await redis.xtrim(streamKey, 'MAXLEN', '~', 100);
+    
+    // Publish as legacy event for backward compatibility
+    this.publish(
+      {
+        type,
+        timestamp: envelope.timestamp,
+        userId,
+        stats: payload as SseEvent['stats'],
+      },
+      userId
+    );
+  }
+
+  // ─── Legacy emit methods (for backward compatibility) ─────────────────────
+
+  emitRuntimeStateUpdated(userId: string, state: Record<string, unknown>): void {
+    // Use new patch method
+    void this.emitRuntimeStatePatch(userId, state);
   }
 
   shutdown(): void {

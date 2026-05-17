@@ -41,6 +41,7 @@ export interface StartupResult {
     platformSyncWorker: boolean;
     xpWorker: boolean;
     scheduler: boolean;
+    retention: boolean;
   };
 }
 
@@ -146,6 +147,21 @@ function bootWorkers(redisOk: boolean): { platformSync: boolean; xp: boolean } {
   return { platformSync, xp };
 }
 
+async function bootRetention(): Promise<boolean> {
+  try {
+    // Dynamic import to avoid circular dependencies and load only if needed
+    const { retentionRuntimeOrchestrator } = await import('../../modules/runtime-orchestration/orchestrator/retentionRuntimeOrchestrator.service.js');
+    if (retentionRuntimeOrchestrator) {
+      logger.info('[startup] Retention system linked (Phase-C Ready)', { event: 'retention_linked' });
+      return true;
+    }
+    return false;
+  } catch (err) {
+    logger.warn('[startup] Retention system linkage failed', { error: err instanceof Error ? err.message : String(err) });
+    return false;
+  }
+}
+
 function bootScheduler(queuesOk: boolean): boolean {
   if (!queuesOk) {
     setSchedulerStatus('degraded', 'Queues unavailable');
@@ -171,7 +187,7 @@ export async function startup(app: Express): Promise<StartupResult> {
   const mongoOk = await bootMongo();
   if (!mongoOk) {
     setApiStatus('failed', 'MongoDB required');
-    return { success: false, phases: { mongodb: false, redis: false, queues: false, platformSyncWorker: false, xpWorker: false, scheduler: false }, degraded: true, warnings: ['MongoDB required — cannot start'] };
+    return { success: false, phases: { mongodb: false, redis: false, queues: false, platformSyncWorker: false, xpWorker: false, scheduler: false, retention: false }, degraded: true, warnings: ['MongoDB required — cannot start'] };
   }
 
   const redisOk = await bootRedis();
@@ -187,6 +203,9 @@ export async function startup(app: Express): Promise<StartupResult> {
   const schedulerOk = bootScheduler(queuesOk);
   if (!schedulerOk) warnings.push('Scheduler paused');
 
+  const retentionOk = await bootRetention();
+  if (!retentionOk) warnings.push('Retention system inactive');
+
   setSseStatus('healthy');
   setApiStatus('healthy');
 
@@ -196,7 +215,7 @@ export async function startup(app: Express): Promise<StartupResult> {
 
   return {
     success: true,
-    phases: { mongodb: mongoOk, redis: redisOk, queues: queuesOk, platformSyncWorker: workers.platformSync, xpWorker: workers.xp, scheduler: schedulerOk },
+    phases: { mongodb: mongoOk, redis: redisOk, queues: queuesOk, platformSyncWorker: workers.platformSync, xpWorker: workers.xp, scheduler: schedulerOk, retention: retentionOk },
     degraded: warnings.length > 0,
     warnings,
   };

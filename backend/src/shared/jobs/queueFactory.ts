@@ -66,3 +66,7 @@ export function getSystemMaintenanceQueue(): Queue {
 export function getXpProcessingQueue(): Queue {
   return getOrCreateQueue(QueueNames.XP_PROCESSING);
 }
+
+export function getNotificationQueue(): Queue {
+  return getOrCreateQueue(QueueNames.NOTIFICATIONS);
+}
