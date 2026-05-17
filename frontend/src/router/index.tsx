@@ -7,6 +7,7 @@ import { ErrorBoundary } from '../components/shared/ErrorBoundary';
 
 const DashboardPage = lazy(() => import('../pages/DashboardPage'));
 const DsaPage = lazy(() => import('../pages/DsaPage'));
+const ProjectsPage = lazy(() => import('../pages/ProjectsPage'));
 const SettingsPage = lazy(() => import('../pages/SettingsPage'));
 const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 const AdminPage = lazy(() => import('../pages/AdminPage'));
@@ -91,8 +92,16 @@ export const AppRouter: React.FC = () => {
           </ErrorBoundary>
         }
       />
-      {/* Legacy routes — consolidated into core surfaces */}
-      <Route path="/projects" element={<Navigate to="/dsa" replace />} />
+      <Route
+        path="/projects"
+        element={
+          <ErrorBoundary pageName="Projects">
+            <Suspense fallback={<PageFallback />}>
+              <ProjectsPage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
       <Route path="/goals" element={<Navigate to="/dashboard" replace />} />
       <Route path="/challenges" element={<Navigate to="/dashboard" replace />} />
       <Route path="/achievements" element={<Navigate to="/profile" replace />} />
