@@ -40,20 +40,13 @@ services:
         condition: service_healthy
     ports:
       - "3001:3001"
+    env_file:
+      - ./backend/.env
     environment:
-      NODE_ENV: production
       PORT: 3001
       MONGODB_URI: mongodb://mongo:27017/devtrack
-      CORS_ORIGIN: https://your-frontend-domain.com
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      # JWT secrets must be set via secrets management in production
-      # JWT_ACCESS_SECRET: <set-via-docker-secrets>
-      # JWT_REFRESH_SECRET: <set-via-docker-secrets>
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-    command: node dist/index.js
     restart: unless-stopped
     deploy:
       resources:
@@ -63,6 +56,26 @@ services:
         reservations:
           cpus: '0.25'
           memory: 128M
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: devtrack-frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
 volumes:
   mongo-data:

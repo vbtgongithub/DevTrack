@@ -1,5 +1,5 @@
 // ============================================================================
-// SkeletonTable.tsx — Loading Skeleton Table
+// SkeletonTable.tsx — Loading Skeleton Table (Unified Design System)
 // ============================================================================
 
 import React from 'react';
@@ -11,37 +11,33 @@ export const SkeletonTable: React.FC<SkeletonTableProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden ${className}`}>
-      <div className="flex gap-4 px-5 py-4 border-b border-gray-200">
+    <div className={`dt-table-container ${className}`}>
+      {/* Header */}
+      <div className="dt-table-header dt-skeleton">
         {Array.from({ length: columns }).map((_, i) => (
           <div
             key={`h-${i}`}
-            className={
-              i === 0
-                ? 'h-3 rounded-md bg-gray-200/80 animate-pulse w-2/5'
-                : 'h-3 rounded-md bg-gray-200/80 animate-pulse flex-1'
-            }
+            className={[
+              'dt-skeleton dt-skeleton-text',
+              i === 0 ? 'w-2/5' : 'flex-1',
+            ].join(' ')}
           />
         ))}
       </div>
 
+      {/* Rows */}
       {Array.from({ length: rows }).map((_, rowIdx) => (
         <div
           key={`r-${rowIdx}`}
-          className={
-            rowIdx === rows - 1
-              ? 'flex gap-4 px-5 py-4'
-              : 'flex gap-4 px-5 py-4 border-b border-gray-100'
-          }
+          className="dt-table-row"
         >
           {Array.from({ length: columns }).map((_, colIdx) => (
             <div
               key={`c-${colIdx}`}
-              className={
-                colIdx === 0
-                  ? 'h-3.5 rounded-md bg-gray-200/80 animate-pulse w-2/5'
-                  : 'h-3.5 rounded-md bg-gray-200/80 animate-pulse flex-1'
-              }
+              className={[
+                'dt-skeleton dt-skeleton-text',
+                colIdx === 0 ? 'w-2/5' : 'flex-1',
+              ].join(' ')}
             />
           ))}
         </div>
