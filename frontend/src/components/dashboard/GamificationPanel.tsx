@@ -28,7 +28,7 @@ const StreakCard: React.FC<StreakProps> = ({ streakData }) => {
     const streakHistory = streakData?.streakHistory ?? [];
     const last7 = streakHistory.slice(-7);
     const result: { day: string; active: boolean }[] = [];
-    
+
     for (let i = 0; i < 7; i++) {
       const item = last7[i];
       let dayLabel = '?';
@@ -36,9 +36,9 @@ const StreakCard: React.FC<StreakProps> = ({ streakData }) => {
         const d = new Date(item.date);
         dayLabel = d.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0);
       }
-      result.push({ 
-        day: dayLabel, 
-        active: (item?.count ?? 0) > 0 
+      result.push({
+        day: dayLabel,
+        active: (item?.count ?? 0) > 0
       });
     }
     return result;
@@ -57,6 +57,10 @@ const StreakCard: React.FC<StreakProps> = ({ streakData }) => {
       <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none"
         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
 
+      <div className="absolute top-4 right-4 px-2.5 py-1 rounded-full bg-white/20 border border-white/30 backdrop-blur-md shadow-sm">
+        <span className="text-[10px] font-black text-white uppercase tracking-widest leading-none">BEST: {longestStreak}</span>
+      </div>
+
       <div className="relative flex items-center justify-between mb-3">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-2xl border border-white/20 flex items-center justify-center shadow-2xl relative shrink-0">
@@ -68,25 +72,21 @@ const StreakCard: React.FC<StreakProps> = ({ streakData }) => {
             <div className="text-[11px] text-white/80 mt-1 font-bold tracking-[0.1em] uppercase opacity-90">day streak</div>
           </div>
         </div>
-        <div className="text-right self-start pt-1">
-          <div className="text-[8px] text-white/50 font-black uppercase tracking-[0.2em] mb-0.5">Best</div>
-          <div className="text-2xl font-black text-white tabular-nums tracking-tighter drop-shadow-md leading-none">{longestStreak}</div>
-        </div>
       </div>
 
       <div className="flex items-center gap-2.5 relative z-10">
         {weekActivity.map((item, i) => (
-          <div key={`${item.day}-${i}`} className="flex-1 aspect-square max-w-[40px] rounded-xl flex items-center justify-center transition-all duration-500 relative">
+          <div key={`${item.day}-${i}`} className="flex-1 aspect-square max-w-[40px] rounded-full flex items-center justify-center transition-all duration-500 relative">
             <div
               className={[
-                'absolute inset-0 rounded-2xl flex items-center justify-center text-xs font-black transition-all duration-500',
+                'absolute inset-0 rounded-full flex items-center justify-center text-[11px] font-black transition-all duration-500',
                 item.active
-                  ? 'bg-white text-dt-primary shadow-[0_10px_25px_rgba(255,255,255,0.25)] scale-110 z-10'
-                  : 'bg-white/5 text-white/30 border border-white/10 backdrop-blur-sm',
+                  ? 'bg-white/90 text-[#7C5CFC] shadow-[0_4px_15px_rgba(255,255,255,0.4)] scale-110 z-10 backdrop-blur-md border border-white'
+                  : 'bg-white/5 text-white/40 border border-white/20 backdrop-blur-sm',
               ].join(' ')}
             >
               {item.active ? (
-                <Icon name="check" size={20} className="text-dt-primary" />
+                <Icon name="check" size={16} className="text-[#7C5CFC]" />
               ) : (
                 <span className="tracking-tighter">{item.day}</span>
               )}
@@ -164,8 +164,8 @@ const AchievementsCard: React.FC<AchievementsProps> = () => {
 
   // If less than 2 unlocked, just show whatever is first to fill 2 slots
   if (displayAchievements.length < 2) {
-      const lockedToFill = achievements.filter(a => !a.isUnlocked).slice(0, 2 - displayAchievements.length);
-      displayAchievements.push(...lockedToFill);
+    const lockedToFill = achievements.filter(a => !a.isUnlocked).slice(0, 2 - displayAchievements.length);
+    displayAchievements.push(...lockedToFill);
   }
 
   return (
@@ -207,7 +207,7 @@ const AchievementsCard: React.FC<AchievementsProps> = () => {
               <span>{badge.icon}</span>
             </div>
             <div className="flex flex-col overflow-hidden">
-                <span className="text-[10px] font-black text-dt-textSecondary leading-tight uppercase tracking-[0.1em] truncate">{badge.title}</span>
+              <span className="text-[10px] font-black text-dt-textSecondary leading-tight uppercase tracking-[0.1em] truncate">{badge.title}</span>
             </div>
             {!badge.isUnlocked && (
               <div className="ml-auto opacity-50 pr-1">

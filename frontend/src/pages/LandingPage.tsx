@@ -38,7 +38,7 @@ const PlatformsSection: React.FC = () => {
   ];
 
   return (
-    <SectionWrapper 
+    <SectionWrapper
       bgConfig={{ color: 'bg-dt-bg', hasGlow: true, glowPositions: ['top-left', 'top-right'] }}
       className="!py-20 border-y border-dt-primary/5"
     >
@@ -97,7 +97,7 @@ const FeaturesSection: React.FC = () => {
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
         {features.map((feature, i) => (
-          <FeatureCard 
+          <FeatureCard
             key={feature.title}
             icon={feature.icon}
             title={feature.title}
@@ -242,7 +242,7 @@ const TestimonialsSection: React.FC = () => {
 
       <div className="grid md:grid-cols-3 gap-6">
         {testimonials.map((testimonial, i) => (
-          <TestimonialCard 
+          <TestimonialCard
             key={testimonial.author}
             {...testimonial}
             delay={i * 0.15}
@@ -328,7 +328,7 @@ const PricingSection: React.FC = () => {
 
       <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {pricingPlans.map((plan, i) => (
-          <PricingCard 
+          <PricingCard
             key={plan.name}
             {...plan}
             delay={i * 0.1}

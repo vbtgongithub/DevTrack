@@ -18,7 +18,6 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ title, progress, insight, i
   }, []);
 
   const progressColor = progress >= 80 ? 'from-dt-success to-emerald-400' : progress >= 50 ? 'from-dt-primary to-dt-secondary' : 'from-dt-warning to-amber-400';
-  const progressBg = progress >= 80 ? 'bg-dt-success/10' : progress >= 50 ? 'bg-dt-primary/10' : 'bg-dt-warning/10';
   const iconBg = progress >= 80 ? 'bg-dt-success/10' : progress >= 50 ? 'bg-dt-primary/10' : 'bg-dt-warning/10';
   const iconColor = progress >= 80 ? 'text-dt-success' : progress >= 50 ? 'text-dt-primary' : 'text-dt-warning';
   const accentColor = progress >= 80 ? 'bg-dt-success' : progress >= 50 ? 'bg-dt-primary' : 'bg-dt-warning';
@@ -50,7 +49,7 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ title, progress, insight, i
         </div>
       </div>
 
-      <div className={['h-3 w-full rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)] relative z-10', progressBg].join(' ')}>
+      <div className="h-3 w-full rounded-full overflow-hidden bg-slate-100 shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)] relative z-10">
         <div
           className={['h-full rounded-full bg-gradient-to-r transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] relative', progressColor].join(' ')}
           style={{ width: mounted ? `${progress}%` : '0%' }}
@@ -137,8 +136,8 @@ export const ProgressCards: React.FC<ProgressCardsProps> = ({ platformStats }) =
               </div>
               <span className="text-3xl font-black text-dt-textDisabled tabular-nums">—</span>
             </div>
-            <div className="h-3 w-full bg-dt-primary/5 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)] relative z-10">
-              <div className="h-full bg-transparent" style={{ width: '0%' }} />
+            <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)] relative z-10">
+              <div className="h-full bg-transparent transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ width: '0%' }} />
             </div>
             <div className="pt-2 border-t border-dt-primary/5 relative z-10">
                <p className="text-[12px] text-dt-textSecondary/70 leading-relaxed font-bold tracking-wide">Awaiting signals</p>

@@ -50,10 +50,10 @@ export const GithubOverviewCard: React.FC<GithubOverviewCardProps> = ({ data }) 
   }
 
   return (
-    <div className="bg-white/80 backdrop-blur-3xl border border-gray-300 rounded-[32px] p-8 lg:p-10 relative overflow-hidden h-full flex flex-col justify-between group shadow-[0_8px_40px_rgba(16,185,129,0.08)] hover:shadow-[0_16px_60px_rgba(16,185,129,0.12)] hover:border-[#10B981]/30 hover:-translate-y-[2px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
+    <div className="bg-white/80 backdrop-blur-3xl border border-gray-300 rounded-[32px] p-8 lg:p-10 relative overflow-hidden h-full flex flex-col justify-between group shadow-[0_8px_40px_rgba(15,23,42,0.06)] hover:shadow-[0_16px_60px_rgba(15,23,42,0.08)] hover:border-slate-800/30 hover:-translate-y-[2px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
       {/* Accent line and background glow */}
-      <div className="absolute -top-32 -left-32 w-80 h-80 bg-gradient-to-br from-[#34D399]/20 to-[#059669]/20 blur-[100px] rounded-full pointer-events-none group-hover:scale-150 transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.03),transparent_60%)] pointer-events-none" />
+      <div className="absolute -top-32 -left-32 w-80 h-80 bg-gradient-to-br from-slate-400/20 to-slate-800/20 blur-[100px] rounded-full pointer-events-none group-hover:scale-150 transition-transform duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.03),transparent_60%)] pointer-events-none" />
 
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-10">
@@ -96,9 +96,9 @@ export const GithubOverviewCard: React.FC<GithubOverviewCardProps> = ({ data }) 
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 lg:gap-5 mb-8 relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#10B981]/5 to-transparent blur-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-          <div className="bg-white/60 backdrop-blur-md rounded-[20px] p-5 flex flex-col items-center justify-center border border-gray-300 shadow-sm hover:shadow-[0_8px_30px_rgba(16,185,129,0.12)] hover:-translate-y-1 hover:border-[#10B981]/30 transition-all duration-500 relative overflow-hidden group/stat">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.05),transparent_50%)] opacity-0 group-hover/stat:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-800/5 to-transparent blur-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+          <div className="bg-white/60 backdrop-blur-md rounded-[20px] p-5 flex flex-col items-center justify-center border border-gray-300 shadow-sm hover:shadow-[0_8px_30px_rgba(15,23,42,0.08)] hover:-translate-y-1 hover:border-slate-800/30 transition-all duration-500 relative overflow-hidden group/stat">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(15,23,42,0.04),transparent_50%)] opacity-0 group-hover/stat:opacity-100 transition-opacity duration-500" />
             <span className="text-[10px] font-black text-dt-textSecondary/60 uppercase mb-2 tracking-[0.2em] relative z-10">Repos</span>
             <span className="text-3xl font-black text-dt-text tabular-nums tracking-tighter relative z-10 group-hover/stat:scale-105 transition-transform duration-300">{ghStats.repos}</span>
           </div>

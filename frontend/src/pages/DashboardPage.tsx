@@ -74,9 +74,9 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="flex flex-col gap-10 max-w-[1600px] mx-auto w-full dt-stagger pb-16 relative">
       {/* Premium Atmospheric Glow Layer */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-dt-primary/5 blur-[120px] rounded-full mix-blend-multiply" />
-        <div className="absolute top-[20%] right-[-10%] w-[40%] h-[60%] bg-dt-secondary/5 blur-[120px] rounded-full mix-blend-multiply" />
+      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-[#F8FAFC]">
+        <div className="absolute top-[-10%] right-[-5%] w-[800px] h-[800px] bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-violet-200/20 via-violet-100/10 to-transparent blur-[100px] rounded-full mix-blend-multiply" />
+        <div className="absolute top-[30%] left-[-10%] w-[600px] h-[600px] bg-[radial-gradient(circle_at_center_left,_var(--tw-gradient-stops))] from-violet-200/20 via-violet-100/10 to-transparent blur-[100px] rounded-full mix-blend-multiply" />
       </div>
 
       {/* ─────────────────────────────────────────────────────────────────

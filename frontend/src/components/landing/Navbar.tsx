@@ -25,18 +25,16 @@ export const Navbar: React.FC = () => {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-5xl transition-all duration-500 ${
-          isScrolled
+        className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-5xl transition-all duration-500 ${isScrolled
             ? 'top-3'
             : 'top-6'
-        }`}
+          }`}
       >
         <motion.div
-          className={`flex items-center justify-between px-6 py-3 rounded-full transition-all duration-500 ${
-            isScrolled
+          className={`flex items-center justify-between px-6 py-3 rounded-full transition-all duration-500 ${isScrolled
               ? 'bg-dt-bg/80 backdrop-blur-2xl border border-dt-primary/10 shadow-dt-glow shadow-dt-primary/10'
               : 'bg-dt-bg/60 backdrop-blur-xl border border-dt-primary/5'
-          }`}
+            }`}
         >
           {/* Logo */}
           <motion.div

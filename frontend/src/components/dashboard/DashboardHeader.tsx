@@ -61,10 +61,10 @@ export const DashboardHeader: React.FC = () => {
       <div className="flex flex-col gap-5">
         <h1 className="text-display text-4xl md:text-5xl text-dt-text leading-[1.1] relative">
           {greeting}, <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-dt-primary via-[#A78BFA] to-[#FF8B94] animate-gradient-x drop-shadow-sm">{displayName.split(' ')[0]}</span> <span className="text-3xl md:text-4xl align-middle ml-1 hover:animate-[wiggle_1s_ease-in-out_infinite] inline-block origin-bottom">{emoji}</span>
-          <div className="absolute -z-10 -inset-4 bg-gradient-to-r from-dt-primary/10 to-[#FF8B94]/10 blur-2xl opacity-50 mix-blend-multiply rounded-full pointer-events-none" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-500 to-rose-400 animate-gradient-x drop-shadow-sm">{displayName.split(' ')[0]}</span> <span className="text-3xl md:text-4xl align-middle ml-1 hover:animate-[wiggle_1s_ease-in-out_infinite] inline-block origin-bottom">{emoji}</span>
+          <div className="absolute -z-10 -inset-4 bg-gradient-to-r from-indigo-600/10 to-rose-400/10 blur-2xl opacity-50 mix-blend-multiply rounded-full pointer-events-none" />
         </h1>
-        
+
         <div className="flex flex-col gap-2.5">
           <div className="flex flex-wrap items-center gap-4 text-[14px]">
             <span className="flex items-center gap-2 px-1">
@@ -72,22 +72,22 @@ export const DashboardHeader: React.FC = () => {
               <span className="text-mono-metric font-semibold text-dt-textSecondary/80 tracking-tight">{dateStr}</span>
             </span>
             <div className="w-1 h-1 rounded-full bg-dt-textDisabled/40 hidden sm:inline" />
-            <span className="text-label !text-[10px] flex items-center gap-2 px-3 py-1 rounded-full bg-dt-success/5 !text-dt-success border border-dt-success/10 shadow-[0_0_15px_rgba(34,197,94,0.05)] backdrop-blur-md transition-all hover:bg-dt-success/10 cursor-default">
+            <span className="text-[10px] font-bold tracking-widest uppercase flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/50 shadow-[0_0_15px_rgba(16,185,129,0.05)] backdrop-blur-md transition-all hover:bg-emerald-100 cursor-default">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-dt-success opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-dt-success shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>
               </span>
               Neural Link Active
             </span>
           </div>
-          
+
           <div className="flex items-center gap-2 text-dt-textSecondary/70 text-[13px] font-medium h-5 overflow-hidden tracking-tight">
             <Icon name="sparkles" size={14} className="text-dt-primary/50 shrink-0" />
             <div className="relative w-full h-full">
               {MOTIVATIONAL_INSIGHTS.map((insight, idx) => (
-                <div 
+                <div
                   key={idx}
-                  className={['absolute inset-0 transition-all duration-700 ease-in-out flex items-center', 
+                  className={['absolute inset-0 transition-all duration-700 ease-in-out flex items-center',
                     idx === insightIndex ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                   ].join(' ')}
                 >
@@ -100,7 +100,7 @@ export const DashboardHeader: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-3 relative z-10">
-        <button 
+        <button
           onClick={handleSync}
           disabled={isSyncing}
           className="group relative px-5 py-2.5 bg-white/60 backdrop-blur-md text-dt-text font-semibold rounded-xl border border-dt-primary/10 shadow-sm hover:shadow-md hover:border-dt-primary/30 transition-all duration-300 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"

@@ -7,14 +7,14 @@ interface AnimatedButtonProps extends HTMLMotionProps<"button"> {
   className?: string;
 }
 
-export const AnimatedButton: React.FC<AnimatedButtonProps> = ({ 
-  children, 
-  variant = 'primary', 
-  className = '', 
-  ...props 
+export const AnimatedButton: React.FC<AnimatedButtonProps> = ({
+  children,
+  variant = 'primary',
+  className = '',
+  ...props
 }) => {
   const baseClasses = "inline-flex items-center justify-center font-bold rounded-2xl transition-all duration-200";
-  
+
   const variants = {
     primary: "px-8 py-4 text-white bg-gradient-to-r from-dt-primary to-dt-secondary shadow-lg shadow-dt-primary/30 bg-[length:200%_auto] hover:bg-[position:100%_0]",
     secondary: "px-8 py-4 text-dt-text bg-dt-surface border border-dt-primary/10 shadow-sm hover:shadow-dt-card-hover",

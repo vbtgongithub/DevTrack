@@ -87,12 +87,12 @@ export const AppShell = () => {
   const mainMargin = collapsed ? 'md:ml-[5.5rem]' : 'md:ml-[16.25rem]';
 
   return (
-    <div className="min-h-screen bg-[#F7F5F2] text-[#111827] flex">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#111827] flex">
       {/* ─── DESKTOP SIDEBAR ─── */}
       <aside
         className={cn(
           'hidden md:flex flex-col fixed left-0 top-0 h-screen z-40',
-          'bg-white border-r border-[rgba(17,24,39,0.06)] transition-all duration-300 ease-out',
+          'bg-[#F8FAFC]/90 backdrop-blur-lg border-r border-slate-100 transition-all duration-300 ease-out',
           sidebarWidth
         )}
       >
@@ -251,15 +251,14 @@ export const AppShell = () => {
               <Menu size={22} />
             </button>
 
-            {/* Search bar — centered pill */}
             <button
               type="button"
               onClick={() => setCommandOpen(true)}
-              className="hidden sm:flex items-center gap-2.5 flex-1 max-w-lg mx-auto px-4 py-2.5 rounded-full border border-zinc-200/80 bg-zinc-50/70 text-zinc-500 text-sm hover:border-[#8B5CF6]/25 hover:bg-[#8B5CF6]/[0.03] transition-all duration-200 shadow-sm"
+              className="hidden sm:flex items-center gap-2.5 flex-1 max-w-lg mx-auto px-4 py-2.5 rounded-full border border-slate-200/80 bg-slate-50/70 text-slate-500 text-sm hover:border-[#8B5CF6]/30 focus:outline focus:outline-2 focus:outline-[#8B5CF6]/50 hover:bg-[#8B5CF6]/5 transition-all duration-300 shadow-sm"
             >
-              <Search size={15} className="text-zinc-400" />
-              <span className="text-[13px] font-medium">Show my hardest problems…</span>
-              <kbd className="ml-auto text-[10px] px-1.5 py-0.5 rounded-md bg-zinc-100 border border-zinc-200/80 text-zinc-500 font-mono">⌘K</kbd>
+              <Search size={15} className="text-slate-400" />
+              <span className="text-[13px] font-medium tracking-tight">Show my hardest problems…</span>
+              <kbd className="ml-auto text-[10px] px-2 py-0.5 rounded-[6px] bg-slate-100 border border-slate-200 text-slate-600 font-mono tracking-widest flex items-center justify-center">⌘K</kbd>
             </button>
 
             {/* Right side actions */}
@@ -334,27 +333,27 @@ function SidebarNavLink({
   active: boolean;
 }) {
   return (
-    <Link
-      to={item.path}
-      className={cn(
-        'relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
-        active
-          ? 'bg-[#8B5CF6]/10 text-[#8B5CF6]'
-          : 'text-zinc-500 hover:text-[#111827] hover:bg-zinc-50',
-        collapsed && 'justify-center px-0 mx-1'
-      )}
-    >
-      {/* Active indicator bar */}
-      {active && (
-        <motion.div
-          layoutId="sidebar-active"
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#8B5CF6]"
-          transition={{ type: 'spring', damping: 30, stiffness: 500 }}
-        />
-      )}
-      <span className={cn(active ? 'text-[#8B5CF6]' : 'text-zinc-500', 'transition-colors')}>{item.icon}</span>
-      {!collapsed && <span className="truncate">{item.label}</span>}
-    </Link>
+      <Link
+        to={item.path}
+        className={cn(
+          'relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 group',
+          active
+            ? 'bg-[#8B5CF6]/10 text-[#5B21B6]'
+            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50',
+          collapsed && 'justify-center px-0 mx-1'
+        )}
+      >
+        {/* Active indicator bar */}
+        {active && (
+          <motion.div
+            layoutId="sidebar-active"
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#8B5CF6]"
+            transition={{ type: 'spring', damping: 30, stiffness: 500 }}
+          />
+        )}
+        <span className={cn(active ? 'text-[#7C3AED]' : 'text-slate-400 group-hover:scale-110', 'transition-all duration-300')}>{item.icon}</span>
+        {!collapsed && <span className="truncate">{item.label}</span>}
+      </Link>
   );
 }
 

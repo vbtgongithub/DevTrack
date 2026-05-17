@@ -9,17 +9,17 @@ export default {
           surface: '#FFFFFF',
           elevated: '#FCFBFF',
           mutedPurple: '#F4F1FF',
-          
+
           text: '#0F172A',
           textSecondary: '#64748B',
           textMuted: '#94A3B8',
           textDisabled: '#CBD5E1',
-          
+
           primary: '#7C5CFC',
           secondary: '#A78BFA',
           lavender: '#C4B5FD',
           primaryHover: '#6D4FF2',
-          
+
           success: '#22C55E',
           warning: '#F59E0B',
           error: '#EF4444',

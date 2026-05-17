@@ -40,8 +40,12 @@ export const EnhancedInsightsCard: React.FC = () => {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
         
         <div className="relative mb-8 group-hover:-translate-y-2 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
+          {/* Ambient purple radial blur behind the icon */}
+          <div className="absolute inset-0 bg-dt-primary rounded-full blur-xl opacity-30 group-hover:opacity-40 transition-opacity duration-700" />
           <div className="w-24 h-24 rounded-full bg-white/50 backdrop-blur-xl flex items-center justify-center border border-dt-primary/20 shadow-[0_8px_40px_rgba(124,92,252,0.12)] relative z-10">
             <div className="absolute inset-2 rounded-full border border-dashed border-dt-primary/30 animate-[spin_20s_linear_infinite]" />
+            {/* Additional pulsing concentric ring */}
+            <div className="absolute inset-0 rounded-full border border-dt-primary/10 animate-ping opacity-20" />
             <Icon name="cube" size={32} className="text-dt-primary/60" />
           </div>
         </div>
@@ -52,18 +56,18 @@ export const EnhancedInsightsCard: React.FC = () => {
         </p>
         
         <div className="flex flex-wrap justify-center items-center gap-3 relative z-10">
-          <div className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-md rounded-xl border border-[#F59E0B]/20 shadow-sm">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
-            <span className="text-[10px] font-black tracking-[0.15em] uppercase text-dt-textSecondary">LeetCode</span>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-md rounded-xl border border-[#3B82F6]/20 shadow-sm">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6] shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-            <span className="text-[10px] font-black tracking-[0.15em] uppercase text-dt-textSecondary">Codeforces</span>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-md rounded-xl border border-[#10B981]/20 shadow-sm">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-            <span className="text-[10px] font-black tracking-[0.15em] uppercase text-dt-textSecondary">GitHub</span>
-          </div>
+          <button type="button" className="group/chip flex items-center gap-2 px-4 py-2 bg-white/80 hover:bg-slate-50 backdrop-blur-md rounded-xl border border-[#F59E0B]/20 hover:border-[#F59E0B]/40 shadow-sm transition-all duration-300">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] shadow-[0_0_8px_rgba(245,158,11,0.6)] group-hover/chip:scale-125 transition-transform" />
+            <span className="text-[10px] font-black tracking-[0.15em] uppercase text-dt-textSecondary group-hover/chip:text-dt-text transition-colors">LeetCode</span>
+          </button>
+          <button type="button" className="group/chip flex items-center gap-2 px-4 py-2 bg-white/80 hover:bg-slate-50 backdrop-blur-md rounded-xl border border-[#3B82F6]/20 hover:border-[#3B82F6]/40 shadow-sm transition-all duration-300">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#3B82F6] shadow-[0_0_8px_rgba(59,130,246,0.6)] group-hover/chip:scale-125 transition-transform" />
+            <span className="text-[10px] font-black tracking-[0.15em] uppercase text-dt-textSecondary group-hover/chip:text-dt-text transition-colors">Codeforces</span>
+          </button>
+          <button type="button" className="group/chip flex items-center gap-2 px-4 py-2 bg-white/80 hover:bg-slate-50 backdrop-blur-md rounded-xl border border-slate-700/20 hover:border-slate-700/40 shadow-sm transition-all duration-300">
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-700 shadow-[0_0_8px_rgba(51,65,85,0.6)] group-hover/chip:scale-125 transition-transform" />
+            <span className="text-[10px] font-black tracking-[0.15em] uppercase text-dt-textSecondary group-hover/chip:text-dt-text transition-colors">GitHub</span>
+          </button>
         </div>
       </div>
     </div>
