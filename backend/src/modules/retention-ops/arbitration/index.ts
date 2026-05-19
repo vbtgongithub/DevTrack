@@ -1,2 +1,0 @@
-export { arbitrationService, type AdaptiveSystem, type AdaptationAction, type SystemState, type ConflictResolution, type ArbitrationDecision } from './arbitration.service.js';
-export { default } from './arbitration.service.js';

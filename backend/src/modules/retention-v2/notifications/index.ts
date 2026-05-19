@@ -1,2 +1,0 @@
-// src/modules/retention-v2/notifications/index.ts — Notifications barrel
-export { notificationFatigueService, type NotificationDecision, type NotificationHealth } from './notificationFatigue.service.js';

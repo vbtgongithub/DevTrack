@@ -7,7 +7,6 @@ import { getAllQueues, getQueue } from '../../shared/jobs/queueFactory.js';
 import { getXpWorkerStatus } from '../../shared/jobs/xpWorker.js';
 import { getRedisHealth } from '../../shared/redis/client.js';
 import cacheManager from '../../shared/cache/cacheManager.js';
-import { getAntiFraudConfig } from '../anti-fraud/anti-fraud.service.js';
 import { eventBus } from '../../shared/sse/eventBus.js';
 import { logger } from '../../shared/logger.js';
 import { QueueNames } from '../../shared/jobs/types.js';
@@ -52,7 +51,6 @@ interface SystemMetrics {
       uptimeSeconds: number;
     };
   };
-  antiFraud: ReturnType<typeof getAntiFraudConfig>;
 }
 
 export const opsController = {
@@ -150,9 +148,6 @@ export const opsController = {
     // Get XP worker status
     const xpWorkerStatus = getXpWorkerStatus();
 
-    // Get anti-fraud config
-    const antiFraudConfig = getAntiFraudConfig();
-
     const metrics: SystemMetrics = {
       queues: queueMetrics,
       redis: {
@@ -169,7 +164,6 @@ export const opsController = {
       workers: {
         xp: xpWorkerStatus,
       },
-      antiFraud: antiFraudConfig,
     };
 
     res.json(metrics);
@@ -309,167 +303,6 @@ export const opsController = {
     });
   },
 
-  // ─── Closed Beta Operations ─────────────────────────────────────────────
-  async getBetaStatus(req: Request, res: Response): Promise<void> {
-    try {
-      const { betaManagement } = await import('../beta/betaManagement.service.js');
-      const { betaOperations } = await import('../beta/betaOperations.service.js');
-      
-      const [stats, opsStats] = await Promise.all([
-        betaManagement.getBetaStatistics(),
-        betaOperations.getBetaStatistics(),
-      ]);
-
-      res.json({
-        success: true,
-        stats: {
-          ...stats,
-          ...opsStats,
-        },
-      });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Failed to get beta status' });
-    }
-  },
-
-  async createBetaCohort(req: Request, res: Response): Promise<void> {
-    try {
-      const { name, description, type, targetSize, featureFlags, betaFeatures } = req.body;
-      const { betaManagement } = await import('../beta/betaManagement.service.js');
-      
-      const cohortId = await betaManagement.createCohort(name, description, type, {
-        targetSize,
-        featureFlags,
-        betaFeatures,
-      });
-
-      await betaManagement.activateCohort(cohortId);
-
-      res.json({
-        success: true,
-        message: 'Beta cohort created and activated successfully',
-        cohortId,
-      });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Failed to create beta cohort' });
-    }
-  },
-
-  async generateInviteCode(req: Request, res: Response): Promise<void> {
-    try {
-      const { email, cohortId, expiresInDays } = req.body;
-      const { betaManagement } = await import('../beta/betaManagement.service.js');
-      
-      const invite = await betaManagement.generateInvite(email, cohortId, expiresInDays || 30);
-
-      res.json({
-        success: true,
-        invite,
-      });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Failed to generate invite' });
-    }
-  },
-
-  // ─── Feature Gates ──────────────────────────────────────────────────────
-  async getFeatureGates(req: Request, res: Response): Promise<void> {
-    try {
-      const { featureGate } = await import('../beta/featureGate.service.js');
-      const gates = await featureGate.listFeatureGates();
-      res.json({ success: true, gates });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Failed to list feature gates' });
-    }
-  },
-
-  async configureFeatureGate(req: Request, res: Response): Promise<void> {
-    try {
-      const { featureGate } = await import('../beta/featureGate.service.js');
-      await featureGate.configureFeatureGate(req.body);
-      res.json({ success: true, message: 'Feature gate configured successfully' });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Failed to configure feature gate' });
-    }
-  },
-
-  async toggleFeatureGate(req: Request, res: Response): Promise<void> {
-    try {
-      const { featureName, enabled } = req.body;
-      const { featureGate } = await import('../beta/featureGate.service.js');
-      
-      if (enabled) {
-        await featureGate.enableFeature(featureName);
-      } else {
-        await featureGate.disableFeature(featureName);
-      }
-
-      res.json({
-        success: true,
-        message: `Feature ${featureName} ${enabled ? 'enabled' : 'disabled'} globally`,
-      });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Failed to toggle feature gate' });
-    }
-  },
-
-  // ─── Kill Switches ──────────────────────────────────────────────────────
-  async getKillSwitches(req: Request, res: Response): Promise<void> {
-    try {
-      const { killSwitchService } = await import('../runtime-orchestration/killSwitch/index.js');
-      const switches = await killSwitchService.getAllSwitches();
-      res.json({ success: true, switches });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Failed to list kill switches' });
-    }
-  },
-
-  async toggleKillSwitch(req: Request, res: Response): Promise<void> {
-    try {
-      const { switchId, enabled, reason } = req.body;
-      const { killSwitchService } = await import('../runtime-orchestration/killSwitch/index.js');
-      
-      let updatedSwitch;
-      if (!enabled) {
-        // Activate the kill switch (which disables the system)
-        updatedSwitch = await killSwitchService.activate(switchId, 'admin', reason || 'Operator action');
-      } else {
-        // Deactivate the kill switch (which enables the system)
-        updatedSwitch = await killSwitchService.deactivate(switchId, 'admin', reason || 'Operator action');
-      }
-
-      res.json({
-        success: true,
-        message: `System ${switchId} ${enabled ? 'enabled' : 'disabled'}`,
-        switch: updatedSwitch,
-      });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Failed to toggle kill switch' });
-    }
-  },
-
-  // ─── Retention & Cohort Dashboard ───────────────────────────────────────
-  async getRetentionDashboard(req: Request, res: Response): Promise<void> {
-    try {
-      const { retentionCommandCenter } = await import('../retention-ops/commandCenter/index.js');
-      
-      const [metrics, cohorts, summary, alerts] = await Promise.all([
-        retentionCommandCenter.getLiveMetrics(),
-        retentionCommandCenter.getCohortHealth(7),
-        retentionCommandCenter.getHealthSummary(),
-        retentionCommandCenter.getOperationalAlerts(),
-      ]);
-
-      res.json({
-        success: true,
-        metrics,
-        cohorts,
-        summary,
-        alerts,
-      });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message || 'Failed to load retention dashboard' });
-    }
-  },
 };
 
 export default opsController;

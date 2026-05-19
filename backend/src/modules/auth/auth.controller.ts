@@ -34,3 +34,13 @@ export async function getMe(req: AuthenticatedRequest, res: Response): Promise<v
   const user = await authService.getMe(req.user!.id);
   successResponse(res, user, 'User retrieved successfully');
 }
+
+export async function sseHandshake(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const userId = req.user!.id;
+  const { createHandshakeTicket } = await import('../../shared/sse/ticketStore.js');
+  
+  const ticket = await createHandshakeTicket(userId);
+  
+  logger.info('[sse] Generated secure short-lived handshake ticket', { userId, ticket });
+  successResponse(res, { ticket }, 'SSE Handshake ticket generated');
+}

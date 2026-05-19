@@ -3,7 +3,7 @@ import { Bell, X, Sparkles } from 'lucide-react';
 import { useSse } from '../../hooks/useSse';
 import { cn } from '../../lib/design-system/tokens.css';
 import { copy } from '../../lib/copy';
-import { springCalm, springGentle } from '../../lib/motion';
+import { smooth, gentle } from '../../design-system/motion';
 
 interface NotificationCenterProps {
   open: boolean;
@@ -34,7 +34,7 @@ export function NotificationCenter({ open, onClose }: NotificationCenterProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={springGentle}
+            transition={gentle}
             className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
             onClick={onClose}
           />
@@ -42,7 +42,7 @@ export function NotificationCenter({ open, onClose }: NotificationCenterProps) {
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            transition={springCalm}
+            transition={smooth}
             className="fixed right-0 top-0 h-full w-full max-w-md z-50 bg-zinc-950/95 backdrop-blur-xl border-l border-zinc-800/60 flex flex-col shadow-2xl"
             role="dialog"
             aria-label="Notifications"

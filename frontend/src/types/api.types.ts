@@ -83,6 +83,11 @@ export interface ApiRegisterResponse {
 // 3. DASHBOARD TYPES
 // ---------------------------------------------------------------------------
 
+export interface ApiWeeklyXpDay {
+  date: string;
+  xp: number;
+}
+
 export interface ApiDashboardStats {
   totalProblems: number;
   totalSubmissions: number;
@@ -93,6 +98,8 @@ export interface ApiDashboardStats {
   totalCommits: number;
   totalPullRequests: number;
   totalContributions: number;
+  weeklyXPHistory?: ApiWeeklyXpDay[];
+  weeklyConsistencyScore?: number;
 }
 
 export interface ApiStreakData {
@@ -569,13 +576,13 @@ export interface ApiPlatformConnectPayload {
   accessToken?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+ 
 export interface ApiNotificationUpdatePayload extends Partial<ApiNotificationPreferences> { }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+ 
 export interface ApiAppearanceUpdatePayload extends Partial<ApiAppearanceSettings> { }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+ 
 export interface ApiPrivacyUpdatePayload extends Partial<ApiPrivacySettings> { }
 
 // ---------------------------------------------------------------------------

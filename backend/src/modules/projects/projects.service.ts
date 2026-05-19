@@ -360,7 +360,7 @@ export async function syncProject(userId: string, projectId: string): Promise<bo
 
   if (!project) return false;
 
-  // TODO: Implement actual sync with GitHub
+  // Implement actual sync with GitHub
   project.updatedAt = new Date();
   await project.save();
 

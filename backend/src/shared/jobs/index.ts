@@ -4,5 +4,5 @@ export { getOrCreateQueue, getQueue, getAllQueues, closeAllQueues, getPlatformSy
 export { getNotificationQueue } from './queueFactory.js';
 export { startPlatformSyncWorker, stopPlatformSyncWorker, getWorkerStatus } from './workers.js';
 export { startXpWorker, stopXpWorker, getXpWorkerStatus } from './xpWorker.js';
-export { startOrchestrationWorker, stopOrchestrationWorker } from './orchestrationWorker.js';
+
 export { startMaintenanceWorker, stopMaintenanceWorker, scheduleMaintenanceTasks } from './maintenanceWorker.js';

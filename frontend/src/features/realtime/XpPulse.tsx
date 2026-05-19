@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { prefersReducedMotion, springCalm } from '../../lib/motion';
+import { prefersReducedMotion, smooth } from '../../design-system/motion';
 
 interface XpPulseProps {
   delta: number | undefined;
@@ -21,7 +21,7 @@ export function XpPulse({ delta, className }: XpPulseProps) {
           scale: 1,
         }}
         exit={{ opacity: 0, y: 4, scale: 0.98 }}
-        transition={springCalm}
+        transition={smooth}
         className={className}
         aria-live="polite"
         role="status"

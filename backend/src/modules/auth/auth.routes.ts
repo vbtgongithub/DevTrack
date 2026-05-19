@@ -26,5 +26,6 @@ router.post('/login', authRateLimit, validateBody(loginSchema), asyncHandler(con
 router.post('/refresh', refreshRateLimit, validateBody(refreshSchema), asyncHandler(controller.refresh));
 router.post('/logout', authMiddleware, validateBody(refreshSchema), asyncHandler(controller.logout));
 router.get('/me', authMiddleware, asyncHandler(controller.getMe));
+router.post('/sse-handshake', authMiddleware, asyncHandler(controller.sseHandshake));
 
 export default router;

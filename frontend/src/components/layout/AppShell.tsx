@@ -11,7 +11,6 @@ import {
   UserRound,
   Settings,
   Shield,
-  Bell,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -19,14 +18,20 @@ import {
   X,
   Flame,
   Zap,
+  Activity,
+  Clock,
+  Wifi,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '../../lib/design-system/tokens.css';
 import { useSse } from '../../hooks/useSse';
 import { useUIStore } from '../../store/uiStore';
-import { NotificationCenter } from '../../features/notifications/NotificationCenter';
+import { NotificationBell } from '../../features/notifications/NotificationBell';
+import { NotificationDrawer } from '../../features/notifications/NotificationDrawer';
 import { isFeatureEnabled } from '../../lib/feature-flags';
 import { useRuntimeState } from '../../hooks/useRuntimeState';
 import { useUserStore } from '../../store/userStore';
+import { OnboardingModal } from '../../features/onboarding';
 
 interface NavItem {
   id: string;
@@ -50,7 +55,34 @@ export const AppShell = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const connectionState = useSse().connectionStatus;
+  const { connectionStatus: connectionState, diagnostics } = useSse();
+  const [pingMs, setPingMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (connectionState !== 'connected') {
+      setPingMs(null);
+      return;
+    }
+
+    const runPing = async () => {
+      const start = performance.now();
+      try {
+        await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/health`, {
+          method: 'GET',
+          cache: 'no-store',
+        });
+        const duration = Math.round(performance.now() - start);
+        setPingMs(duration);
+      } catch {
+        setPingMs(null);
+      }
+    };
+
+    runPing();
+    const interval = setInterval(runPing, 15_000);
+    return () => clearInterval(interval);
+  }, [connectionState]);
+
   const toggleSearch = useUIStore((s) => s.toggleSearch);
   const { data: runtimeState } = useRuntimeState();
   const streak = runtimeState?.streak ?? 0;
@@ -83,8 +115,8 @@ export const AppShell = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const sidebarWidth = collapsed ? 'w-[5.5rem]' : 'w-[16.25rem]';
-  const mainMargin = collapsed ? 'md:ml-[5.5rem]' : 'md:ml-[16.25rem]';
+  const sidebarWidth = collapsed ? 'w-[5.25rem]' : 'w-[14.5rem]';
+  const mainMargin = collapsed ? 'md:ml-[5.25rem]' : 'md:ml-[14.5rem]';
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#111827] flex">
@@ -92,20 +124,20 @@ export const AppShell = () => {
       <aside
         className={cn(
           'hidden md:flex flex-col fixed left-0 top-0 h-screen z-40',
-          'bg-[#F8FAFC]/90 backdrop-blur-lg border-r border-slate-100 transition-all duration-300 ease-out',
+          'bg-[#F8FAFC]/75 backdrop-blur-2xl border-r border-slate-200/50 transition-all duration-300 ease-out shadow-sm',
           sidebarWidth
         )}
       >
         {/* Logo */}
-        <div className={cn('h-[72px] flex items-center border-b border-[rgba(17,24,39,0.06)]', collapsed ? 'px-0 justify-center' : 'px-5')}>
+        <div className={cn('h-[72px] flex items-center border-b border-slate-200/50', collapsed ? 'px-0 justify-center' : 'px-5')}>
           <Link to="/dashboard" className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#A78BFA] flex items-center justify-center shrink-0 shadow-[0_4px_16px_rgba(139,92,246,0.35)]">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#A78BFA] flex items-center justify-center shrink-0 shadow-[0_4px_16px_rgba(139,92,246,0.3)]">
               <Zap className="w-[18px] h-[18px] text-white" />
             </div>
             {!collapsed && (
               <div className="flex flex-col min-w-0">
-                <span className="font-bold text-[15px] tracking-tight text-[#111827] leading-none">DevTrack</span>
-                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500 mt-0.5">Engineering OS</span>
+                <span className="font-bold text-[14px] tracking-tight text-slate-800 leading-none">DevTrack</span>
+                <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400 mt-0.5">Engineering OS</span>
               </div>
             )}
           </Link>
@@ -114,12 +146,12 @@ export const AppShell = () => {
         {/* Section label */}
         {!collapsed && (
           <div className="px-5 pt-6 pb-2">
-            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-600">Core Systems</span>
+            <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">Core Systems</span>
           </div>
         )}
 
         {/* Nav items */}
-        <nav className={cn('flex-1 px-2.5 space-y-1', collapsed && 'pt-4')} aria-label="Main">
+        <nav className={cn('flex-1 px-2.5 space-y-1 mt-4', collapsed && 'pt-4')} aria-label="Main">
           {navItems.map((item) => (
             <SidebarNavLink
               key={item.id}
@@ -130,52 +162,44 @@ export const AppShell = () => {
           ))}
         </nav>
 
-        {/* Streak card at bottom */}
-        <div className={cn('px-3 pb-3', collapsed && 'px-2')}>
+        {/* Streak card at bottom (refined to be extremely compact and horizontal) */}
+        <div className={cn('px-2.5 pb-2.5', collapsed && 'px-2')}>
           {!collapsed ? (
-            <div className="rounded-2xl bg-white border border-[rgba(17,24,39,0.06)] shadow-sm p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
-                  <Flame className="w-5 h-5 text-orange-500" />
+            <div className="rounded-xl bg-white/60 border border-slate-200/50 shadow-sm p-3 hover:border-[#8B5CF6]/30 transition-all duration-300">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                  <Flame className="w-4 h-4 text-orange-500" />
                 </div>
-                <div>
-                  <p className="text-[#111827] font-bold text-sm leading-none">{streak} Day Streak</p>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-orange-500 mt-1">
-                    Momentum {streak > 7 ? 'High' : streak > 0 ? 'Active' : 'Idle'}
+                <div className="min-w-0">
+                  <p className="text-slate-800 font-extrabold text-[12px] leading-none">{streak} Day Streak</p>
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-orange-500 mt-1">
+                    {streak > 7 ? 'High Momentum' : 'Active'}
                   </p>
                 </div>
               </div>
-              <div className="mt-3 h-1 rounded-full bg-zinc-100 overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(100, (streak / 30) * 100)}%` }}
-                  transition={{ duration: 1, ease: 'easeOut' }}
-                />
-              </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-1 py-2">
-              <Flame className="w-5 h-5 text-orange-500" />
-              <span className="text-[10px] font-bold text-orange-500">{streak}</span>
+            <div className="flex flex-col items-center gap-1 py-1.5 rounded-lg hover:bg-slate-50">
+              <Flame className="w-4.5 h-4.5 text-orange-500" />
+              <span className="text-[9px] font-black text-orange-500">{streak}</span>
             </div>
           )}
         </div>
 
-        {/* Profile dock */}
+        {/* Profile dock (reduced height, tighter) */}
         {!collapsed && (
-          <div className="px-3 pb-4">
+          <div className="px-2.5 pb-4">
             <button
               type="button"
               onClick={() => navigate('/profile')}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-zinc-50 border border-transparent hover:border-zinc-200 transition-colors"
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200/60 transition-all duration-300"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B5CF6]/10 to-[#A78BFA]/10 border border-[#8B5CF6]/20 flex items-center justify-center">
-                <span className="text-xs font-bold text-[#8B5CF6]">{displayName.charAt(0).toUpperCase()}</span>
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#8B5CF6]/20 to-[#A78BFA]/20 border border-[#8B5CF6]/30 flex items-center justify-center shrink-0">
+                <span className="text-[10px] font-bold text-[#8B5CF6]">{displayName.charAt(0).toUpperCase()}</span>
               </div>
               <div className="text-left min-w-0">
-                <p className="text-xs font-semibold text-[#111827] truncate">{displayName.length > 12 ? displayName.slice(0, 12) + '…' : displayName}</p>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500">Architecture Lead</p>
+                <p className="text-xs font-bold text-slate-800 truncate">{displayName}</p>
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Elite Node</p>
               </div>
             </button>
           </div>
@@ -185,7 +209,7 @@ export const AppShell = () => {
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
-          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-white border border-[rgba(17,24,39,0.1)] shadow-sm flex items-center justify-center text-zinc-400 hover:text-[#111827] hover:border-[#8B5CF6]/40 transition-all duration-200"
+          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-zinc-400 hover:text-[#111827] hover:border-[#8B5CF6]/40 transition-all duration-200"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
@@ -238,56 +262,55 @@ export const AppShell = () => {
 
       {/* ─── MAIN CONTENT AREA ─── */}
       <main className={cn('flex-1 min-h-screen flex flex-col transition-all duration-300', mainMargin)}>
-        {/* ─── TOPBAR (72px sticky) ─── */}
-        <header className="sticky top-0 z-30 h-[72px] bg-white/75 backdrop-blur-2xl border-b border-[rgba(17,24,39,0.06)]">
-          <div className="h-full max-w-[1440px] mx-auto px-4 md:px-8 flex items-center gap-4">
-            {/* Mobile menu */}
-            <button
-              type="button"
-              className="p-2 text-zinc-500 md:hidden"
-              onClick={() => setMobileOpen(true)}
-              aria-label="Open menu"
-            >
-              <Menu size={22} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setCommandOpen(true)}
-              className="hidden sm:flex items-center gap-2.5 flex-1 max-w-lg mx-auto px-4 py-2.5 rounded-full border border-slate-200/80 bg-slate-50/70 text-slate-500 text-sm hover:border-[#8B5CF6]/30 focus:outline focus:outline-2 focus:outline-[#8B5CF6]/50 hover:bg-[#8B5CF6]/5 transition-all duration-300 shadow-sm"
-            >
-              <Search size={15} className="text-slate-400" />
-              <span className="text-[13px] font-medium tracking-tight">Show my hardest problems…</span>
-              <kbd className="ml-auto text-[10px] px-2 py-0.5 rounded-[6px] bg-slate-100 border border-slate-200 text-slate-600 font-mono tracking-widest flex items-center justify-center">⌘K</kbd>
-            </button>
-
-            {/* Right side actions */}
-            <div className="ml-auto flex items-center gap-2">
-              {/* SSE Status dot */}
-              <ConnectionDot status={connectionState} />
-
-              {/* Notifications */}
+        {/* ─── TOPBAR (72px sticky with refined center layer) ─── */}
+        <header className="sticky top-0 z-30 h-[72px] bg-gradient-to-b from-[#F8FAFC] to-[#F8FAFC]/90 backdrop-blur-2xl border-b border-slate-200/50 shadow-sm flex items-center">
+          <div className="w-full max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-between gap-4">
+            {/* Mobile menu button */}
+            <div className="flex items-center gap-2 md:hidden">
               <button
                 type="button"
-                onClick={() => setNotificationsOpen(true)}
-                className="p-2 text-zinc-400 hover:text-[#8B5CF6] relative rounded-xl hover:bg-[#8B5CF6]/5 transition-colors duration-200"
-                aria-label="Notifications"
+                className="p-2 text-zinc-500 hover:text-slate-800 transition-colors"
+                onClick={() => setMobileOpen(true)}
+                aria-label="Open menu"
               >
-                <Bell size={20} />
+                <Menu size={20} />
+              </button>
+            </div>
+
+            {/* Central Unified Grouped Action Command Layer */}
+            <div className="flex-1 flex items-center justify-center max-w-4xl mx-auto w-full gap-4">
+              {/* Search Command Bar */}
+              <button
+                type="button"
+                onClick={() => setCommandOpen(true)}
+                className="flex items-center gap-2.5 flex-1 max-w-lg px-4 py-2 rounded-full border border-slate-200 bg-white/80 text-slate-500 text-sm hover:border-[#8B5CF6]/40 focus:outline focus:outline-2 focus:outline-[#8B5CF6]/40 hover:bg-[#8B5CF6]/5 transition-all duration-300 shadow-sm group"
+              >
+                <Search size={14} className="text-slate-400 group-hover:text-[#8B5CF6] transition-colors" />
+                <span className="text-[12px] font-semibold text-slate-600 tracking-tight">Show my hardest problems…</span>
+                <kbd className="ml-auto text-[9px] px-1.5 py-0.5 rounded-[5px] bg-slate-100 border border-slate-200 text-slate-500 font-mono tracking-widest flex items-center justify-center">⌘K</kbd>
               </button>
 
-              {/* Profile mini card */}
+              {/* Realtime Status Dot */}
+              <div className="shrink-0 flex items-center border border-slate-200/80 bg-white/80 rounded-full px-3 py-1.5 shadow-sm">
+                <ConnectionDot status={connectionState} pingMs={pingMs} diagnostics={diagnostics} />
+              </div>
+
+              {/* Notifications */}
+              <div className="shrink-0 border border-slate-200/80 bg-white/80 rounded-full p-1.5 shadow-sm flex items-center justify-center">
+                <NotificationBell onClick={() => setNotificationsOpen(true)} />
+              </div>
+
+              {/* Profile Mini Cluster */}
               <button
                 type="button"
                 onClick={() => navigate('/profile')}
-                className="hidden md:flex items-center gap-2.5 pl-3 pr-4 py-1.5 rounded-full hover:bg-zinc-50 transition-colors border border-transparent hover:border-zinc-100"
+                className="hidden md:flex items-center gap-2.5 pl-2.5 pr-3.5 py-1 bg-white/85 border border-slate-200 rounded-full hover:bg-slate-50 transition-all duration-300 shadow-sm shrink-0 hover:border-[#8B5CF6]/30"
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#A78BFA] flex items-center justify-center shadow-sm">
-                  <span className="text-xs font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
+                <div className="w-6.5 h-6.5 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#A78BFA] flex items-center justify-center shadow-sm shrink-0">
+                  <span className="text-[10px] font-extrabold text-white">{displayName.charAt(0).toUpperCase()}</span>
                 </div>
-                <div className="text-left">
-                  <p className="text-[13px] font-semibold text-[#111827] leading-none">{displayName}</p>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8B5CF6] mt-0.5">Elite Node</p>
+                <div className="text-left min-w-0">
+                  <p className="text-[11px] font-bold text-slate-800 leading-none truncate">{displayName}</p>
                 </div>
               </button>
             </div>
@@ -295,12 +318,44 @@ export const AppShell = () => {
         </header>
 
         {/* ─── PAGE CONTENT ─── */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-20 md:pb-0">
           <div className="max-w-[1440px] mx-auto px-4 md:px-10 lg:px-14 py-8 md:py-10">
             <Outlet />
           </div>
         </div>
       </main>
+
+      {/* ─── MOBILE BOTTOM NAVIGATION (Premium Glassmorphic) ─── */}
+      <nav 
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/75 backdrop-blur-2xl border-t border-slate-200/50 px-2 py-2 flex justify-around items-center shadow-[0_-4px_24px_rgba(124,92,252,0.04)]"
+        aria-label="Mobile Navigation"
+      >
+        {coreNav.map((item) => {
+          const active = location.pathname.startsWith(item.path);
+          return (
+            <Link
+              key={item.id}
+              to={item.path}
+              className={cn(
+                "flex flex-col items-center gap-1.5 py-1 px-3.5 rounded-xl transition-all duration-300 relative",
+                active ? "text-[#7C3AED]" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              {active && (
+                <motion.div
+                  layoutId="mobile-nav-active"
+                  className="absolute inset-0 bg-[#8B5CF6]/8 rounded-xl"
+                  transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                />
+              )}
+              <span className={cn("transition-transform duration-300 relative z-10 shrink-0", active && "scale-110 text-[#7C3AED]")}>
+                {item.icon}
+              </span>
+              <span className="text-[9px] font-bold tracking-tight relative z-10 leading-none">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
       {/* ─── COMMAND PALETTE ─── */}
       <AnimatePresence>
@@ -317,7 +372,8 @@ export const AppShell = () => {
         )}
       </AnimatePresence>
 
-      <NotificationCenter open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+      <NotificationDrawer open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+      <OnboardingModal />
     </div>
   );
 };
@@ -358,13 +414,114 @@ function SidebarNavLink({
 }
 
 /* ─── Connection status dot for topbar ─── */
-function ConnectionDot({ status }: { status: 'connecting' | 'connected' | 'reconnecting' | 'disconnected' }) {
-  if (status === 'connected') return null;
-  const color = status === 'reconnecting' || status === 'connecting' ? 'bg-[#F59E0B]' : 'bg-zinc-400';
+function ConnectionDot({ 
+  status, 
+  pingMs,
+  diagnostics 
+}: { 
+  status: 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
+  pingMs: number | null;
+  diagnostics: any;
+}) {
+  const [open, setOpen] = useState(false);
+  const isConnected = status === 'connected';
+  
+  const statusColorMap = {
+    connected: { dot: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50' },
+    connecting: { dot: 'bg-amber-500', text: 'text-amber-600', bg: 'bg-amber-50' },
+    reconnecting: { dot: 'bg-amber-500', text: 'text-amber-600', bg: 'bg-amber-50' },
+    disconnected: { dot: 'bg-rose-500', text: 'text-rose-600', bg: 'bg-rose-50' },
+  };
+
+  const current = statusColorMap[status] || statusColorMap.disconnected;
+  const latencyText = pingMs !== null ? `${pingMs}ms` : 'offline';
+  const latencyColor = pingMs !== null && pingMs < 100 ? 'text-emerald-500' : pingMs !== null && pingMs < 300 ? 'text-amber-500' : 'text-rose-500';
+
+  // Format date nicely
+  const connectedTime = diagnostics?.connectedAt 
+    ? new Date(diagnostics.connectedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : 'Never';
+
   return (
-    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-medium text-zinc-500">
-      <span className={cn('w-1.5 h-1.5 rounded-full animate-pulse', color)} />
-      {status === 'reconnecting' ? 'Reconnecting…' : status === 'connecting' ? 'Connecting…' : 'Offline'}
+    <div className="relative">
+      <button 
+        type="button" 
+        onClick={() => setOpen(!open)}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 tracking-tight hover:text-slate-800 transition-colors focus:outline-none"
+      >
+        <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', current.dot, !isConnected && 'animate-pulse')} />
+        <span>{status === 'connected' ? 'Live' : status === 'reconnecting' ? 'Reconnecting…' : status === 'connecting' ? 'Connecting…' : 'Offline'}</span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="absolute right-0 mt-2.5 w-60 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-4 text-left pointer-events-auto"
+            onMouseEnter={() => setOpen(true)}
+            onMouseLeave={() => setOpen(false)}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2">
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">Connection Telemetry</span>
+              <span className={cn('px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tight', current.bg, current.text)}>
+                {status}
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {/* Latency */}
+              <div className="flex items-center justify-between text-[11px]">
+                <div className="flex items-center gap-2 text-slate-500">
+                  <Wifi size={12} className="text-slate-400" />
+                  <span>Ping Latency</span>
+                </div>
+                <span className={cn('font-bold', latencyColor)}>{latencyText}</span>
+              </div>
+
+              {/* Total Events */}
+              <div className="flex items-center justify-between text-[11px]">
+                <div className="flex items-center gap-2 text-slate-500">
+                  <Activity size={12} className="text-slate-400" />
+                  <span>Events Streamed</span>
+                </div>
+                <span className="font-bold text-slate-700">{diagnostics?.totalEventsReceived ?? 0}</span>
+              </div>
+
+              {/* Reconnect attempts */}
+              <div className="flex items-center justify-between text-[11px]">
+                <div className="flex items-center gap-2 text-slate-500">
+                  <RefreshCw size={12} className="text-slate-400" />
+                  <span>Reconnects</span>
+                </div>
+                <span className="font-bold text-slate-700">{diagnostics?.totalReconnects ?? 0}</span>
+              </div>
+
+              {/* Connected since */}
+              <div className="flex items-center justify-between text-[11px]">
+                <div className="flex items-center gap-2 text-slate-500">
+                  <Clock size={12} className="text-slate-400" />
+                  <span>Session Start</span>
+                </div>
+                <span className="font-bold text-slate-700">{connectedTime}</span>
+              </div>
+            </div>
+
+            {/* Infrastructure Note */}
+            <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[9px] text-slate-400 font-bold">Node: sse-edge-us</span>
+              <span className="text-[9px] text-emerald-500 font-bold flex items-center gap-1">
+                <span className="w-1 h-1 rounded-full bg-emerald-500 animate-ping" />
+                Active
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

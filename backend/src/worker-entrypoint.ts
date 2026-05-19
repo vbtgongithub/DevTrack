@@ -6,7 +6,7 @@
 import { connectDatabase, disconnectDatabase } from './db/index.js';
 import { logger } from './shared/logger.js';
 import { startPlatformSyncWorker, stopPlatformSyncWorker } from './shared/jobs/workers.js';
-import { startOrchestrationWorker, stopOrchestrationWorker } from './shared/jobs/orchestrationWorker.js';
+
 import { startMaintenanceWorker, stopMaintenanceWorker, scheduleMaintenanceTasks } from './shared/jobs/maintenanceWorker.js';
 
 const WORKER_TYPE = process.env.WORKER_TYPE || 'all';
@@ -35,11 +35,6 @@ async function main(): Promise<void> {
       break;
     }
 
-    case 'orchestration':
-      startOrchestrationWorker();
-      logger.info('[worker-entrypoint] Orchestration compensation worker started');
-      break;
-
     case 'maintenance':
       startMaintenanceWorker();
       await scheduleMaintenanceTasks();
@@ -49,7 +44,7 @@ async function main(): Promise<void> {
     case 'all':
     default:
       startPlatformSyncWorker();
-      startOrchestrationWorker();
+
       startMaintenanceWorker();
       await scheduleMaintenanceTasks();
       try {
@@ -79,7 +74,6 @@ async function shutdown(signal: string): Promise<void> {
 
   try {
     await stopPlatformSyncWorker();
-    await stopOrchestrationWorker();
     await stopMaintenanceWorker();
     await disconnectDatabase();
   } catch (err) {

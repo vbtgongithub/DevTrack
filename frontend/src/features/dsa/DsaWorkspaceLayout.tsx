@@ -16,7 +16,7 @@ import { cn } from '../../lib/design-system/tokens.css';
 
 import { copy } from '../../lib/copy';
 
-import { springCalm, staggerItem, springSnappy } from '../../lib/motion';
+import { smooth, staggerItem, snappy } from '../../design-system/motion';
 
 
 
@@ -184,7 +184,7 @@ export function DsaWorkspaceLayout({ children, syncBar }: DsaWorkspaceLayoutProp
 
           layout
 
-          transition={springCalm}
+          transition={smooth}
 
           className="min-w-0 rounded-xl border border-zinc-200 bg-white p-5 sm:p-6 md:p-8 focus-within:ring-1 focus-within:ring-[#7C5CFF]/20 focus-within:ring-offset-2 focus-within:ring-offset-white shadow-sm"
 
@@ -396,7 +396,7 @@ function SidebarPanel({
 
       whileHover={{ scale: 1.01 }}
 
-      transition={springSnappy}
+      transition={snappy}
 
       className="rounded-lg border border-zinc-200 bg-white p-3 hover:bg-zinc-50 transition-colors duration-200 shadow-sm"
 
@@ -438,7 +438,7 @@ function SessionStrip({ activeSlots }: { activeSlots: number }) {
 
             layout
 
-            transition={springSnappy}
+            transition={snappy}
 
             className={cn(
 
@@ -474,7 +474,7 @@ function KeyboardShortcuts({ onClose }: { onClose: () => void }) {
 
       exit={{ opacity: 0, scale: 0.95 }}
 
-      transition={springCalm}
+      transition={smooth}
 
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
 

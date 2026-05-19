@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
+import { springCalm } from '../../lib/motion';
 import { copy } from '../../lib/copy';
-import { springCalm, prefersReducedMotion } from '../../lib/motion';
+import { prefersReducedMotion } from '../../design-system/motion';
 
 interface PageLoaderProps {
   label?: string;

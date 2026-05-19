@@ -4,7 +4,7 @@ import { Bug, X, Activity, Wifi, Clock, Zap, Shield, RefreshCw } from 'lucide-re
 import { useRuntimeState, type RuntimeState } from '../../hooks/useRuntimeState';
 import { useSse, type SseDiagnostics, type SseEvent } from '../../hooks/useSse';
 import { cn } from '../../lib/design-system/tokens.css';
-import { springCalm } from '../../lib/motion';
+import { smooth } from '../../design-system/motion';
 import { useUserStore } from '../../store/userStore';
 
 interface RuntimeDebugPanelProps {
@@ -50,7 +50,7 @@ export function RuntimeDebugPanel({ enabled = import.meta.env.DEV }: RuntimeDebu
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={springCalm}
+            transition={smooth}
             className="fixed bottom-4 right-4 z-[60] w-[420px] max-h-[80vh] bg-zinc-900/95 border border-zinc-800 rounded-xl shadow-2xl backdrop-blur-xl overflow-hidden flex flex-col"
           >
             {/* Header */}

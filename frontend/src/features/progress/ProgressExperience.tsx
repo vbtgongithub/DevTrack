@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card } from '../../components/ui';
 import { useRuntimeState, type RuntimeState } from '../../hooks/useRuntimeState';
 import { useUserStore } from '../../store/userStore';
-import { staggerContainer, staggerItem, springCalm } from '../../lib/motion';
+import { staggerContainer, staggerItem, smooth } from '../../design-system/motion';
 import { copy } from '../../lib/copy';
 import { cn } from '../../lib/design-system/tokens.css';
 
@@ -34,7 +34,7 @@ export function ProgressExperience({ identitySection }: ProgressExperienceProps)
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={springCalm}
+          transition={smooth}
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4"
         >
           <Sparkles className="w-3.5 h-3.5 text-emerald-400" />

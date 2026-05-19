@@ -70,16 +70,19 @@ export interface ApiAuthTokens {
 export interface ApiLoginResponse {
   user: ApiUser;
   tokens: ApiAuthTokens;
-  featureFlags: Record<string, boolean>;
 }
 
 export interface ApiRegisterResponse {
   user: ApiUser;
   tokens: ApiAuthTokens;
-  featureFlags: Record<string, boolean>;
 }
 
 // Dashboard Types
+export interface ApiWeeklyXpDay {
+  date: string;   // ISO date string "YYYY-MM-DD"
+  xp: number;
+}
+
 export interface ApiDashboardStats {
   totalProblems: number;
   totalSubmissions: number;
@@ -90,6 +93,8 @@ export interface ApiDashboardStats {
   totalCommits: number;
   totalPullRequests: number;
   totalContributions: number;
+  weeklyXPHistory: ApiWeeklyXpDay[];   // last 7 days, Mon–Sun
+  weeklyConsistencyScore: number;      // 0–100
 }
 
 export interface ApiStreakData {

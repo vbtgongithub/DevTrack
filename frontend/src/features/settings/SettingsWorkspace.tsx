@@ -45,7 +45,7 @@ export const SettingsWorkspace: React.FC = () => {
     if (!hasChanges || isSaving) return;
 
     setIsSaving(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const payload: any = {};
 
     const setNestedValue = (obj: Record<string, unknown>, path: string, val: unknown) => {

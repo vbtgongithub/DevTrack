@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Trophy, X, Sparkles } from 'lucide-react';
-import { springCalm } from '../../lib/motion';
+import { smooth } from '../../design-system/motion';
 import { copy } from '../../lib/copy';
 
 interface AchievementRevealProps {
@@ -28,7 +28,7 @@ export function AchievementReveal({ open, name, rarity, onDismiss }: Achievement
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={springCalm}
+          transition={smooth}
           className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
@@ -39,7 +39,7 @@ export function AchievementReveal({ open, name, rarity, onDismiss }: Achievement
             initial={{ opacity: 0, y: 32, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
-            transition={springCalm}
+            transition={smooth}
             className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -48,7 +48,7 @@ export function AchievementReveal({ open, name, rarity, onDismiss }: Achievement
                 <motion.div
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
-                  transition={{ delay: 0.1, ...springCalm }}
+                  transition={{ delay: 0.1, ...smooth }}
                   className={`p-3 rounded-xl ${colorClass.split(' ').slice(1).join(' ')} relative`}
                 >
                   <motion.div

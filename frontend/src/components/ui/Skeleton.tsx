@@ -1,5 +1,6 @@
+import { motion } from 'framer-motion';
 import { cn } from '../../lib/design-system/tokens.css';
-import { skeletonPulse } from '../../lib/motion';
+import { shimmerPulse } from '../../design-system/motion';
 
 interface SkeletonProps {
   className?: string;
@@ -7,9 +8,9 @@ interface SkeletonProps {
 
 export function Skeleton({ className }: SkeletonProps) {
   return (
-    <div 
+    <motion.div 
       aria-hidden 
-      {...skeletonPulse}
+      {...shimmerPulse}
       className={cn('rounded-lg bg-zinc-200/60', className)} 
     />
   );
@@ -17,9 +18,9 @@ export function Skeleton({ className }: SkeletonProps) {
 
 function Block({ className }: SkeletonProps) {
   return (
-    <div 
+    <motion.div 
       aria-hidden 
-      {...skeletonPulse}
+      {...shimmerPulse}
       className={cn('rounded-md bg-zinc-100', className)} 
     />
   );

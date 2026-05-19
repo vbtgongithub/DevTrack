@@ -32,12 +32,23 @@ export const queryClient = new QueryClient({
 export const queryKeys = {
   dashboard: {
     all: ['dashboard'] as const,
+    data: ['dashboard', 'data'] as const,
     stats: ['dashboard', 'stats'] as const,
     streak: ['dashboard', 'streak'] as const,
     platforms: ['dashboard', 'platforms'] as const,
     missions: ['dashboard', 'missions'] as const,
     recentActivity: (limit: number) => ['dashboard', 'recentActivity', limit] as const,
     github: ['dashboard', 'github'] as const,
+    achievements: ['dashboard', 'achievements'] as const,
+  },
+  xp: {
+    current: ['xp', 'state'] as const,
+  },
+  streak: {
+    current: ['streak', 'state'] as const,
+  },
+  missions: {
+    active: ['missions', 'active'] as const,
   },
   achievements: {
     all: ['achievements'] as const,
@@ -55,6 +66,10 @@ export const queryKeys = {
   projects: {
     all: ['projects'] as const,
     detail: (id: string) => ['projects', id] as const,
+    tasks: (projectId: string) => ['projects', projectId, 'tasks'] as const,
+  },
+  notifications: {
+    list: ['notifications'] as const,
   },
   profile: {
     all: ['profile'] as const,

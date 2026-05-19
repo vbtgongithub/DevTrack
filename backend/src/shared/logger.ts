@@ -21,6 +21,10 @@ function formatEntry(entry: LogEntry): string {
 }
 
 function emit(entry: LogEntry): void {
+  // Silence logging in test environments unless DEBUG is enabled
+  if (process.env.SILENT_LOGGING === 'true' || (process.env.NODE_ENV === 'test' && process.env.DEBUG !== 'true')) {
+    return;
+  }
   // Automatically attach trace context if available (AsyncLocalStorage)
   const traceCtx = getTraceMetadata();
   if (traceCtx.traceId && !entry.traceId) entry.traceId = traceCtx.traceId;
@@ -87,8 +91,8 @@ export const logger = {
       level: 'ERROR',
       service: SERVICE_NAME,
       event,
-      requestId: (finalMeta?.requestId || finalMeta?.metadata?.requestId) as string | undefined,
-      userId: (finalMeta?.userId || finalMeta?.metadata?.userId) as string | undefined,
+      requestId: ((finalMeta as any)?.requestId || (finalMeta as any)?.metadata?.requestId) as string | undefined,
+      userId: ((finalMeta as any)?.userId || (finalMeta as any)?.metadata?.userId) as string | undefined,
       error: errorMsg || undefined,
       metadata: {
         ...excludeMeta(finalMeta),

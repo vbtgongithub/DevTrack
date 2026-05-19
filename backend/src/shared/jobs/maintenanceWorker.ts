@@ -7,6 +7,7 @@ import { getRedisClient } from '../redis/index.js';
 import { logger } from '../logger.js';
 import { dlqService } from './dlq.service.js';
 import { QueueNames, SystemMaintenanceJobData } from './types.js';
+import { generateDailyMissions, generateWeeklyMissions } from '../../modules/missions/missionGenerator.service.js';
 
 let _worker: Worker<SystemMaintenanceJobData> | null = null;
 let _queue: Queue<SystemMaintenanceJobData> | null = null;
@@ -105,6 +106,26 @@ async function runHealthCheck(): Promise<void> {
   }
 }
 
+async function runGenerateDailyMissions(): Promise<void> {
+  logger.info('[maintenance] Generating daily missions');
+  try {
+    await generateDailyMissions();
+    logger.info('[maintenance] Daily missions generated successfully');
+  } catch (err) {
+    logger.error('[maintenance] Daily mission generation failed', err);
+  }
+}
+
+async function runGenerateWeeklyMissions(): Promise<void> {
+  logger.info('[maintenance] Generating weekly missions');
+  try {
+    await generateWeeklyMissions();
+    logger.info('[maintenance] Weekly missions generated successfully');
+  } catch (err) {
+    logger.error('[maintenance] Weekly mission generation failed', err);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Worker
 // ---------------------------------------------------------------------------
@@ -133,6 +154,12 @@ export function startMaintenanceWorker(): Worker<SystemMaintenanceJobData> {
           break;
         case 'health_check':
           await runHealthCheck();
+          break;
+        case 'generate_daily_missions':
+          await runGenerateDailyMissions();
+          break;
+        case 'generate_weekly_missions':
+          await runGenerateWeeklyMissions();
           break;
         default:
           logger.warn('[maintenance] Unknown task type', { task });
@@ -196,6 +223,30 @@ export async function scheduleMaintenanceTasks(): Promise<void> {
       jobId: 'maintenance-health-check',
       removeOnComplete: { count: 3 },
       removeOnFail: { count: 5 },
+    }
+  );
+
+  // Generate daily missions at 00:05 UTC every day
+  await _queue.add(
+    'generate-daily-missions',
+    { task: 'generate_daily_missions' },
+    {
+      repeat: { pattern: '5 0 * * *' }, // 00:05 UTC daily
+      jobId: 'maintenance-daily-missions',
+      removeOnComplete: { count: 5 },
+      removeOnFail: { count: 10 },
+    }
+  );
+
+  // Generate weekly missions at 00:05 UTC every Monday
+  await _queue.add(
+    'generate-weekly-missions',
+    { task: 'generate_weekly_missions' },
+    {
+      repeat: { pattern: '5 0 * * 1' }, // 00:05 UTC on Mondays
+      jobId: 'maintenance-weekly-missions',
+      removeOnComplete: { count: 5 },
+      removeOnFail: { count: 10 },
     }
   );
 

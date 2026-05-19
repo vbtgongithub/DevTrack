@@ -8,7 +8,9 @@ import {
   Mission,
   ConnectedPlatform,
   PlatformStats,
+  UserAnalytics,
 } from '../../db/models/index.js';
+import { logger } from '../../shared/logger.js';
 import type {
   ApiDashboardResponse,
   ApiDashboardStats,
@@ -18,6 +20,7 @@ import type {
   ApiDashboardRecentActivity,
   ApiAchievement,
   ApiAchievementsResponse,
+  ApiWeeklyXpDay,
 } from '../../types/api.types.js';
 import { getStartOfDay, formatISODate, isSameDay } from '../../shared/date.js';
 
@@ -104,6 +107,9 @@ export async function getDashboardStats(userId: string, platformStats?: ApiPlatf
   // Calculate streak
   const streakData = await calculateStreak(userId);
 
+  // Fetch weekly XP history from UserAnalytics
+  const { weeklyXPHistory, weeklyConsistencyScore } = await getWeeklyXpHistory(userId);
+
   return {
     totalProblems: totalPlatformProblems || problems.totalProblems,
     totalSubmissions: problems.totalSubmissions,
@@ -114,6 +120,90 @@ export async function getDashboardStats(userId: string, platformStats?: ApiPlatf
     totalCommits: projects.totalCommits,
     totalPullRequests: projects.totalPullRequests,
     totalContributions: projects.totalCommits + projects.totalPullRequests,
+    weeklyXPHistory,
+    weeklyConsistencyScore,
+  };
+}
+
+/**
+ * Build a 7-day XP history (Mon–Sun of the current week) from UserAnalytics.
+ * Falls back to DailyActivity if UserAnalytics has no data yet.
+ */
+async function getWeeklyXpHistory(userId: string): Promise<{
+  weeklyXPHistory: ApiWeeklyXpDay[];
+  weeklyConsistencyScore: number;
+}> {
+  // Build the Mon–Sun window for the current week
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0 = Sun
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + mondayOffset);
+  monday.setHours(0, 0, 0, 0);
+
+  const weekDays: ApiWeeklyXpDay[] = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return { date: formatISODate(d), xp: 0 };
+  });
+
+  // Try UserAnalytics first (pre-computed, fast)
+  const analytics = await UserAnalytics.findOne({ userId: new Types.ObjectId(userId) });
+
+  if (analytics && analytics.weeklyXPHistory && analytics.weeklyXPHistory.length > 0) {
+    // weeklyXPHistory stores week-level buckets; map the current week's bucket to daily
+    // For a daily breakdown we fall through to DailyActivity, but we can use the
+    // consistency score directly from analytics.
+    const weeklyConsistencyScore = analytics.weeklyConsistencyScore ?? 0;
+
+    // Attempt to fill daily XP from DailyActivity for the current week
+    const activities = await DailyActivity.find({
+      userId: new Types.ObjectId(userId),
+      date: { $gte: monday, $lte: today },
+    });
+
+    // DailyActivity tracks activity count, not XP directly.
+    // Use the current week's total XP from analytics and distribute proportionally
+    // by activity count per day, or just show activity count as a proxy.
+    const activityMap = new Map(activities.map((a) => [formatISODate(a.date), a.count]));
+    const totalActivityCount = activities.reduce((s, a) => s + a.count, 0);
+
+    // Get current week's XP from analytics history
+    const weekStart = monday;
+    const weekBucket = analytics.weeklyXPHistory.find(
+      (w) => Math.abs(w.weekStart.getTime() - weekStart.getTime()) < 7 * 24 * 60 * 60 * 1000
+    );
+    const weekTotalXp = weekBucket?.xp ?? 0;
+
+    weekDays.forEach((day) => {
+      const count = activityMap.get(day.date) ?? 0;
+      // Distribute XP proportionally by activity count
+      day.xp = totalActivityCount > 0
+        ? Math.round((count / totalActivityCount) * weekTotalXp)
+        : 0;
+    });
+
+    const activeDays = weekDays.filter((d) => d.xp > 0).length;
+    const score = weeklyConsistencyScore || Math.round((activeDays / 7) * 100);
+
+    return { weeklyXPHistory: weekDays, weeklyConsistencyScore: score };
+  }
+
+  // Fallback: use DailyActivity count as XP proxy (no analytics record yet)
+  const activities = await DailyActivity.find({
+    userId: new Types.ObjectId(userId),
+    date: { $gte: monday, $lte: today },
+  });
+
+  const activityMap = new Map(activities.map((a) => [formatISODate(a.date), a.count]));
+  weekDays.forEach((day) => {
+    day.xp = activityMap.get(day.date) ?? 0;
+  });
+
+  const activeDays = weekDays.filter((d) => d.xp > 0).length;
+  return {
+    weeklyXPHistory: weekDays,
+    weeklyConsistencyScore: Math.round((activeDays / 7) * 100),
   };
 }
 
@@ -504,15 +594,15 @@ const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
 ];
 
 export async function getAchievements(userId: string): Promise<ApiAchievementsResponse> {
-  // Get user stats to derive achievements
+  // Get user stats to derive achievements statelessly
   const [dashboardStats, platformStats] = await Promise.all([
     getDashboardStats(userId),
     getPlatformStats(userId),
   ]);
 
-  const totalProblems = platformStats.reduce((sum, p) => sum + p.totalSolved, 0);
-  const totalHard = platformStats.reduce((sum, p) => sum + p.hardSolved, 0);
-  const totalContests = platformStats.reduce((sum, p) => sum + p.totalContests, 0);
+  const totalProblems = platformStats.reduce((sum: number, p: ApiPlatformStats) => sum + p.totalSolved, 0);
+  const totalHard = platformStats.reduce((sum: number, p: ApiPlatformStats) => sum + p.hardSolved, 0);
+  const totalContests = platformStats.reduce((sum: number, p: ApiPlatformStats) => sum + p.totalContests, 0);
   const currentStreak = dashboardStats.currentStreak;
   const totalProjects = dashboardStats.totalProjects;
 

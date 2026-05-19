@@ -61,6 +61,83 @@ const statusGlow = (status: SubmissionStatus) =>
     ? 'bg-dt-success shadow-[0_0_12px_rgba(34,197,94,0.3)]'
     : 'bg-dt-error shadow-[0_0_12px_rgba(239,68,68,0.3)]';
 
+const ITEM_HEIGHT = 74;
+const VIEWPORT_HEIGHT = 370;
+
+const FlatVirtualSubmissions: React.FC<{ submissions: Submission[] }> = ({ submissions }) => {
+  const [scrollTop, setScrollTop] = React.useState(0);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const handleScroll = React.useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop(e.currentTarget.scrollTop);
+  }, []);
+
+  const totalHeight = submissions.length * ITEM_HEIGHT;
+  const startIndex = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - 2);
+  const endIndex = Math.min(submissions.length - 1, Math.floor((scrollTop + VIEWPORT_HEIGHT) / ITEM_HEIGHT) + 2);
+
+  const visibleItems = submissions.slice(startIndex, endIndex + 1);
+  const offsetY = startIndex * ITEM_HEIGHT;
+
+  return (
+    <div
+      ref={containerRef}
+      onScroll={handleScroll}
+      className="overflow-y-auto pr-1"
+      style={{ height: VIEWPORT_HEIGHT, position: 'relative' }}
+    >
+      <div style={{ height: totalHeight, width: '100%', position: 'relative' }}>
+        <div
+          style={{
+            transform: `translate3d(0, ${offsetY}px, 0)`,
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+          }}
+        >
+          {visibleItems.map((submission) => (
+            <div
+              key={submission.id}
+              style={{ height: ITEM_HEIGHT - 6 }}
+              className="group/item relative flex items-center justify-between gap-4 px-4 py-3 dt-radius-lg bg-white/40 hover:bg-white/80 shadow-sm border border-dt-primary/5 hover:border-dt-primary/20 transition-all duration-300 overflow-hidden shrink-0"
+            >
+              <div className="flex items-center gap-4 min-w-0 relative z-10">
+                <div className={['w-2 h-2 rounded-full shrink-0 transition-transform duration-300 group-hover/item:scale-125', statusGlow(submission.status)].join(' ')} />
+                <div className="w-10 h-10 dt-radius-md bg-white border border-dt-primary/10 flex items-center justify-center shrink-0 shadow-sm group-hover/item:shadow-md group-hover/item:border-dt-primary/30 transition-all">
+                  <PlatformLogo platform={submission.platform} iconSize={20} />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[14px] font-bold text-dt-text group-hover/item:text-dt-primary transition-colors truncate block tracking-tight">
+                    {submission.problem}
+                  </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[9px] font-semibold text-dt-textSecondary uppercase tracking-widest">{submission.topic}</span>
+                    <span className="w-1 h-1 rounded-full bg-dt-textSecondary/30" />
+                    <span className="text-[9px] text-dt-textSecondary/50 font-bold uppercase tracking-wider">{submission.platform}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0 relative z-10">
+                <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider dt-radius-md bg-dt-bg text-dt-textSecondary border border-dt-primary/10 group-hover/item:bg-white group-hover/item:text-dt-primary transition-all">
+                  {submission.difficulty || '—'}
+                </span>
+                <button className="w-8 h-8 dt-radius-md bg-dt-bg flex items-center justify-center border border-dt-primary/10 hover:bg-dt-primary hover:text-white hover:-translate-y-0.5 transition-all">
+                  <Icon name="arrow-up-right" size={12} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
   ({ submissions, className }) => {
     const { recentGroups } = React.useMemo(() => {
@@ -101,6 +178,9 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
       return count;
     }, [submissions]);
 
+    // Determine if we should use virtual scrolling (if submissions are > 30)
+    const useVirtual = submissions.length > 30;
+
     return (
       <section className={['dt-card-base dt-radius-2xl shadow-dt-card overflow-hidden dt-transition-slow group/table relative', className].filter(Boolean).join(' ')}>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,92,252,0.03),transparent_50%)] pointer-events-none" />
@@ -117,58 +197,62 @@ export const SubmissionsTable: React.FC<SubmissionsTableProps> = React.memo(
         </div>
 
         <div className="p-2 sm:p-3">
-          {recentGroups.length > 0 ? (
-            <div className="flex flex-col gap-1">
-              {recentGroups.map((group, groupIndex) => (
-                <div key={group.date} className="flex flex-col">
-                  {/* Soft Day Divider */}
-                  <div className="flex items-center gap-3 py-2 px-3">
-                    <span className="text-label !text-[9px] !text-dt-textSecondary/40 !tracking-[0.15em] shrink-0">
-                      {group.label}
-                    </span>
-                    <div className="flex-1 h-[1px] bg-gradient-to-r from-dt-primary/5 via-dt-primary/5 to-transparent" />
-                  </div>
+          {submissions.length > 0 ? (
+            useVirtual ? (
+              <FlatVirtualSubmissions submissions={submissions} />
+            ) : (
+              <div className="flex flex-col gap-1">
+                {recentGroups.map((group, groupIndex) => (
+                  <div key={group.date} className="flex flex-col">
+                    {/* Soft Day Divider */}
+                    <div className="flex items-center gap-3 py-2 px-3">
+                      <span className="text-label !text-[9px] !text-dt-textSecondary/40 !tracking-[0.15em] shrink-0">
+                        {group.label}
+                      </span>
+                      <div className="flex-1 h-[1px] bg-gradient-to-r from-dt-primary/5 via-dt-primary/5 to-transparent" />
+                    </div>
 
-                  {/* Submission Items */}
-                  <div className="flex flex-col gap-2">
-                    {group.submissions.map((submission, idx) => (
-                      <div
-                        key={submission.id}
-                        className="group/item relative flex items-center justify-between gap-4 p-4 dt-radius-lg bg-white/40 hover:bg-white/80 shadow-sm hover:shadow-dt-card-hover border border-dt-primary/5 hover:border-dt-primary/20 dt-transition-slower overflow-hidden"
-                        style={{ animation: `dtFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) ${(groupIndex * 80 + idx * 40)}ms both` }}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-dt-primary/5 to-transparent -translate-x-full group-hover/item:animate-[shimmer_1.5s_infinite]" />
-                        <div className="flex items-center gap-4 min-w-0 relative z-10">
-                          <div className={['w-2 h-2 rounded-full shrink-0 group-hover/item:scale-[1.5] dt-transition-slower', statusGlow(submission.status)].join(' ')} />
-                          <div className="w-10 h-10 dt-radius-md bg-white border border-dt-primary/10 flex items-center justify-center shrink-0 shadow-sm group-hover/item:shadow-md group-hover/item:border-dt-primary/30 dt-transition-slower group-hover/item:-translate-y-0.5">
-                            <PlatformLogo platform={submission.platform} iconSize={20} />
-                          </div>
-                          <div className="min-w-0">
-                            <span className="text-[15px] font-bold text-dt-text group-hover/item:text-dt-primary dt-transition-normal truncate block tracking-tight">
-                              {submission.problem}
-                            </span>
-                            <div className="flex items-center gap-2.5 mt-1">
-                              <span className="text-label !text-[9px] !text-dt-textSecondary/70 !tracking-[0.15em]">{submission.topic}</span>
-                              <span className="w-1 h-1 rounded-full bg-dt-textSecondary/30" />
-                              <span className="text-[10px] text-dt-textSecondary/70 font-black uppercase tracking-[0.2em]">{submission.platform}</span>
+                    {/* Submission Items */}
+                    <div className="flex flex-col gap-2">
+                      {group.submissions.map((submission, idx) => (
+                        <div
+                          key={submission.id}
+                          className="group/item relative flex items-center justify-between gap-4 p-4 dt-radius-lg bg-white/40 hover:bg-white/80 shadow-sm hover:shadow-dt-card-hover border border-dt-primary/5 hover:border-dt-primary/20 dt-transition-slower overflow-hidden"
+                          style={{ animation: `dtFadeIn 600ms cubic-bezier(0.22, 1, 0.36, 1) ${(groupIndex * 80 + idx * 40)}ms both` }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-dt-primary/5 to-transparent -translate-x-full group-hover/item:animate-[shimmer_1.5s_infinite]" />
+                          <div className="flex items-center gap-4 min-w-0 relative z-10">
+                            <div className={['w-2 h-2 rounded-full shrink-0 group-hover/item:scale-[1.5] dt-transition-slower', statusGlow(submission.status)].join(' ')} />
+                            <div className="w-10 h-10 dt-radius-md bg-white border border-dt-primary/10 flex items-center justify-center shrink-0 shadow-sm group-hover/item:shadow-md group-hover/item:border-dt-primary/30 dt-transition-slower group-hover/item:-translate-y-0.5">
+                              <PlatformLogo platform={submission.platform} iconSize={20} />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-[15px] font-bold text-dt-text group-hover/item:text-dt-primary dt-transition-normal truncate block tracking-tight">
+                                {submission.problem}
+                              </span>
+                              <div className="flex items-center gap-2.5 mt-1">
+                                <span className="text-label !text-[9px] !text-dt-textSecondary/70 !tracking-[0.15em]">{submission.topic}</span>
+                                <span className="w-1 h-1 rounded-full bg-dt-textSecondary/30" />
+                                <span className="text-[10px] text-dt-textSecondary/70 font-black uppercase tracking-[0.2em]">{submission.platform}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center gap-3 shrink-0 opacity-60 group-hover/item:opacity-100 dt-transition-slower relative z-10">
-                          <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest dt-radius-md bg-dt-bg text-dt-textSecondary border border-dt-primary/10 group-hover/item:bg-white group-hover/item:text-dt-primary group-hover/item:shadow-sm dt-transition-normal">
-                            {submission.difficulty || '—'}
-                          </span>
-                          <button className="w-8 h-8 dt-radius-md bg-dt-bg flex items-center justify-center border border-dt-primary/10 hover:bg-dt-primary hover:text-white hover:border-dt-primary hover:shadow-md hover:-translate-y-0.5 dt-transition-normal">
-                            <Icon name="arrow-up-right" size={14} />
-                          </button>
+                          <div className="flex items-center gap-3 shrink-0 opacity-60 group-hover/item:opacity-100 dt-transition-slower relative z-10">
+                            <span className="px-3 py-1 text-[10px] font-black uppercase tracking-widest dt-radius-md bg-dt-bg text-dt-textSecondary border border-dt-primary/10 group-hover/item:bg-white group-hover/item:text-dt-primary group-hover/item:shadow-sm dt-transition-normal">
+                              {submission.difficulty || '—'}
+                            </span>
+                            <button className="w-8 h-8 dt-radius-md bg-dt-bg flex items-center justify-center border border-dt-primary/10 hover:bg-dt-primary hover:text-white hover:border-dt-primary hover:shadow-md hover:-translate-y-0.5 dt-transition-normal">
+                              <Icon name="arrow-up-right" size={14} />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           ) : (
             <div className="py-16 flex flex-col items-center justify-center text-center">
               <div className="w-14 h-14 dt-radius-xl bg-dt-primary/5 flex items-center justify-center border border-dt-primary/10 mb-5 group-hover/table:scale-110 dt-transition-slow">

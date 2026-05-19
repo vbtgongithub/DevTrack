@@ -1,15 +1,21 @@
 # DevTrack — Project Status & Architectural Analytics
 
-**Last Updated:** May 17, 2026  
+**Last Updated:** May 19, 2026  
 **Current Branch:** `fix/ci-frontend-build`  
 **Deployment Status:** READY FOR PRODUCTION LAUNCH 🚀  
 
 ---
 
-## 📋 Latest Achievements & Commits (May 12 - May 17, 2026)
+## 📋 Latest Achievements & Commits (May 12 - May 19, 2026)
 
 DevTrack has undergone deep runtime synchronization, structural routing fixes, and high-fidelity dashboard refactoring to align with elite SaaS product standards (e.g. Linear, Vercel):
 
+*   **feat(sse): persistent Redis publisher & EventSource backfill** (`a3c4b9e`)  
+    *Resolved duplicate publisher creation by implementing a shared singleton Redis publisher in `eventBus.ts` with retry policies. Enabled automatic `lastEventId` query-parameter mapping in `sseHandler.ts` to allow standard browser EventSource connections to easily request missed event backfills (replaying from Redis streams).*
+*   **feat(security): hardened ticket-based SSE authentication and telemetry** (`b8f391c`)  
+    *Implemented a secure short-lived handshake ticket protocol to prevent token exposure in query parameters. Created a fault-tolerant ticket store with local in-memory fallback to survive Redis downtimes. Added an interactive connection telemetry HUD in the topbar showing live ping latency, events streamed, and session diagnostics. Verified complete protocol resilience with a robust Vitest security integration suite.*
+*   **feat(validation): strict Zod schemas for SSE payloads** (`8f9c2d1`)  
+    *Hardened the SSE event contract by defining explicit Zod payload schemas for all 11+ event types (e.g., sync moments, progression milestones, level ups, notifications) to completely prevent semantic payload abuse and field reuse errors.*
 *   **fix(router): restore Projects page route** (`fd0054b`)  
     *Resolved a critical router redirection issue that forced Projects traffic back to the DSA page. Restored proper lazy loading of the Projects page within the core router gate.*
 *   **feat(ui): upgrade DevTrack Dashboard to Elite SaaS standards** (`774098d`)  
@@ -78,8 +84,9 @@ The workspace currently contains active, high-fidelity design refinements:
 | **platform-sync**| controller, service, routes, index | `platforms/*` | `/api/platforms` |
 | **xp** | processor, rules, routes, index | `xp/*` | `/api/xp` |
 | **settings** | controller, routes, index | `settings/*` | `/api/settings` |
+| **onboarding** | controller, routes, index | `onboarding/*` | `/api/onboarding` |
 
-### Models (MongoDB schemas) — 19 models total
+### Models (MongoDB schemas) — 20 models total
 | Model | Used By |
 |-------|---------|
 | `user.model.ts` | auth.service, auth.controller |
@@ -100,6 +107,7 @@ The workspace currently contains active, high-fidelity design refinements:
 | `syncJob.model.ts` | sync.service |
 | `userXp.model.ts` | xp/processor, xp/rules |
 | `xpTransaction.model.ts` | xp/processor, xp/rules |
+| `onboardingAnalytics.model.ts` | onboarding/controller |
 
 ### Middleware
 | File | Purpose | Used By |
@@ -187,6 +195,7 @@ The workspace currently contains active, high-fidelity design refinements:
 | `src/hooks/useProjectsData.ts` | Projects query | ProjectsPage |
 | `src/hooks/useSse.ts` | SSE real-time connection | useDsaData, useXp |
 | `src/hooks/useXp.ts` | XP state + SSE | useDsaData, GamificationPanel |
+| `src/hooks/useOnboarding.ts` | Onboarding progress and completions | OnboardingModal |
 
 ---
 
@@ -232,6 +241,10 @@ Platform Sync Ingestion ─► Anti-Abuse Scanner ─► Idempotency Gate (Index
 3.  **App-Wide Glassmorphic Theme Overhaul:** Upgraded all dashboard surfaces (MomentumHero, WeeklyMomentum, ActionsPanel) to a unified, calm SaaS theme using HSL vivid accents and JetBrains typography (Commit `774098d`).
 4.  **Runtime Orchestrator Engine:** Hardened the server startup lifecycle (`shared/runtime`), combining database connects, queues boot, PubSub streams, and worker initializations under a standardized safety registry (Commit `144f074`).
 5.  **Cleanups & Scrap Deletions:** Cleared out obsolete scratch files (`backend/scratch/` and root `scratch/`) and removed `prompt.md` to prevent cluttering local AI indexing agents.
+6.  **Codebase Consolidation & De-duplication:** Conducted a comprehensive repository-wide de-duplication audit. Safely eliminated duplicate design system components (`Button`, `Card`, `Badge`) from `frontend/src/design-system/components` and unified the application to use the high-fidelity UI components under `frontend/src/components/ui`. Cleaned up import bindings in `EmptyState.tsx`, `OfflineState.tsx`, and `ErrorBoundary.tsx`.
+7.  **SaaS layout and UI cleanups:** Permanently deleted dead layout components (`AppLayout.tsx`, `AppLayout.css`, `Sidebar.tsx`, `Sidebar.css`, `Topbar.tsx`, `Topbar.css`) and redundant UI components (`EmptyState.tsx` from `components/ui/`) that were bypassed by the premium shell, reducing bundle size and improving codebase readability.
+8.  **Premium custom confirmation modals:** Integrated a stateful, glassmorphic modal confirmation system (`ConfirmationModal.tsx`) with smooth Framer Motion spring physics, replacing raw browser `confirm(...)` dialogs across the platform (e.g. during project deletion or focus session mode switching).
+9.  **Interactive Onboarding & Calibration Funnel:** Architected and deployed a multi-stage premium guided onboarding flow overlayed across core workspace routes. Enabled skippable sequences, live asynchronous platform links (LeetCode, Codeforces, GitHub) with realistic sync feedback, custom goal setting (focus duration targets, programming language matrices), and persistent backend synchronization (`OnboardingAnalytics`). Built dynamic layouts using framer-motion transitions, matching all elite product benchmarks.
 
 ### 🟡 Minor Architectural Notes
 *   **Zustand dsaStore:** The store exists but the frontend utilizes direct TanStack Query caches for DSA views. The dsaStore acts as a secondary ViewModel buffer.
@@ -250,6 +263,7 @@ Platform Sync Ingestion ─► Anti-Abuse Scanner ─► Idempotency Gate (Index
 | **Authentication** | ✅ 100% | Access/Refresh token rotation with axios client response interceptors fully active. |
 | **Crawler Adapters** | ✅ 100% | 6 Platform Ingest adapters verified (LeetCode, GFG, Codeforces, HackerRank, CodeChef, GitHub). |
 | **Background Workers**| ✅ 100% | Isolation topologies (`worker-entrypoint.ts` controlled via `WORKER_TYPE`) fully functional. |
-| **SSE Singleton Channel**| ✅ 100% | Singleton tab connection limits and `useSyncExternalStore` hooks validated. |
+| **SSE Singleton Channel**| ✅ 100% | Shared Redis publisher singleton, EventSource Last-Event-ID recovery, and `useSyncExternalStore` hooks validated. |
 | **Progress Saga System**| ✅ 100% | Transactional XP points math and compensation handlers verified. |
 | **Smoke & Unit Testing**| ✅ 100% | Backend unit tests compile and run seamlessly via Vitest. |
+| **Payload Security Gate**| ✅ 100% | Strict Zod contract validation enforced across all 11+ SSE event types. |

@@ -38,12 +38,12 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
   return (
     <div
       className={[
-        'h-full min-h-[140px]',
+        'h-full min-h-[120px]',
         'dt-card-base dt-card-interactive',
         'bg-white backdrop-blur-xl',
-        'border border-dt-primary/5',
-        'dt-card-pad-md lg:dt-card-pad-lg',
-        'flex flex-col justify-between gap-4 min-w-0 cursor-pointer',
+        'border border-gray-200/50',
+        'px-4 py-4',
+        'flex flex-col justify-between gap-3 min-w-0 cursor-pointer',
         'relative overflow-hidden group',
         'dt-transition-slow',
         'hover:-translate-y-1',
@@ -57,47 +57,47 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
 
       {/* Top accent gradient line */}
       <div className={[
-        'absolute top-0 left-0 right-0 h-1.5',
+        'absolute top-0 left-0 right-0 h-1',
         'bg-gradient-to-r',
         accent.bar,
         'opacity-70 group-hover:opacity-100 dt-transition-slow',
       ].join(' ')} />
 
-      <div className="flex items-center justify-between min-w-0 pt-1 gap-3">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between min-w-0 pt-1 gap-3 relative z-10">
+        <div className="flex items-center gap-2.5">
           <div className={[
-            'shrink-0 w-10 h-10 dt-radius-md flex items-center justify-center border dt-transition-normal',
+            'shrink-0 w-8 h-8 dt-radius-md flex items-center justify-center border transition-all duration-300',
             accent.bg,
             accent.border,
-            'group-hover:scale-110',
+            'group-hover:scale-105 group-hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.5)]',
           ].join(' ')}>
-            <img src={logo} alt={name} className="w-5 h-5 object-contain drop-shadow-sm" />
+            <img src={logo} alt={name} className="w-4 h-4 object-contain drop-shadow-sm" />
           </div>
-          <div className="text-[15px] font-bold text-dt-text whitespace-nowrap truncate min-w-0">
+          <div className="text-[13px] font-bold text-dt-text whitespace-nowrap truncate min-w-0 group-hover:text-dt-primary transition-colors">
             {name}
           </div>
         </div>
         {!connected && (
           <div className="ml-auto shrink-0">
-            <span className="text-[10px] font-semibold px-2.5 py-1 dt-radius-sm bg-dt-textDisabled/20 text-dt-textSecondary">
-              Link Account
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-dt-textDisabled/20 text-dt-textSecondary uppercase tracking-wider">
+              Link
             </span>
           </div>
         )}
       </div>
 
-      <div className="min-w-0 flex-1 flex flex-col justify-end relative z-10">
-        <div className="text-4xl lg:text-5xl font-black text-dt-text leading-none tabular-nums whitespace-nowrap tracking-tighter drop-shadow-sm group-hover:scale-[1.02] origin-left dt-transition-slow">
+      <div className="min-w-0 flex-1 flex flex-col justify-end relative z-10 mt-1">
+        <div className="text-3xl lg:text-[32px] font-black text-dt-text leading-none tabular-nums whitespace-nowrap tracking-tighter drop-shadow-sm group-hover:scale-[1.02] origin-left dt-transition-slow">
           {problems.toLocaleString()}
         </div>
-        <div className="mt-2 text-[11px] text-dt-textSecondary/70 whitespace-nowrap font-black tracking-[0.15em] uppercase">{label}</div>
+        <div className="mt-1.5 text-[10px] text-dt-textSecondary/80 whitespace-nowrap font-black tracking-[0.1em] uppercase">{label}</div>
       </div>
 
       {hasData && (
-        <div className="min-w-0 pt-4 border-t border-gray-200 flex items-center justify-between gap-4 relative z-10">
-          <span className="text-[10px] text-dt-textMuted font-black uppercase tracking-[0.2em]">{ratingLabel}</span>
+        <div className="min-w-0 pt-3 border-t border-gray-100 flex items-center justify-between gap-4 relative z-10 mt-1">
+          <span className="text-[9px] text-dt-textMuted font-black uppercase tracking-[0.15em]">{ratingLabel}</span>
           <span className={[
-            'text-[11px] font-black px-2.5 py-1 dt-radius-sm border tabular-nums tracking-wide',
+            'text-[10px] font-black px-2 py-0.5 rounded border tabular-nums tracking-wide shadow-sm',
             accent.badge,
           ].join(' ')}>
             {rating}
@@ -107,11 +107,11 @@ export const PlatformStatCard: React.FC<PlatformStatCardProps> = ({
 
       {/* Subtle hover glow background */}
       <div className={[
-        'absolute inset-0 opacity-0 group-hover:opacity-10 dt-transition-slow pointer-events-none mix-blend-multiply',
+        'absolute inset-0 opacity-0 group-hover:opacity-[0.03] dt-transition-slow pointer-events-none mix-blend-multiply',
         accent.bg,
       ].join(' ')} />
       <div className={[
-        'absolute -inset-20 opacity-0 group-hover:opacity-[0.03] blur-3xl dt-transition-slower pointer-events-none',
+        'absolute -inset-20 opacity-0 group-hover:opacity-[0.02] blur-2xl dt-transition-slower pointer-events-none',
         accent.bg.replace('/5', '') // strip opacity for raw color glow
       ].join(' ')} />
     </div>

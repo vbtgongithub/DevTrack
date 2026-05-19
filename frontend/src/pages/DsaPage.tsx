@@ -1,7 +1,7 @@
 import { PageShell } from '../components/layout/PageShell';
 import { useDsaData } from '../hooks/useDsaData';
 import React from 'react';
-import { HeatmapCard } from '../components/dsa/HeatmapCard';
+import { SkeletonHeatmap } from '../components/skeletons/SkeletonHeatmap';
 import { DsaHero } from '../components/dsa/DsaHero';
 import { SubmissionsTable } from '../components/dsa/SubmissionsTable';
 import { TopicProgress } from '../components/dsa/TopicProgress';
@@ -9,6 +9,10 @@ import { PlatformOverview } from '../components/dsa/PlatformOverview';
 import { ContestList } from '../components/dsa/ContestList';
 import { InsightsCard } from '../components/dsa/InsightsCard';
 import { Icon } from '../components/shared/Icon';
+
+const HeatmapCard = React.lazy(() =>
+  import('../components/dsa/HeatmapCard').then((m) => ({ default: m.HeatmapCard }))
+);
 import type { DsaData } from '../types/dsa';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
@@ -175,7 +179,9 @@ const DsaPage: React.FC = () => {
               className="flex flex-col gap-4"
             >
               <DsaHero heatmap={heatmapCells} stats={safeData.stats} />
-              <HeatmapCard title="Velocity Matrix" cells={heatmapCells} />
+              <React.Suspense fallback={<SkeletonHeatmap />}>
+                <HeatmapCard title="Velocity Matrix" cells={heatmapCells} />
+              </React.Suspense>
             </motion.div>
 
             {/* Core Operation Layer - Tighter Grid */}

@@ -27,9 +27,10 @@ export default {
         },
       },
       boxShadow: {
-        'dt-card': '0 10px 40px rgba(124, 92, 252, 0.06)',
-        'dt-card-hover': '0 18px 50px rgba(124, 92, 252, 0.12)',
-        'dt-glow': '0 0 40px rgba(124, 92, 252, 0.08)',
+        'dt-card': '0 4px 24px rgba(124, 92, 252, 0.06)',
+        'dt-card-hover': '0 8px 32px rgba(124, 92, 252, 0.12)',
+        'dt-glow': '0 0 32px rgba(124, 92, 252, 0.1)',
+        'dt-floating': '0 12px 48px rgba(124, 92, 252, 0.14)',
       },
       backgroundImage: {
         'dt-primary-gradient': 'linear-gradient(135deg, #7C5CFC 0%, #A78BFA 100%)',

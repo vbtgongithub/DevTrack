@@ -47,7 +47,10 @@ cursor/
 *.md
 !README.md
 !PROJECT_STATUS.md
-!prompt.md
+!CONTRIBUTING.md
+!ARCHITECTURE.md
+!DEPLOYMENT.md
+!SECURITY.md
 
 # Local documentation (not needed for production)
 docs/

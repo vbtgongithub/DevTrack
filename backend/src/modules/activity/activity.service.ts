@@ -183,21 +183,7 @@ export async function createActivity(
     { upsert: true, new: true }
   );
 
-  // ── Phase-C: Hook into retention system ────────────────────────────────
-  try {
-    const { retentionRuntimeOrchestrator } = await import('../runtime-orchestration/orchestrator/retentionRuntimeOrchestrator.service.js');
-    if (retentionRuntimeOrchestrator) {
-      retentionRuntimeOrchestrator.processActivityEvent(userId, activity._id.toString(), {
-        type: payload.type,
-        xp: (payload.metadata as any)?.xp || 0,
-        problemDifficulty: (payload.metadata as any)?.difficulty || 'easy',
-        duration: (payload.metadata as any)?.duration || 0,
-      }).catch(err => logger.error('[activity] Retention hook failed', { error: err }));
-    }
-  } catch (err) {
-    // Retention system linkage failed or module missing - fail silently to preserve core flow
-    logger.debug('[activity] Retention hook skipped', { reason: 'module_unavailable' });
-  }
+  // Removed retention hook
 
   return {
     id: activity._id.toString(),

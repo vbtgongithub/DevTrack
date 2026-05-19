@@ -544,14 +544,13 @@
 
 /* ─── Sticky Action Bar (Fixed) ─────────────────────────────────── */
 .profile-sticky-footer {
-  position: fixed;
+  position: sticky;
   bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 48px);
+  width: 100%;
   max-width: 1000px;
   z-index: 100;
   pointer-events: none;
+  margin: 32px auto 0 auto;
 }
 
 .profile-action-bar {
@@ -661,7 +660,7 @@
   }
 
   .profile-sticky-footer {
-    width: calc(100% - 32px);
+    width: 100%;
     bottom: 16px;
   }
 

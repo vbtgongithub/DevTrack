@@ -25,11 +25,11 @@
   --color-dt-error: #EF4444;
   --color-dt-info: #3B82F6;
 
-  /* ─── SHADOWS ─── */
-  --shadow-dt-card: 0 10px 40px rgba(124, 92, 252, 0.04);
-  --shadow-dt-card-hover: 0 20px 60px rgba(124, 92, 252, 0.1);
-  --shadow-dt-glow: 0 0 40px rgba(124, 92, 252, 0.08);
-  --shadow-dt-floating: 0 30px 100px rgba(124, 92, 252, 0.12);
+  /* ─── SHADOWS (Elite Depth System) ─── */
+  --shadow-dt-card: 0 4px 24px rgba(124, 92, 252, 0.06);
+  --shadow-dt-card-hover: 0 8px 32px rgba(124, 92, 252, 0.12);
+  --shadow-dt-glow: 0 0 32px rgba(124, 92, 252, 0.1);
+  --shadow-dt-floating: 0 12px 48px rgba(124, 92, 252, 0.14);
 
   /* ─── BACKGROUNDS ─── */
   --background-image-dt-primary-gradient: linear-gradient(135deg, #7C5CFC 0%, #A78BFA 100%);
@@ -39,23 +39,23 @@
     radial-gradient(circle at bottom right, rgba(167, 139, 250, 0.02), transparent 40%),
     #F8F6F3;
 
-  /* ─── UNIFIED SPACING SCALE ─── */
+  /* ─── UNIFIED SPACING SCALE (Elite Compression) ─── */
   --spacing-dt-xs: 4px;
-  --spacing-dt-sm: 8px;
-  --spacing-dt-md: 16px;
-  --spacing-dt-lg: 24px;
-  --spacing-dt-xl: 32px;
-  --spacing-dt-2xl: 40px;
-  --spacing-dt-3xl: 48px;
-  --spacing-dt-4xl: 64px;
+  --spacing-dt-sm: 6px;
+  --spacing-dt-md: 12px;
+  --spacing-dt-lg: 20px;
+  --spacing-dt-xl: 28px;
+  --spacing-dt-2xl: 36px;
+  --spacing-dt-3xl: 44px;
+  --spacing-dt-4xl: 56px;
 
-  /* ─── UNIFIED BORDER RADIUS ─── */
+  /* ─── UNIFIED BORDER RADIUS (Premium Sculpting) ─── */
   --radius-dt-sm: 8px;
-  --radius-dt-md: 12px;
-  --radius-dt-lg: 16px;
-  --radius-dt-xl: 20px;
-  --radius-dt-2xl: 24px;
-  --radius-dt-3xl: 28px;
+  --radius-dt-md: 10px;
+  --radius-dt-lg: 14px;
+  --radius-dt-xl: 18px;
+  --radius-dt-2xl: 22px;
+  --radius-dt-3xl: 26px;
   --radius-dt-full: 9999px;
 
   /* ─── UNIFIED TRANSITIONS ─── */
@@ -108,6 +108,30 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ─── FOCUS-VISIBLE: Accessible keyboard focus ring ─── */
+  *:focus-visible {
+    outline: 2px solid var(--color-dt-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Remove focus ring for mouse clicks */
+  *:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* ─── REDUCED MOTION: Respect user preferences ─── */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
@@ -746,23 +770,82 @@
   }
 
   .dt-stagger>*:nth-child(2) {
-    animation-delay: 80ms;
+    animation-delay: 60ms;
   }
 
   .dt-stagger>*:nth-child(3) {
-    animation-delay: 160ms;
+    animation-delay: 120ms;
   }
 
   .dt-stagger>*:nth-child(4) {
-    animation-delay: 240ms;
+    animation-delay: 180ms;
   }
 
   .dt-stagger>*:nth-child(5) {
-    animation-delay: 320ms;
+    animation-delay: 240ms;
   }
 
   .dt-stagger>*:nth-child(6) {
-    animation-delay: 400ms;
+    animation-delay: 300ms;
+  }
+
+  .dt-stagger>*:nth-child(7) {
+    animation-delay: 360ms;
+  }
+
+  .dt-stagger>*:nth-child(8) {
+    animation-delay: 420ms;
+  }
+
+  /* Elite Motion Choreography */
+  .dt-motion-lift {
+    transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .dt-motion-lift:hover {
+    transform: translateY(-1px);
+  }
+
+  .dt-motion-scale {
+    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .dt-motion-scale:hover {
+    transform: scale(1.02);
+  }
+
+  .dt-motion-glow {
+    transition: box-shadow 500ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Breathing animation for focus states */
+  .dt-breathing {
+    animation: dtBreathing 5s ease-in-out infinite;
+  }
+
+  @keyframes dtBreathing {
+    0%, 100% {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.6;
+      transform: scale(1.05);
+    }
+  }
+
+  /* Subtle pulse for live indicators */
+  .dt-pulse-subtle {
+    animation: dtPulseSubtle 3s ease-in-out infinite;
+  }
+
+  @keyframes dtPulseSubtle {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
   }
 }
 
@@ -815,4 +898,51 @@
 /* ─── Skeleton shimmer utility ─── */
 .animate-shimmer {
   animation: dtShimmer 1.5s ease-in-out infinite;
+}
+
+/* ─── Shimmer for progress bars ─── */
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ─── Screen reader only ─── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ─── Gradient text animation ─── */
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  background-size: 200% auto;
+  animation: gradient-x 4s ease infinite;
+}
+
+/* ─── Hide scrollbar utility ─── */
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
 }

@@ -345,7 +345,7 @@ export function useDsaData(): {
     void topicsQ.refetch();
     void platformStatsQ.refetch();
     void schedulerStatusQ.refetch();
-  }, [dashboardQ.refetch, submissionsQ.refetch, contestsQ.refetch, topicsQ.refetch, platformStatsQ.refetch, schedulerStatusQ.refetch]);
+  }, [dashboardQ, submissionsQ, contestsQ, topicsQ, platformStatsQ, schedulerStatusQ]);
 
   const sync = () => syncMutation.mutate(undefined);
 

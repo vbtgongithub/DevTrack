@@ -20,6 +20,10 @@ import {
   stopSyncScheduler,
 } from '../syncScheduler.js';
 import {
+  startMissionScheduler,
+  stopMissionScheduler,
+} from '../scheduler/missionScheduler.js';
+import {
   setApiStatus,
   setMongoStatus,
   setRedisStatus,
@@ -154,20 +158,7 @@ function bootWorkers(redisOk: boolean): { platformSync: boolean; xp: boolean } {
   return { platformSync, xp };
 }
 
-async function bootRetention(): Promise<boolean> {
-  try {
-    // Dynamic import to avoid circular dependencies and load only if needed
-    const { retentionRuntimeOrchestrator } = await import('../../modules/runtime-orchestration/orchestrator/retentionRuntimeOrchestrator.service.js');
-    if (retentionRuntimeOrchestrator) {
-      logger.info('[startup] Retention system linked (Phase-C Ready)', { event: 'retention_linked' });
-      return true;
-    }
-    return false;
-  } catch (err) {
-    logger.warn('[startup] Retention system linkage failed', { error: err instanceof Error ? err.message : String(err) });
-    return false;
-  }
-}
+
 
 function bootScheduler(queuesOk: boolean): boolean {
   if (!queuesOk) {
@@ -177,8 +168,9 @@ function bootScheduler(queuesOk: boolean): boolean {
   }
   try {
     startSyncScheduler();
+    startMissionScheduler(); // Start mission scheduler
     setSchedulerStatus('healthy');
-    logger.info('[startup] Scheduler started', { event: 'scheduler_resumed' });
+    logger.info('[startup] Scheduler started (sync + missions)', { event: 'scheduler_resumed' });
     return true;
   } catch (err) {
     setSchedulerStatus('failed', err instanceof Error ? err.message : String(err));
@@ -210,8 +202,7 @@ export async function startup(app: Express): Promise<StartupResult> {
   const schedulerOk = bootScheduler(queuesOk);
   if (!schedulerOk) warnings.push('Scheduler paused');
 
-  const retentionOk = await bootRetention();
-  if (!retentionOk) warnings.push('Retention system inactive');
+
 
   setSseStatus('healthy');
   setApiStatus('healthy');
@@ -222,7 +213,7 @@ export async function startup(app: Express): Promise<StartupResult> {
 
   return {
     success: true,
-    phases: { mongodb: mongoOk, redis: redisOk, queues: queuesOk, platformSyncWorker: workers.platformSync, xpWorker: workers.xp, scheduler: schedulerOk, retention: retentionOk },
+    phases: { mongodb: mongoOk, redis: redisOk, queues: queuesOk, platformSyncWorker: workers.platformSync, xpWorker: workers.xp, scheduler: schedulerOk, retention: false },
     degraded: warnings.length > 0,
     warnings,
   };
@@ -236,6 +227,7 @@ export async function shutdown(): Promise<void> {
   logger.info('[shutdown] Initiating graceful shutdown');
 
   stopSyncScheduler();
+  stopMissionScheduler(); // Stop mission scheduler
   setSchedulerStatus('stopped');
 
   await stopPlatformSyncWorker();

@@ -16,6 +16,9 @@ import { streakRoutes } from '../modules/streak/index.js';
 import { opsRoutes } from '../modules/ops/ops.routes.js';
 import { runtimeStateRoutes } from '../modules/runtime-state/index.js';
 import { observationRoutes } from '../modules/observation/index.js';
+import missionsRoutes from '../modules/missions/missions.routes.js';
+import notificationRoutes from '../modules/notifications/notification.routes.js';
+import onboardingRoutes from '../modules/onboarding/onboarding.routes.js';
 
 const router = Router();
 
@@ -48,5 +51,8 @@ router.use('/streak', streakRoutes);
 router.use('/ops', opsRoutes);
 router.use('/runtime-state', runtimeStateRoutes);
 router.use('/observation', observationRoutes);
+router.use('/missions', missionsRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/onboarding', onboardingRoutes);
 
 export default router;

@@ -40,7 +40,7 @@ export function startPlatformSyncWorker(): Worker<PlatformSyncJobData> {
         });
 
         syncState.beginSync();
-        eventBus.emitSyncStarted(userId);
+        eventBus.emitSyncStarted(userId, platformName);
 
         try {
           const result = await syncPlatform(userId, platformName);

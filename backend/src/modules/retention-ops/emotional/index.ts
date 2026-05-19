@@ -1,2 +1,0 @@
-export { emotionalCoherenceService, type CoherenceScore, type EmotionalState, type CoherenceViolation } from './emotionalCoherence.service.js';
-export { default } from './emotionalCoherence.service.js';

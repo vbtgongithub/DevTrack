@@ -156,31 +156,36 @@ function createSseStream(
 
 export async function handleSseRequest(req: Request, res: Response): Promise<void> {
   const requestId = req.context?.requestId ?? `sse-${Date.now()}`;
-  const lastEventId = (req.headers['last-event-id'] || req.headers['Last-Event-ID']) as string | undefined;
+  const lastEventId = (req.headers['last-event-id'] || req.headers['Last-Event-ID'] || req.query.lastEventId) as string | undefined;
 
-  const token = (req.query.token as string) || (req.headers.authorization?.split(' ')[1]);
+  let userId: string;
+  const ticket = req.query.ticket as string | undefined;
 
-  if (!token) {
-    logger.warn('[sse] Auth required', {
+  if (ticket) {
+    try {
+      const { consumeHandshakeTicket } = await import('./ticketStore.js');
+      const ticketUserId = await consumeHandshakeTicket(ticket);
+      
+      if (!ticketUserId) {
+        logger.warn('[sse] Ticket handshake failed — expired or invalid ticket', { ticket, requestId });
+        res.status(401).json({ error: 'Invalid or expired handshake ticket' });
+        return;
+      }
+      
+      userId = ticketUserId;
+      logger.info('[sse] Handshake authenticated successfully via ticket', { userId, ticket, requestId });
+    } catch (err) {
+      logger.error('[sse] Ticket handshake error', err as Error, { ticket, requestId });
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+  } else {
+    logger.warn('[sse] Auth required — Handshake ticket missing', {
       event: 'sse_auth_required',
       requestId,
       ip: req.ip,
     });
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-
-  let userId: string;
-  try {
-    const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as { id: string };
-    userId = decoded.id;
-  } catch {
-    logger.warn('[sse] Invalid token', {
-      event: 'sse_invalid_token',
-      requestId,
-      ip: req.ip,
-    });
-    res.status(401).json({ error: 'Invalid or expired token' });
+    res.status(401).json({ error: 'Authentication required. SSE ticket must be provided.' });
     return;
   }
 

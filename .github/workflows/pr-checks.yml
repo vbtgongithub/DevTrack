@@ -1,0 +1,145 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  # ── Fail Fast Checks (Lint & Typecheck) ───────────────────────────────────
+  static-checks:
+    name: Static Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies (Backend)
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Install dependencies (Frontend)
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Typecheck Backend
+        working-directory: ./backend
+        run: npx tsc --noEmit
+
+      - name: Typecheck Frontend
+        working-directory: ./frontend
+        run: npx tsc --noEmit
+
+      - name: Lint Backend
+        working-directory: ./backend
+        run: npm run lint --if-present
+
+      - name: Lint Frontend
+        working-directory: ./frontend
+        run: npm run lint --if-present
+
+  # ── Unit Tests ────────────────────────────────────────────────────────────
+  unit-tests:
+    name: Unit Tests
+    needs: static-checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies (Backend)
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Install dependencies (Frontend)
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Run Backend Unit Tests
+        working-directory: ./backend
+        run: npm run test:unit --if-present
+
+      - name: Run Frontend Unit Tests
+        working-directory: ./frontend
+        run: npm run test:unit --if-present
+
+  # ── Integration Tests (Requires DB) ────────────────────────────────────────
+  integration-tests:
+    name: Integration Tests
+    needs: static-checks
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd mongo
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7.0-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MONGODB_URI: mongodb://127.0.0.1:27017/devtrack_test
+      REDIS_URL: redis://127.0.0.1:6379
+      NODE_ENV: test
+      JWT_SECRET: test-secret-key-12345
+      PORT: 3001
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies (Backend)
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run Integration Tests
+        working-directory: ./backend
+        run: npm run test:integration --if-present
+
+  # ── Docker Build Verification ──────────────────────────────────────────────
+  docker-verify:
+    name: Docker Build Verification
+    needs: static-checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Backend Docker Build
+        working-directory: ./backend
+        run: docker build -t devtrack-backend:test .
+
+      - name: Verify Frontend Docker Build
+        working-directory: ./frontend
+        run: docker build -t devtrack-frontend:test .

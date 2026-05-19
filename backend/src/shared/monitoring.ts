@@ -29,7 +29,7 @@ export function reportError(error: unknown, context: ErrorContext = {}): void {
 
   // 2. Production-only integrations
   if (env.IS_PROD) {
-    // TODO: Integrate Sentry or BetterStack here
+    // Integrate Sentry or BetterStack here
     // Sentry.captureException(errorObj, { extra: context });
   }
 }

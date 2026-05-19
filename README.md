@@ -1,362 +1,108 @@
-# 🌌 DevTrack — The Developer Operating System
+# 🌌 DevTrack: Developer Productivity & Engineering Gamification OS
 
-> A next-generation engineering productivity platform that transforms coding activity into a real-time, gamified operating system for developers.
-
-DevTrack is not just another developer dashboard. It is a full-scale engineering telemetry platform designed to unify competitive programming, GitHub activity, productivity analytics, progression systems, and real-time infrastructure into a single immersive experience.
-
-Built with a modern distributed architecture, DevTrack combines high-performance ingestion pipelines, real-time synchronization, scalable worker orchestration, and a premium SaaS-grade interface to create an ecosystem where developers can track growth, maintain momentum, and visualize progress like a high-end RPG progression engine.
+DevTrack is a high-performance, developer-centric monorepo platform designed to aggregate engineering activity, track daily productivity, and gamify coding achievements. By integrating competitive programming platforms with real-time analytics and a rich telemetry UI, DevTrack turns software engineering into an engaging, progression-based experience.
 
 ---
 
-# ✨ Why DevTrack Exists
+## 🚀 Core Capabilities
 
-Modern developers operate across fragmented ecosystems:
-
-- Competitive programming platforms
-- GitHub repositories
-- Daily coding streaks
-- Contribution graphs
-- Contest ratings
-- Personal productivity metrics
-
-Most tools only show isolated statistics.
-
-DevTrack unifies everything into a single intelligent engineering command center — delivering live telemetry, progression systems, achievement mechanics, and deep behavioral analytics in real time.
-
-The result feels closer to a developer-focused operating system than a traditional dashboard.
+* **Engineering OS Dashboard:** A sleek, dark-mode, glassmorphism-based developer dashboard with platform telemetry, daily coding velocity graphs, systems status bars, and active widgets.
+* **DSA Telemetry Ingestion:** Crawlers and adapters that ingest profile statistics, contests, and problem solving data across **LeetCode**, **Codeforces**, **CodeChef**, and **GitHub**.
+* **Unified Progression Engine:** Computes experience points (XP), levels, coding streaks, and badges based on real-time activity metrics.
+* **High-Coherence SSE WebChannel**: Real-time server-push state synchronization over a Server-Sent Events (SSE) singleton channel, ensuring multi-tab browser instances share a single connection to bypass browser tab connection limits.
+* **Command Palette Navigation:** A quick-action command palette (`Ctrl+K` / `Cmd+K`) for lightning-fast workspace navigation, system diagnostics, and settings management.
 
 ---
 
-# 🚀 Core Features
+## 🏗️ System Architecture Overview
 
-## ⚡ Real-Time Engineering Telemetry
+DevTrack uses a decoupled, monorepo architecture separating a rich **React 19** frontend from a robust **Express 5** + **MongoDB** + **Redis** backend. Background operations, platform indexing, and gamification processing are delegated to isolated **BullMQ workers**.
 
-A fully immersive developer dashboard powered by live synchronization systems.
-
-Track:
-- Coding velocity
-- Submission activity
-- Daily progression
-- XP growth
-- Platform sync status
-- Contest analytics
-- Contribution consistency
-- System health metrics
-
-All rendered through a premium dark-mode SaaS interface with glassmorphism layers, motion systems, and real-time visual feedback.
+For a deep dive into the system components, data flow, and singleton connection management, refer to the [System Architecture Guide](ARCHITECTURE.md).
 
 ---
 
-## 🧠 Multi-Platform DSA Intelligence Engine
+## 🛠️ Technology Stack & Ecosystem
 
-DevTrack aggregates developer performance across major coding ecosystems through a unified ingestion and analytics pipeline.
+### 💻 Backend (API & Ingestion)
+* **Core Platform:** Node.js, TypeScript, Express.js (v5)
+* **Database:** MongoDB via Mongoose (with compound indexing, strict validation, and `.lean()` read paths)
+* **Distributed Queue & Cache:** Redis + BullMQ (for asynchronous background ingestion, cron operations, and scheduler tasks)
+* **Testing Suite:** Vitest (smoke, unit, and integration tests)
 
-Supported integrations currently include:
-- LeetCode
-- Codeforces
-- CodeChef
-- GitHub
-
-The ingestion layer supports:
-- API integrations
-- GraphQL adapters
-- Smart scraping pipelines
-- Cached fallback recovery
-- Delta synchronization
-- Idempotent indexing
-
-This creates a unified engineering identity across all connected platforms.
+### 🎨 Frontend (Engineering UI)
+* **Client Core:** React 19, Vite, TypeScript, Vanilla Tailwind CSS v4
+* **State & Caching:** Zustand v5 (transient UI, sidebar, modal states), TanStack Query v5 (React Query for server state caching and client validation)
+* **Animations:** Framer Motion (premium micro-animations, radar scanners, orbital physics, and spring-based layouts)
+* **Iconography:** Lucide React
 
 ---
 
-## 📈 Dynamic Progression & XP System
+## 📁 Repository Documentation Index
 
-DevTrack introduces RPG-inspired developer progression mechanics powered by transactional background pipelines.
+To help contributors and operators find operational details quickly:
 
-Developers earn:
-- Experience Points (XP)
-- Levels
-- Streaks
-- Badges
-- Achievement unlocks
-- Milestone rewards
-
-The system includes:
-- Anti-abuse validation
-- Duplicate prevention
-- Submission anomaly detection
-- Saga rollback compensation
-- Distributed queue orchestration
-
-This ensures progression remains accurate, scalable, and exploit-resistant.
+- **[System Architecture Guide (ARCHITECTURE.md)](ARCHITECTURE.md)**: Deep dive into the SSE Singleton Pattern, event streaming, PubSub, and worker architectures.
+- **[Production Deployment Guide (DEPLOYMENT.md)](DEPLOYMENT.md)**: Configuration matrix, independent scaling topology (API vs. Workers), Docker Setup, and environment variables.
+- **[Contributing Guidelines (CONTRIBUTING.md)](CONTRIBUTING.md)**: Repository conventions, domain-driven backend folder structures, frontend layout paradigms, styling guidelines, and Git branch flow.
+- **[Security Policy (SECURITY.md)](SECURITY.md)**: Vulnerability reporting workflow, production config verification policies, and rate-limiting setup details.
 
 ---
 
-## 🔥 Unified Activity Heatmap
+## 💻 Local Setup & Development
 
-A rolling contribution heatmap combines:
-- DSA submissions
-- GitHub commits
-- Platform activity
-- Daily coding streaks
+### System Requirements
+* **Node.js:** `>= 18.0.0`
+* **npm:** `>= 9.0.0`
+* **Docker Desktop:** Installed & running (for local MongoDB & Redis services)
 
-into a single visual timeline.
+### Quick Start
 
-Instead of switching between platforms, developers get one cohesive view of engineering consistency.
+1. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/VarshithReddy2006/DevTrack.git
+   cd DevTrack
+   ```
 
----
+2. **Spin up Core Infrastructure (Docker):**
+   Ensure Docker is running, then launch MongoDB and Redis:
+   ```bash
+   npm run docker:up
+   ```
+   *This exposes MongoDB on `localhost:27017` and Redis on `localhost:6379`.*
 
-## 📡 High-Coherence Real-Time Sync Engine
+3. **Configure Environment Variables:**
+   Copy the example template to `.env` in the root:
+   ```bash
+   cp .env.example .env
+   ```
+   Edit `.env` and fill out your local parameters (and optionally a `GITHUB_TOKEN` to prevent GitHub rate-limiting).
 
-DevTrack uses a custom SSE Singleton WebChannel architecture.
+4. **Install Dependencies:**
+   Install workspace-wide dependencies recursively:
+   ```bash
+   npm run install-all
+   ```
 
-Unlike traditional implementations that create redundant browser connections per tab, DevTrack coordinates all tabs through a shared synchronization layer.
-
-Benefits:
-- Lower server load
-- Reduced socket exhaustion
-- Better browser performance
-- Real-time state propagation
-- Efficient multi-tab synchronization
-
-This architecture enables SaaS-scale real-time telemetry without unnecessary infrastructure overhead.
-
----
-
-# 🏗️ Architecture Overview
-
-DevTrack follows a distributed monorepo architecture optimized for scalability, observability, and isolated background processing.
-
-## Frontend Stack
-
-- React 19
-- Vite 8
-- TypeScript
-- Tailwind CSS v4
-- Framer Motion
-- Zustand
-- TanStack Query
-- React Router v7
-
-The frontend is engineered around:
-- ultra-fast rendering
-- motion-driven UI systems
-- modular feature domains
-- synchronized external state stores
-- premium SaaS interaction patterns
+5. **Start Local Development Servers:**
+   Launch the Express API and Vite client concurrently:
+   ```bash
+   npm run dev
+   ```
+   * **Frontend:** `http://localhost:5173`
+   * **Backend:** `http://localhost:3001`
+   * **SSE Channel:** `http://localhost:3001/events`
 
 ---
 
-## Backend Stack
+## 📜 Workspace Commands Reference
 
-- Node.js
-- TypeScript
-- Express 5
-- MongoDB
-- Redis
-- BullMQ
-- Axios
-- Cheerio
-- Vitest
-
-The backend focuses heavily on:
-- event-driven orchestration
-- isolated workers
-- transactional consistency
-- ingestion reliability
-- horizontal scalability
-
----
-
-# ⚙️ Distributed Worker Infrastructure
-
-DevTrack separates HTTP traffic from heavy background processing through isolated worker containers.
-
-Worker modes include:
-
-| Worker Type | Responsibility |
-|---|---|
-| `sync` | Platform crawling & ingestion |
-| `xp` | XP calculations & progression |
-| `orchestration` | Saga rollback coordination |
-| `maintenance` | Cleanup jobs & diagnostics |
-| `all` | Full unified worker runtime |
-
-This architecture prevents worker failures from impacting the public API layer.
-
----
-
-# 🧬 Progression Saga Pipeline
-
-One of DevTrack’s defining systems is its transactional progression orchestration engine.
-
-Pipeline stages include:
-
-1. Platform synchronization
-2. Delta comparison
-3. Anti-abuse validation
-4. Duplicate filtering
-5. XP computation
-6. Achievement evaluation
-7. Streak synchronization
-8. Compensation rollback handling
-
-If any downstream stage fails, rollback mechanisms restore consistent user state automatically.
-
-This creates database-level integrity without relying on monolithic transactions.
-
----
-
-# 🎨 Premium SaaS Design System
-
-DevTrack’s visual system is inspired by:
-- futuristic telemetry interfaces
-- high-end SaaS dashboards
-- gaming HUD systems
-- engineering observability tools
-
-Design characteristics:
-- Deep-space dark themes
-- Glassmorphism surfaces
-- Motion-driven UI feedback
-- Conic radar gradients
-- Telemetry scan layers
-- Soft neon accent systems
-- Orbital micro-interactions
-
-The result is a UI designed to feel alive.
-
----
-
-# 🧪 Testing & Reliability
-
-DevTrack emphasizes runtime resilience and validation integrity.
-
-Testing includes:
-- ingestion validation
-- heatmap correctness
-- schema integrity
-- orchestration consistency
-- date synchronization
-- worker health checks
-- platform adapter resilience
-
-Powered by:
-- Vitest
-- smoke testing
-- modular validation suites
-
----
-
-# 🐳 Local Development Setup
-
-## Requirements
-
-- Node.js ≥ 18
-- npm ≥ 9
-- Docker Desktop
-
----
-
-## Clone Repository
-
-```bash
-git clone https://github.com/VarshithReddy2006/DevTrack.git
-cd DevTrack
-```
-
----
-
-## Start Infrastructure
-
-```bash
-npm run docker:up
-```
-
-Services:
-- MongoDB → `localhost:27017`
-- Redis → `localhost:6379`
-
----
-
-## Configure Environment Variables
-
-```bash
-cp .env.example .env
-```
-
-Optionally configure:
-- GitHub API tokens
-- platform credentials
-- Redis connection URLs
-- database URIs
-
----
-
-## Install Dependencies
-
-```bash
-npm run install-all
-```
-
----
-
-## Run Development Environment
-
-```bash
-npm run dev
-```
-
-Endpoints:
-- Frontend → `http://localhost:5173`
-- Backend → `http://localhost:3001`
-- SSE Stream → `http://localhost:3001/events`
-
----
-
-# 📦 Monorepo Commands
-
-| Command | Description |
-|---|---|
-| `npm run dev` | Starts frontend + backend concurrently |
-| `npm run build` | Production build |
-| `npm run test` | Executes backend test suite |
-| `npm run docker:up` | Starts MongoDB & Redis |
-| `npm run docker:down` | Stops infrastructure |
-| `npm run clean` | Removes all node_modules |
-| `npm run install-all` | Installs all workspace dependencies |
-
----
-
-# 🌍 Vision
-
-DevTrack is evolving into a fully connected Developer Operating System.
-
-The long-term vision includes:
-- AI-assisted productivity insights
-- Advanced engineering analytics
-- Team collaboration systems
-- Competitive leaderboards
-- Personalized growth recommendations
-- Live coding telemetry
-- Infrastructure observability
-- Developer progression intelligence
-
-The goal is simple:
-
-Build the definitive platform for measuring, visualizing, and accelerating developer growth.
-
----
-
-# 📄 License
-
-This project is licensed under the MIT License.
-
----
-
-# 👨‍💻 Authors
-
-Built by:
-
-- Varshith Reddy — focused on building immersive systems, scalable engineering infrastructure, and next-generation developer experiences.
-- Bhanu Teja — collaborator and contributor to the DevTrack ecosystem and platform engineering architecture.
+| Command | Action |
+| :--- | :--- |
+| `npm run install-all` | Runs `npm install` recursively in the root, `/frontend`, and `/backend` |
+| `npm run dev` | Spins up the Frontend client and Backend API servers in concurrent watch mode |
+| `npm run build` | Compiles both Frontend and Backend workspaces for production deployment |
+| `npm run test` | Runs the test suite on the backend using Vitest |
+| `npm run docker:up` | Builds and launches MongoDB & Redis containers with automated health checks |
+| `npm run docker:down` | Gracefully shuts down and purges local Docker containers |
+| `npm run clean` | Recursively wipes out `node_modules` folders to trigger a fresh install |

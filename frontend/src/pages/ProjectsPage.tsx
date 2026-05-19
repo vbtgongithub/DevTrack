@@ -1,29 +1,53 @@
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PageShell } from '../components/layout/PageShell';
 import { Icon, type IconName } from '../components/shared/Icon';
 import { EmptyState } from '../components/shared/EmptyState';
+import { ConfirmationModal } from '../components/ui/ConfirmationModal';
 import { useProjectsData } from '../hooks/useProjectsData';
+import { ProjectDetailDrawer } from '../features/projects/components/ProjectDetailDrawer';
+import { ProjectListView } from '../features/projects/components/ProjectListView';
 import githubLogo from '../assets/logos/github.png';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { ProjectCardVM } from '../types/vm.types';
 import type { ApiProjectCreatePayload } from '../types/api.types';
 
+const ProjectBoardView = React.lazy(() =>
+  import('../features/projects/components/ProjectBoardView').then((m) => ({ default: m.ProjectBoardView }))
+);
+
 /* ─── Types ─── */
 type ProjectFilter = 'All' | 'Active' | 'Completed';
+type ViewMode = 'grid' | 'list' | 'board';
 
 /* ─── Helpers ─── */
 const FILTERS: ProjectFilter[] = ['All', 'Active', 'Completed'];
 
-function progressBarColor(status: string): string {
+function statusConfig(status: string): { label: string; color: string; bg: string; dot: string } {
   switch (status) {
     case 'completed':
-      return 'from-emerald-500 via-emerald-400 to-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]';
+      return { label: 'Completed', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200', dot: 'bg-emerald-500' };
     case 'in_progress':
-      return 'from-dt-primary via-dt-secondary to-dt-primary shadow-[0_0_12px_rgba(124,92,252,0.4)]';
+      return { label: 'In Progress', color: 'text-dt-primary', bg: 'bg-dt-mutedPurple border-dt-primary/20', dot: 'bg-dt-primary' };
     case 'planning':
-      return 'from-indigo-500 via-indigo-400 to-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.3)]';
+      return { label: 'Planning', color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-200', dot: 'bg-indigo-500' };
+    case 'on_hold':
+      return { label: 'On Hold', color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200', dot: 'bg-amber-500' };
     default:
-      return 'from-dt-textMuted/30 to-dt-textMuted/10';
+      return { label: status, color: 'text-dt-textSecondary', bg: 'bg-gray-50 border-gray-200', dot: 'bg-gray-400' };
+  }
+}
+
+function progressBarGradient(status: string): string {
+  switch (status) {
+    case 'completed':
+      return 'from-emerald-500 to-emerald-400';
+    case 'in_progress':
+      return 'from-dt-primary to-dt-secondary';
+    case 'planning':
+      return 'from-indigo-500 to-indigo-400';
+    default:
+      return 'from-gray-400 to-gray-300';
   }
 }
 
@@ -85,95 +109,93 @@ const CreateProjectModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-dt-bg/80 backdrop-blur-md" onClick={onClose}>
-      <div
-        className="bg-white/95 backdrop-blur-3xl border border-dt-primary/10 rounded-[32px] shadow-dt-floating w-full max-w-lg p-10 mx-4 animate-[dtFadeIn_400ms_cubic-bezier(0.22,1,0.36,1)]"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 10 }}
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        className="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-lg p-8 mx-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-[22px] font-black text-dt-text tracking-tighter leading-none">New Project</h2>
-            <p className="text-[10px] font-black text-dt-textSecondary/40 tracking-[0.15em] uppercase mt-2">Initialize workspace vector</p>
+            <h2 className="text-xl font-bold text-dt-text tracking-tight">New Project</h2>
+            <p className="text-sm text-dt-textSecondary mt-1">Set up a new project workspace</p>
           </div>
-          <button type="button" onClick={onClose} className="w-10 h-10 rounded-[14px] bg-dt-primary/5 hover:bg-dt-primary/10 border border-dt-primary/10 hover:border-dt-primary/20 cursor-pointer transition-all duration-300 group flex items-center justify-center">
-            <Icon name="x-mark" size={20} className="text-dt-primary/60 group-hover:text-dt-primary transition-colors" />
+          <button type="button" onClick={onClose} className="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 cursor-pointer transition-colors flex items-center justify-center">
+            <Icon name="x-mark" size={18} className="text-dt-textSecondary" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="group/field">
-            <label className="text-label mb-2 block">Project Identity</label>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="text-sm font-semibold text-dt-text mb-1.5 block">Project Name</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="dt-input w-full"
-              placeholder="System name..."
+              placeholder="My awesome project..."
               required
             />
           </div>
 
           <div>
-            <label className="text-label mb-2 block">Description Matrix</label>
+            <label className="text-sm font-semibold text-dt-text mb-1.5 block">Description</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               className="dt-input w-full resize-none"
               rows={3}
-              placeholder="Define project scope and architecture..."
+              placeholder="What is this project about?"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-label mb-2 block">Lifecycle</label>
+              <label className="text-sm font-semibold text-dt-text mb-1.5 block">Status</label>
               <div className="relative">
                 <select
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value as typeof form.status })}
-                  className="dt-input w-full appearance-none cursor-pointer pr-10"
+                  className="dt-input dt-select w-full cursor-pointer"
                 >
                   <option value="planning">Planning</option>
                   <option value="in_progress">In Progress</option>
                   <option value="completed">Completed</option>
                   <option value="on_hold">On Hold</option>
                 </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
-                  <Icon name="chevron-down" size={14} />
-                </div>
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-black tracking-widest uppercase text-dt-textSecondary/50 mb-2">Access Control</label>
+              <label className="text-sm font-semibold text-dt-text mb-1.5 block">Visibility</label>
               <div className="relative">
                 <select
                   value={form.visibility}
                   onChange={(e) => setForm({ ...form, visibility: e.target.value as typeof form.visibility })}
-                  className="w-full px-5 py-4 bg-dt-bg/40 border border-dt-primary/10 rounded-[16px] text-[14px] font-bold text-dt-text outline-none focus:border-dt-primary/30 focus:bg-white shadow-sm transition-all duration-500 appearance-none cursor-pointer"
+                  className="dt-input dt-select w-full cursor-pointer"
                 >
                   <option value="private">Private</option>
                   <option value="public">Public</option>
                 </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
-                  <Icon name="chevron-down" size={14} />
-                </div>
               </div>
             </div>
           </div>
 
           <div>
-            <label className="text-label mb-2 block">Tech Spectrum</label>
+            <label className="text-sm font-semibold text-dt-text mb-1.5 block">Tech Stack</label>
             <input
               type="text"
               value={form.techStack}
               onChange={(e) => setForm({ ...form, techStack: e.target.value })}
               className="dt-input w-full"
-              placeholder="React, TypeScript, GraphQL..."
+              placeholder="React, TypeScript, Node.js..."
             />
           </div>
 
           <div>
-            <label className="text-label mb-2 block">Repository Vector</label>
+            <label className="text-sm font-semibold text-dt-text mb-1.5 block">Repository URL</label>
             <input
               type="url"
               value={form.repoUrl}
@@ -183,29 +205,214 @@ const CreateProjectModal: React.FC<{
             />
           </div>
 
-          <div className="flex justify-end gap-4 pt-6">
+          <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="dt-btn dt-btn-ghost dt-btn-md px-6"
+              className="dt-btn dt-btn-ghost dt-btn-md px-5"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving || !form.name.trim()}
-              className="dt-btn dt-btn-primary dt-btn-md px-10 shadow-dt-floating"
+              className="dt-btn dt-btn-primary dt-btn-md px-8"
             >
-              {saving ? 'Processing…' : 'Initialize Project'}
+              {saving ? 'Creating…' : 'Create Project'}
             </button>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 };
 
-/* ─── Component ─── */
+/* ─── Project Card (Cleaned Up — Real Data Only) ─── */
+const ProjectCard: React.FC<{
+  project: ProjectCardVM;
+  index: number;
+  onDelete: (id: string) => void;
+  onOpen: (id: string) => void;
+  isDeleting: boolean;
+}> = React.memo(({ project: p, index, onDelete, onOpen, isDeleting }) => {
+  const progress = statusProgress(p);
+  const status = statusConfig(p.status);
+  const isActive = isActiveStatus(p.status);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.5, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
+      onClick={() => onOpen(p.id)}
+      className={[
+        'group/card bg-white border border-gray-200/80 rounded-2xl overflow-hidden cursor-pointer',
+        'hover:border-dt-primary/25 hover:shadow-[0_12px_40px_rgba(124,92,252,0.08)]',
+        'transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
+        isDeleting ? 'opacity-40 scale-[0.98] pointer-events-none' : '',
+      ].join(' ')}
+    >
+      {/* Progress bar accent at top */}
+      <div className="h-1 w-full bg-gray-100 relative">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 1, ease: 'circOut', delay: index * 0.1 + 0.3 }}
+          className={`h-full bg-gradient-to-r ${progressBarGradient(p.status)}`}
+        />
+      </div>
+
+      <div className="p-6">
+        {/* Header: Icon + Name + Status */}
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-11 h-11 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center shrink-0 relative overflow-hidden group-hover/card:border-dt-primary/20 transition-colors">
+              <img src={githubLogo} alt="" className="w-5.5 h-5.5 object-contain opacity-70 group-hover/card:opacity-100 transition-opacity" />
+              {isActive && (
+                <div className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border-[1.5px] border-white"></span>
+                </div>
+              )}
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-[17px] font-bold text-dt-text tracking-tight leading-snug truncate group-hover/card:text-dt-primary transition-colors duration-300">
+                {p.name}
+              </h3>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${status.bg} ${status.color}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`}></span>
+                  {status.label}
+                </span>
+                <span className="text-[11px] text-dt-textMuted font-medium">{p.updatedAgo}</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDelete(p.id); }}
+            className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center transition-all duration-200 opacity-0 group-hover/card:opacity-100 text-gray-400 hover:text-red-500 shrink-0"
+            title="Delete project"
+          >
+            <Icon name="trash" size={15} />
+          </button>
+        </div>
+
+        {/* Description */}
+        <p className="text-[13.5px] text-dt-textSecondary leading-relaxed line-clamp-2 mb-5">
+          {p.description || 'No description provided.'}
+        </p>
+
+        {/* Real Metrics Row */}
+        <div className="grid grid-cols-3 gap-3 mb-5">
+          {[
+            {
+              label: 'Progress',
+              value: `${progress}%`,
+              icon: 'activity' as IconName,
+              color: 'text-dt-primary',
+            },
+            {
+              label: 'Stars',
+              value: p.stars || '0',
+              icon: 'star' as IconName,
+              color: 'text-amber-500',
+            },
+            {
+              label: 'Issues',
+              value: p.openIssues || '0',
+              icon: 'exclamation-circle' as IconName,
+              color: 'text-rose-500',
+            },
+          ].map((metric) => (
+            <div
+              key={metric.label}
+              className="flex flex-col gap-1.5 p-3 rounded-xl bg-gray-50/80 border border-gray-100"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-semibold text-dt-textMuted uppercase tracking-wider">{metric.label}</span>
+                <Icon name={metric.icon} size={12} className={metric.color} />
+              </div>
+              <span className={`text-[15px] font-bold text-dt-text tracking-tight tabular-nums`}>{metric.value}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Progress bar */}
+        {p.milestonesProgress && (
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-semibold text-dt-textSecondary">Milestones</span>
+              <span className="text-[11px] font-bold text-dt-textSecondary tabular-nums">
+                {p.milestonesProgress.completed}/{p.milestonesProgress.total}
+              </span>
+            </div>
+            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${p.milestonesProgress.percent}%` }}
+                transition={{ duration: 1, ease: 'circOut' }}
+                className={`h-full rounded-full bg-gradient-to-r ${progressBarGradient(p.status)}`}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Tech stack tags */}
+        {p.techStack.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-5">
+            {p.techStack.slice(0, 5).map((tag) => (
+              <span
+                key={tag}
+                className="px-2.5 py-1 rounded-md bg-gray-50 border border-gray-150 text-[11px] font-semibold text-dt-textSecondary tracking-wide"
+              >
+                {tag}
+              </span>
+            ))}
+            {p.techStack.length > 5 && (
+              <span className="px-2.5 py-1 rounded-md bg-gray-50 border border-gray-150 text-[11px] font-semibold text-dt-textMuted">
+                +{p.techStack.length - 5}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Footer: Links */}
+        <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
+          {p.repoUrl && (
+            <button
+              onClick={() => window.open(p.repoUrl!, '_blank')}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-[12px] font-semibold text-dt-textSecondary hover:text-dt-text transition-all duration-200 group/link"
+            >
+              <Icon name="github" size={14} className="opacity-60 group-hover/link:opacity-100 transition-opacity" />
+              Source
+            </button>
+          )}
+          {p.liveUrl && (
+            <button
+              onClick={() => window.open(p.liveUrl!, '_blank')}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-dt-primary/5 hover:bg-dt-primary/10 border border-dt-primary/10 text-[12px] font-semibold text-dt-primary hover:text-dt-primary transition-all duration-200 group/link"
+            >
+              <Icon name="external-link" size={14} className="opacity-70 group-hover/link:opacity-100 transition-opacity" />
+              Live
+            </button>
+          )}
+          <div className="flex-1" />
+          {p.lastCommit && (
+            <span className="text-[11px] text-dt-textMuted font-medium flex items-center gap-1.5">
+              <Icon name="clock" size={12} className="opacity-50" />
+              {p.lastCommit}
+            </span>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+});
+
+/* ─── Main Page Component ─── */
 const ProjectsPage: React.FC = () => {
   const {
     data,
@@ -216,25 +423,88 @@ const ProjectsPage: React.FC = () => {
     deleteProject,
   } = useProjectsData();
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filter, setFilter] = React.useState<ProjectFilter>('All');
   const [mounted, setMounted] = React.useState(false);
   const [showCreate, setShowCreate] = React.useState(false);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = React.useState<string | null>(null);
+  const [viewMode, setViewMode] = React.useState<ViewMode>('grid');
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [techFilter, setTechFilter] = React.useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  const [projectToDelete, setProjectToDelete] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setMounted(true);
-  }, []);
+    const p = searchParams.get('project');
+    if (p) {
+      setSelectedProjectId(p);
+    }
+  }, [searchParams]);
+
+  // Keyboard shortcuts: N → new project, G → grid, L → list
+  React.useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (showCreate || selectedProjectId) return;
+
+      if (e.key === 'n' || e.key === 'N') { e.preventDefault(); setShowCreate(true); }
+      if (e.key === 'g' || e.key === 'G') { e.preventDefault(); setViewMode('grid'); }
+      if (e.key === 'l' || e.key === 'L') { e.preventDefault(); setViewMode('list'); }
+      if (e.key === 'b' || e.key === 'B') { e.preventDefault(); setViewMode('board'); }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [showCreate, selectedProjectId]);
 
   const projects = React.useMemo(() => data?.projects ?? [], [data]);
 
   const filteredProjects = React.useMemo(() => {
-    if (filter === 'All') return projects;
-    if (filter === 'Completed') return projects.filter((p) => p.status === 'completed');
-    return projects.filter((p) => isActiveStatus(p.status));
-  }, [filter, projects]);
+    let result = projects;
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this project architecture from the node?')) return;
+    // Status filter
+    if (filter === 'Completed') result = result.filter((p) => p.status === 'completed');
+    else if (filter === 'Active') result = result.filter((p) => isActiveStatus(p.status));
+
+    // Tech stack filter
+    if (techFilter) {
+      result = result.filter((p) => p.techStack.some(t => t.toLowerCase() === techFilter.toLowerCase()));
+    }
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.description || '').toLowerCase().includes(q) ||
+        p.techStack.some(t => t.toLowerCase().includes(q))
+      );
+    }
+
+    return result;
+  }, [filter, projects, searchQuery, techFilter]);
+
+  // Unique tech stack tags across all projects
+  const allTechTags = React.useMemo(() => {
+    const tags = new Set<string>();
+    for (const p of projects) {
+      for (const t of p.techStack) tags.add(t);
+    }
+    return Array.from(tags).sort();
+  }, [projects]);
+
+  const handleDelete = (id: string) => {
+    setProjectToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!projectToDelete) return;
+    const id = projectToDelete;
+    setDeleteConfirmOpen(false);
+    setProjectToDelete(null);
     setDeletingId(id);
     try {
       await deleteProject(id);
@@ -245,15 +515,9 @@ const ProjectsPage: React.FC = () => {
     }
   };
 
-  /* ─── Scroll-Linked Atmosphere ─── */
-  const { scrollYProgress } = useScroll();
-  const orb1Y = useTransform(scrollYProgress, [0, 1], [0, -200]);
-  const orb2Y = useTransform(scrollYProgress, [0, 1], [0, 150]);
-  const orb3Y = useTransform(scrollYProgress, [0, 1], [0, -100]);
-
-  /* ─── Filter Toggle Group ─── */
-  const filterGroup = (
-    <div className="flex items-center gap-1.5 bg-white/60 backdrop-blur-3xl border border-dt-primary/10 rounded-[20px] p-1.5 shadow-[0_8px_30px_rgba(124,92,252,0.06)] relative group/filters">
+  /* ─── Filter Tabs ─── */
+  const filterTabs = (
+    <div className="flex items-center gap-1 bg-gray-100/80 rounded-xl p-1">
       {FILTERS.map((key) => {
         const isSelected = filter === key;
         return (
@@ -262,18 +526,13 @@ const ProjectsPage: React.FC = () => {
             type="button"
             onClick={() => setFilter(key)}
             className={[
-              'relative px-6 py-3 text-[11px] font-black tracking-[0.2em] uppercase rounded-[16px] cursor-pointer transition-colors duration-300 z-10',
-              isSelected ? 'text-white' : 'text-dt-textSecondary/50 hover:text-dt-text',
+              'relative px-4 py-2 text-[12px] font-semibold rounded-lg cursor-pointer transition-all duration-200',
+              isSelected
+                ? 'bg-white text-dt-text shadow-sm'
+                : 'text-dt-textSecondary hover:text-dt-text',
             ].join(' ')}
           >
-            {isSelected && (
-              <motion.div
-                layoutId="activeFilterPill"
-                className="absolute inset-0 bg-dt-text rounded-[16px] shadow-dt-floating border border-white/10"
-                transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-              />
-            )}
-            <span className="relative z-10">{key}</span>
+            {key}
           </button>
         );
       })}
@@ -282,18 +541,53 @@ const ProjectsPage: React.FC = () => {
 
   /* ─── Header Actions ─── */
   const headerActions = (
-    <div className="flex flex-col sm:flex-row items-center gap-6">
-      {filterGroup}
+    <div className="flex items-center gap-3">
+      {filterTabs}
+
+      {/* View Toggle */}
+      <div className="flex items-center gap-0.5 bg-gray-100/80 rounded-lg p-0.5">
+        <button
+          type="button"
+          onClick={() => setViewMode('grid')}
+          className={[
+            'p-1.5 rounded-md transition-all duration-200',
+            viewMode === 'grid' ? 'bg-white shadow-sm text-dt-text' : 'text-dt-textMuted hover:text-dt-text',
+          ].join(' ')}
+          title="Grid view (G)"
+        >
+          <Icon name="squares-2x2" size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('board')}
+          className={[
+            'p-1.5 rounded-md transition-all duration-200',
+            viewMode === 'board' ? 'bg-white shadow-sm text-dt-text' : 'text-dt-textMuted hover:text-dt-text',
+          ].join(' ')}
+          title="Board view (B)"
+        >
+          <Icon name="view-columns" size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('list')}
+          className={[
+            'p-1.5 rounded-md transition-all duration-200',
+            viewMode === 'list' ? 'bg-white shadow-sm text-dt-text' : 'text-dt-textMuted hover:text-dt-text',
+          ].join(' ')}
+          title="List view (L)"
+        >
+          <Icon name="bars-3" size={15} />
+        </button>
+      </div>
+
       <button
         type="button"
         onClick={() => setShowCreate(true)}
-        className="dt-btn dt-btn-primary dt-btn-lg px-8 shadow-dt-floating"
+        className="dt-btn dt-btn-primary dt-btn-md px-5 gap-2"
       >
-        <div className="relative flex h-2 w-2 z-10">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <Icon name="plus" size={14} className="relative text-white" />
-        </div>
-        <span className="relative z-10">Initialize Node</span>
+        <Icon name="plus" size={14} className="text-white" />
+        New Project
       </button>
     </div>
   );
@@ -301,15 +595,25 @@ const ProjectsPage: React.FC = () => {
   /* ─── Loading Skeleton ─── */
   if (status === 'loading' && !data) {
     return (
-      <PageShell title="My Projects" subtitle="Managing development architecture vectors" status="loading" error={null}>
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="dt-card p-10 animate-pulse rounded-[32px]">
-              <div className="h-4 bg-dt-primary/10 rounded w-16 mb-8" />
-              <div className="h-8 bg-dt-primary/10 rounded w-3/4 mb-4" />
-              <div className="h-4 bg-dt-primary/5 rounded w-full mb-8" />
-              <div className="h-2 bg-dt-primary/5 rounded-full w-full mb-6" />
-              <div className="h-4 bg-dt-primary/5 rounded w-1/3" />
+      <PageShell title="Projects" subtitle="Manage your development workspaces" status="loading" error={null}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-white border border-gray-200 rounded-2xl p-6 animate-pulse">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-11 h-11 rounded-xl bg-gray-100" />
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-100 rounded w-2/3 mb-2" />
+                  <div className="h-3 bg-gray-100 rounded w-1/3" />
+                </div>
+              </div>
+              <div className="h-3 bg-gray-50 rounded w-full mb-2" />
+              <div className="h-3 bg-gray-50 rounded w-4/5 mb-5" />
+              <div className="grid grid-cols-3 gap-3 mb-5">
+                {[1, 2, 3].map((j) => (
+                  <div key={j} className="h-16 bg-gray-50 rounded-xl" />
+                ))}
+              </div>
+              <div className="h-1 bg-gray-50 rounded-full" />
             </div>
           ))}
         </div>
@@ -318,306 +622,136 @@ const ProjectsPage: React.FC = () => {
   }
 
   return (
-    <div className={['transition-all duration-1000 cubic-bezier(0.22, 1, 0.36, 1)', mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'].join(' ')}>
+    <div className={['transition-all duration-700', mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'].join(' ')}>
       <PageShell
-        title="Engineering Project Control Center"
-        subtitle="AI-assisted workspace architecture"
+        title="Projects"
+        subtitle="Manage your development workspaces"
         status={status === 'loading' ? 'success' : status}
         error={error}
         actions={headerActions}
         onRetry={refresh}
       >
-        {/* Elite Atmospheric System — Ultra-Subtle Mesh Gradients */}
-        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          {/* Subtle Lavender Diffusion */}
-          <motion.div style={{ y: orb1Y }} className="absolute top-[-5%] left-[10%] w-[900px] h-[900px] bg-dt-lavender/5 rounded-full blur-[160px] opacity-40 animate-pulse" />
-          <motion.div style={{ y: orb2Y }} className="absolute bottom-[-5%] right-[5%] w-[800px] h-[800px] bg-dt-primary/3 rounded-full blur-[140px] opacity-30 animate-pulse" />
+        <div className="relative z-10 mx-auto w-full max-w-[1400px]">
+          {/* Stats & Search bar */}
+          {projects.length > 0 && (
+            <div className="flex items-center justify-between gap-6 mb-6">
+              <div className="flex items-center gap-6 text-[13px]">
+                <span className="text-dt-textSecondary font-medium">
+                  <span className="font-bold text-dt-text tabular-nums">{filteredProjects.length}</span>{filteredProjects.length !== projects.length ? ` of ${projects.length}` : ''} projects
+                </span>
+                <span className="w-1 h-1 rounded-full bg-gray-300" />
+                <span className="text-dt-textSecondary font-medium">
+                  <span className="font-bold text-emerald-600 tabular-nums">{projects.filter(p => isActiveStatus(p.status)).length}</span> active
+                </span>
+              </div>
 
-          {/* Depth-Based Lighting */}
-          <motion.div style={{ y: orb3Y }} className="absolute top-[30%] right-[15%] w-[500px] h-[500px] bg-indigo-500/2 rounded-full blur-[110px] opacity-15" />
-          <div className="absolute bottom-[15%] left-[20%] w-[400px] h-[400px] bg-dt-secondary/2 rounded-full blur-[100px] opacity-10" />
+              {/* Search */}
+              <div className="relative">
+                <Icon name="magnifying-glass" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-dt-textMuted" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search projects..."
+                  className="w-[220px] pl-8 pr-3 py-2 text-[12px] font-medium text-dt-text bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-dt-primary/40 focus:bg-white transition-all placeholder:text-dt-textMuted"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-dt-textMuted hover:text-dt-text"
+                  >
+                    <Icon name="x-mark" size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
-          {/* Cinema Softness Layer */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(124,92,252,0.01)_100%)]" />
-        </div>
-
-        {/* ─── Content ─── */}
-        <div className="relative z-10 mx-auto w-full max-w-[1300px]">
+          {/* Tech stack filter pills */}
+          {allTechTags.length > 0 && projects.length > 0 && (
+            <div className="flex items-center gap-1.5 mb-6 flex-wrap">
+              <span className="text-[10px] font-bold text-dt-textMuted uppercase tracking-wider mr-1">Stack:</span>
+              {techFilter && (
+                <button
+                  onClick={() => setTechFilter(null)}
+                  className="px-2 py-0.5 rounded-md text-[10px] font-semibold text-dt-primary bg-dt-primary/5 border border-dt-primary/10 hover:bg-dt-primary/10 transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+              {allTechTags.map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => setTechFilter(techFilter === tag ? null : tag)}
+                  className={[
+                    'px-2 py-0.5 rounded-md text-[10px] font-semibold border transition-all',
+                    techFilter === tag
+                      ? 'text-dt-primary bg-dt-primary/10 border-dt-primary/20'
+                      : 'text-dt-textSecondary bg-gray-50 border-gray-200 hover:border-gray-300',
+                  ].join(' ')}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Empty State */}
           {filteredProjects.length === 0 ? (
             <EmptyState
-              title={projects.length === 0 ? 'Project Log Empty' : 'No Vectors Found'}
-              description={projects.length === 0 ? 'Initialize your first project architecture to start tracking development intelligence.' : 'Refine search filters to locate specific project nodes.'}
+              title={projects.length === 0 ? 'No projects yet' : 'No matching projects'}
+              description={projects.length === 0 ? 'Create your first project to start tracking your development work.' : 'Try adjusting your filters to find what you\'re looking for.'}
               icon="folder"
               action={
                 projects.length === 0 && (
                   <button
                     type="button"
                     onClick={() => setShowCreate(true)}
-                    className="inline-flex items-center gap-3 rounded-[18px] px-8 py-4 text-[11px] font-black tracking-[0.25em] uppercase bg-dt-text text-white shadow-dt-floating hover:bg-dt-primary hover:shadow-dt-card-hover hover:-translate-y-1 transition-all duration-700 cubic-bezier(0.22, 1, 0.36, 1)"
+                    className="dt-btn dt-btn-primary dt-btn-md px-6 gap-2 mt-4"
                   >
                     <Icon name="plus" size={16} className="text-white" />
-                    Initialize Node
+                    Create Project
                   </button>
                 )
               }
             />
+          ) : viewMode === 'grid' ? (
+            /* ─── Project Grid ─── */
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5 pb-16">
+              {filteredProjects.map((p, index) => (
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  index={index}
+                  onDelete={handleDelete}
+                  onOpen={setSelectedProjectId}
+                  isDeleting={deletingId === p.id}
+                />
+              ))}
+            </div>
+          ) : viewMode === 'board' ? (
+            /* ─── Project Board (Kanban) ─── */
+            <React.Suspense fallback={
+              <div className="h-[400px] flex items-center justify-center bg-white border border-gray-200/80 rounded-2xl animate-pulse">
+                <span className="text-xs font-semibold text-dt-textMuted tracking-wider uppercase">Loading Board View…</span>
+              </div>
+            }>
+              <ProjectBoardView
+                projects={filteredProjects}
+                onOpen={setSelectedProjectId}
+                onDelete={handleDelete}
+                deletingId={deletingId}
+              />
+            </React.Suspense>
           ) : (
-            /* ─── Project Intelligence Grid: Orchestrated Hierarchy ─── */
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-24">
-              {filteredProjects.map((p, index) => {
-                const progress = statusProgress(p);
-                const isActive = isActiveStatus(p.status);
-
-                return (
-                  <motion.div
-                    key={p.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: '-50px' }}
-                    transition={{ duration: 0.8, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                    className={[
-                      'group/project-card',
-                      'bg-white/40 backdrop-blur-3xl border border-white/40 rounded-[32px] p-0 shadow-[0_20px_50px_rgba(0,0,0,0.05)] relative overflow-hidden',
-                      'hover:shadow-[0_40px_100px_rgba(124,92,252,0.12)] hover:-translate-y-2 hover:bg-white/60',
-                      'transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1)',
-                      deletingId === p.id ? 'opacity-40 grayscale pointer-events-none' : '',
-                    ].join(' ')}
-                  >
-                    {/* ── Background Intelligence Layer ── */}
-                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none z-0" 
-                         style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #7C5CFC 1px, transparent 0)', backgroundSize: '24px 24px' }} />
-                    <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-dt-primary/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none z-0" />
-                    
-                    <div className="flex flex-col h-full relative z-10">
-                      {/* ── Top Bar: Identity & Real-time Status ── */}
-                      <div className="flex items-start justify-between p-8 pb-6">
-                        <div className="flex items-center gap-6">
-                          {/* Glowing Icon Container */}
-                          <div className="relative group/icon">
-                            <div className="absolute -inset-2 bg-gradient-to-tr from-dt-primary to-dt-secondary rounded-[22px] blur-xl opacity-0 group-hover/project-card:opacity-20 transition-opacity duration-700" />
-                            <div className="w-16 h-16 rounded-[20px] bg-white border border-dt-primary/10 shadow-[0_8px_30px_rgba(0,0,0,0.04)] flex items-center justify-center shrink-0 group-hover/project-card:scale-105 group-hover/project-card:border-dt-primary/30 transition-all duration-700 overflow-hidden relative">
-                              <div className="absolute inset-0 bg-gradient-to-tr from-dt-primary/10 to-transparent opacity-0 group-hover/project-card:opacity-100 transition-opacity" />
-                              <img src={githubLogo} alt="" className="w-8 h-8 object-contain opacity-80 group-hover/project-card:opacity-100 transition-opacity relative z-10" />
-                            </div>
-                            {isActive && (
-                              <div className="absolute -bottom-1 -right-1 flex h-4 w-4">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-white"></span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-3 mb-1.5">
-                              <h3 className="text-[24px] font-black text-dt-text tracking-tighter leading-none group-hover/project-card:text-dt-primary transition-colors duration-500">
-                                {p.name}
-                              </h3>
-                              <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-dt-text text-white text-[9px] font-black uppercase tracking-widest border border-white/10 shadow-sm">
-                                <span className="w-1 h-1 rounded-full bg-emerald-400"></span>
-                                v2.4.0
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-dt-primary/5 border border-dt-primary/10">
-                                <span className="text-[9px] font-black text-dt-primary uppercase tracking-widest">Active Node</span>
-                              </div>
-                              <span className="text-dt-textSecondary/30 font-bold">•</span>
-                              <p className="text-[11px] font-bold text-dt-textSecondary/50 uppercase tracking-[0.2em]">Infrastructure Vector</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                           <div className="flex flex-col items-end gap-1.5 mr-2">
-                             <span className="text-[9px] font-black text-dt-textSecondary/40 uppercase tracking-widest">System Load</span>
-                             <div className="flex gap-0.5">
-                               {[1, 2, 3, 4, 5].map(i => (
-                                 <div key={i} className={`w-3 h-1 rounded-full ${i <= 3 ? 'bg-emerald-400' : 'bg-dt-textSecondary/10'}`} />
-                               ))}
-                             </div>
-                           </div>
-                           <button
-                             type="button"
-                             onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}
-                             className="w-11 h-11 rounded-[16px] bg-white/50 hover:bg-red-50 hover:text-red-600 border border-dt-primary/10 hover:border-red-200 shadow-sm flex items-center justify-center transition-all duration-300 opacity-0 group-hover/project-card:opacity-100 -translate-y-2 group-hover/project-card:translate-y-0"
-                           >
-                             <Icon name="trash" size={18} />
-                           </button>
-                        </div>
-                      </div>
-
-                      {/* ── Middle Area: Rich Summary & Engineering Blocks ── */}
-                      <div className="flex flex-col lg:flex-row flex-1">
-                        <div className="flex-1 p-8 pt-2 flex flex-col gap-8 border-r border-dt-primary/5">
-                          <p className="text-[16px] text-dt-textSecondary/70 font-medium leading-relaxed line-clamp-3">
-                            {p.description || 'Neural link established. System node operational with default architecture matrices. Analyzing cluster performance and deployment vector...'}
-                          </p>
-
-                          {/* Engineering Telemetry Blocks */}
-                          <div className="grid grid-cols-3 gap-4">
-                            {[
-                              { label: 'Health', value: '100%', color: 'text-emerald-500', icon: 'zap' },
-                              { label: 'Latency', value: '42ms', color: 'text-dt-primary', icon: 'activity' },
-                              { label: 'Uptime', value: '99.9%', color: 'text-dt-secondary', icon: 'clock' },
-                            ].map((block) => (
-                              <div key={block.label} className="bg-dt-bg/40 border border-dt-primary/5 rounded-[20px] p-4 flex flex-col gap-2 group/block hover:border-dt-primary/20 transition-colors">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[9px] font-black text-dt-textSecondary/40 uppercase tracking-widest">{block.label}</span>
-                                  <Icon name={block.icon as IconName} size={12} className={block.color} />
-                                </div>
-                                <span className={`text-[16px] font-black text-dt-text tracking-tighter ${block.color}`}>{block.value}</span>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Tech Spectrum: Interactive Capsules */}
-                          <div className="mt-2">
-                            <div className="flex items-center justify-between mb-4">
-                              <span className="text-[10px] font-black text-dt-textSecondary/40 uppercase tracking-[0.3em]">Neural Stack</span>
-                              <div className="h-px flex-1 mx-4 bg-gradient-to-r from-dt-primary/10 to-transparent" />
-                            </div>
-                            <div className="flex flex-wrap gap-2.5">
-                              {p.techStack.length > 0 ? (
-                                p.techStack.slice(0, 5).map((tag) => (
-                                  <motion.div
-                                    key={tag}
-                                    whileHover={{ y: -3, scale: 1.05 }}
-                                    className="px-4 py-2 rounded-[14px] bg-white border border-dt-primary/10 flex items-center gap-2 group/tag cursor-pointer hover:border-dt-primary/40 hover:shadow-lg transition-all duration-500 shadow-sm"
-                                  >
-                                    <div className="w-1.5 h-1.5 rounded-full bg-dt-primary group-hover/tag:animate-pulse" />
-                                    <span className="text-[11px] font-black text-dt-textSecondary tracking-wide uppercase">{tag}</span>
-                                  </motion.div>
-                                ))
-                              ) : (
-                                <div className="px-4 py-2 rounded-[14px] border border-dashed border-dt-textSecondary/20 text-[11px] font-bold text-dt-textSecondary/30 uppercase tracking-widest">Stack Undefined</div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* ── Live Node Telemetry System ── */}
-                        <div className="lg:w-[280px] bg-gradient-to-b from-dt-primary/[0.02] to-transparent p-8 flex flex-col gap-8 relative overflow-hidden group/telemetry">
-                           {/* Tiny Activity Graph Overlay */}
-                           <div className="absolute top-0 right-0 w-full h-32 opacity-10 pointer-events-none">
-                             <svg viewBox="0 0 200 60" className="w-full h-full">
-                               <path d="M0 40 Q 25 35, 50 45 T 100 35 T 150 45 T 200 30" fill="none" stroke="#7C5CFC" strokeWidth="1" />
-                             </svg>
-                           </div>
-
-                           <div className="flex flex-col gap-4 relative z-10">
-                             <div className="flex items-center justify-between">
-                               <div className="flex flex-col gap-1">
-                                 <span className="text-[10px] font-black text-dt-primary uppercase tracking-widest">Node Sync</span>
-                                 <div className="flex items-center gap-1.5">
-                                   <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                                   <span className="text-[12px] font-black text-dt-text uppercase tracking-widest">Online</span>
-                                 </div>
-                               </div>
-                               <div className="text-right">
-                                 <span className="text-[24px] font-black text-dt-text tabular-nums tracking-tighter leading-none">{progress}%</span>
-                               </div>
-                             </div>
-
-                             {/* Advanced Sync Bar */}
-                             <div className="h-[10px] w-full bg-white border border-dt-primary/10 rounded-full overflow-hidden relative shadow-inner">
-                               <motion.div
-                                 initial={{ width: 0 }}
-                                 animate={{ width: `${progress}%` }}
-                                 transition={{ duration: 1.5, ease: "circOut" }}
-                                 className={[
-                                   'h-full rounded-full relative',
-                                   progressBarColor(p.status),
-                                 ].join(' ')}
-                               >
-                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
-                               </motion.div>
-                             </div>
-                           </div>
-
-                           {/* Secondary Metrics Grid */}
-                           <div className="flex flex-col gap-4 relative z-10">
-                              <div className="p-4 rounded-[20px] bg-white/50 border border-dt-primary/5 flex items-center justify-between hover:border-dt-primary/20 transition-all">
-                                <div className="flex flex-col">
-                                  <span className="text-[9px] font-black text-dt-textSecondary/40 uppercase tracking-widest">Throughput</span>
-                                  <span className="text-[13px] font-black text-dt-text tracking-tight uppercase">1.2 GB/s</span>
-                                </div>
-                                <div className="w-10 h-1 rounded-full bg-emerald-400/20 relative overflow-hidden">
-                                  <div className="absolute inset-0 bg-emerald-400 animate-[shimmer_1.5s_infinite]" />
-                                </div>
-                              </div>
-
-                              {/* Mini Analytics: System Pulse */}
-                              <div className="p-4 rounded-[20px] bg-dt-text text-white flex items-center justify-between shadow-lg">
-                                <div className="flex flex-col">
-                                  <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Active Pulse</span>
-                                  <span className="text-[13px] font-black text-white tracking-tight uppercase">High Frequency</span>
-                                </div>
-                                <Icon name="bolt" size={16} className="text-amber-400" />
-                              </div>
-                           </div>
-
-                           <motion.button
-                             whileHover={{ scale: 1.02, y: -2 }}
-                             whileTap={{ scale: 0.98 }}
-                             className="mt-auto w-full py-4 rounded-[18px] bg-dt-primary text-white text-[11px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-3 shadow-[0_15px_40px_rgba(124,92,252,0.2)] hover:shadow-[0_20px_50px_rgba(124,92,252,0.3)] transition-all duration-500"
-                           >
-                             Access Core
-                             <Icon name="arrow-right" size={14} className="group-hover/telemetry:translate-x-1 transition-transform" />
-                           </motion.button>
-                        </div>
-                      </div>
-
-                      {/* ── Redesigned Footer: Premium Identity ── */}
-                      <div className="px-8 py-6 border-t border-dt-primary/5 bg-dt-bg/20 flex items-center justify-between">
-                        <div className="flex items-center gap-10">
-                          <div className="flex items-center gap-3 group/stat cursor-pointer">
-                            <div className="w-9 h-9 rounded-[12px] bg-amber-500/5 flex items-center justify-center border border-amber-500/10 group-hover/stat:bg-amber-500 group-hover/stat:text-white transition-all duration-300">
-                              <Icon name="star" size={14} className="text-amber-500 group-hover/stat:text-white transition-colors" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[15px] font-black text-dt-text leading-none">{p.stars}</span>
-                              <span className="text-[9px] font-black text-dt-textSecondary/40 uppercase tracking-widest mt-1">Stars</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-3 group/stat cursor-pointer">
-                            <div className="w-9 h-9 rounded-[12px] bg-dt-primary/5 flex items-center justify-center border border-dt-primary/10 group-hover/stat:bg-dt-primary group-hover/stat:text-white transition-all duration-300">
-                              <Icon name="clock" size={14} className="text-dt-primary group-hover/stat:text-white transition-colors" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[14px] font-bold text-dt-textSecondary/80 leading-none">{p.updatedAgo}</span>
-                              <span className="text-[9px] font-black text-dt-textSecondary/40 uppercase tracking-widest mt-1">Telemetry</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          {p.repoUrl && (
-                            <button
-                              onClick={() => window.open(p.repoUrl!, '_blank')}
-                              className="px-5 py-2.5 rounded-[14px] bg-white border border-dt-primary/10 flex items-center gap-3 hover:border-dt-text hover:shadow-lg transition-all duration-300 group/gh"
-                            >
-                              <Icon name="github" size={18} className="text-dt-textSecondary/50 group-hover/gh:text-dt-text transition-colors" />
-                              <span className="text-[11px] font-black text-dt-textSecondary group-hover/gh:text-dt-text tracking-widest uppercase">Source</span>
-                            </button>
-                          )}
-                          {p.liveUrl && (
-                            <button
-                              onClick={() => window.open(p.liveUrl!, '_blank')}
-                              className="px-5 py-2.5 rounded-[14px] bg-dt-text border border-white/5 flex items-center gap-3 hover:bg-dt-primary hover:shadow-[0_10px_30px_rgba(124,92,252,0.3)] transition-all duration-300 group/live"
-                            >
-                              <Icon name="external-link" size={16} className="text-white/60 group-hover/live:text-white transition-colors" />
-                              <span className="text-[11px] font-black text-white tracking-widest uppercase">Terminal</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+            /* ─── Project List ─── */
+            <div className="pb-16">
+              <ProjectListView
+                projects={filteredProjects}
+                onOpen={setSelectedProjectId}
+                onDelete={handleDelete}
+                deletingId={deletingId}
+              />
             </div>
           )}
         </div>
@@ -628,6 +762,30 @@ const ProjectsPage: React.FC = () => {
         open={showCreate}
         onClose={() => setShowCreate(false)}
         onCreate={createProject}
+      />
+
+      {/* ─── Project Detail Drawer ─── */}
+      <ProjectDetailDrawer
+        projectId={selectedProjectId}
+        onClose={() => {
+          setSelectedProjectId(null);
+          setSearchParams(new URLSearchParams());
+        }}
+      />
+
+      {/* ─── Delete Confirmation Modal ─── */}
+      <ConfirmationModal
+        isOpen={deleteConfirmOpen}
+        title="Delete Project"
+        message="Are you sure you want to permanently delete this project? All associated tasks, activity logs, and settings will be permanently lost."
+        confirmLabel="Delete Project"
+        cancelLabel="Keep Project"
+        type="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setDeleteConfirmOpen(false);
+          setProjectToDelete(null);
+        }}
       />
     </div>
   );

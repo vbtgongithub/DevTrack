@@ -36,6 +36,7 @@ export type SseEventType =
   | 'goal_completed'
   | 'challenge_completed'
   | 'near_milestone'
+  | 'mission_progress'
   // Sync
   | 'sync_started'
   | 'sync_completed'
@@ -73,6 +74,7 @@ export interface SseEvent {
     failedCount?: number;
     error?: string;
   };
+  payload?: any;
 }
 
 export type ConnectionStatus =
@@ -201,8 +203,12 @@ let globalReconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 let globalHeartbeatTimer: ReturnType<typeof setInterval> | null = null;
 let globalLastMessage = 0;
 let globalConsecutiveFailures = 0;
+let globalDisconnectedAt: number | null = null;
 
-function connectGlobalSse(setSseStatus: (status: 'connected' | 'reconnecting' | 'disconnected') => void, setInfrastructureDegraded: (degraded: boolean) => void) {
+// Stale state recovery threshold (30 seconds)
+const STALE_STATE_THRESHOLD_MS = 30_000;
+
+async function connectGlobalSse(setSseStatus: (status: 'connected' | 'reconnecting' | 'disconnected') => void, setInfrastructureDegraded: (degraded: boolean) => void) {
   if (globalEventSource !== null) return;
 
   const token = localStorage.getItem('devtrack_access_token');
@@ -217,8 +223,24 @@ function connectGlobalSse(setSseStatus: (status: 'connected' | 'reconnecting' | 
   emitChange();
   setSseStatus('reconnecting');
 
-  // Build URL with Last-Event-ID for reconnection
-  const urlParams = new URLSearchParams({ token });
+  // Securely request a short-lived SSE handshake ticket via HTTP API
+  let ticket: string | null = null;
+  try {
+    const { default: axiosClient } = await import('../utils/axiosClient');
+    const { data } = await axiosClient.post<{ data: { ticket: string } }>('/auth/sse-handshake');
+    ticket = data.data.ticket;
+  } catch (err) {
+    console.warn('[SSE] Failed to obtain secure SSE handshake ticket. Falling back to JWT token.', err);
+  }
+
+  // Build URL with ticket or fallback to token for resiliency
+  const urlParams = new URLSearchParams();
+  if (ticket) {
+    urlParams.set('ticket', ticket);
+  } else {
+    urlParams.set('token', token);
+  }
+  
   if (store.lastEventId) {
     urlParams.set('lastEventId', store.lastEventId);
   }
@@ -230,12 +252,29 @@ function connectGlobalSse(setSseStatus: (status: 'connected' | 'reconnecting' | 
 
   es.onopen = () => {
     globalConsecutiveFailures = 0;
-    store.connectedAt = Date.now();
+    const now = Date.now();
+    store.connectedAt = now;
     store.totalReconnects = store.reconnectAttempt > 0 ? store.totalReconnects + 1 : store.totalReconnects;
     store.consecutiveFailures = 0;
     store.connectionStatus = 'connected';
     emitChange();
     setSseStatus('connected');
+
+    // Stale state recovery: if disconnected for >30s, force-invalidate all queries
+    if (globalDisconnectedAt !== null) {
+      const disconnectDuration = now - globalDisconnectedAt;
+      if (disconnectDuration > STALE_STATE_THRESHOLD_MS) {
+        console.info('[SSE] Reconnected after long disconnect, invalidating all queries', {
+          disconnectDuration: Math.round(disconnectDuration / 1000) + 's',
+        });
+        
+        // Force-invalidate all queries to ensure fresh state
+        for (const cb of activeCallbacks) {
+          cb.queryClient.invalidateQueries();
+        }
+      }
+      globalDisconnectedAt = null;
+    }
 
     if (globalHeartbeatTimer) clearInterval(globalHeartbeatTimer);
     globalHeartbeatTimer = setInterval(() => {
@@ -262,6 +301,7 @@ function connectGlobalSse(setSseStatus: (status: 'connected' | 'reconnecting' | 
           timestamp: parsed.timestamp,
           userId: parsed.userId,
           stats: parsed.payload as SseEvent['stats'],
+          payload: parsed.payload,
         };
         store.lastEventId = parsed.id;
       } else {
@@ -305,6 +345,11 @@ function connectGlobalSse(setSseStatus: (status: 'connected' | 'reconnecting' | 
     globalConsecutiveFailures += 1;
     store.consecutiveFailures = globalConsecutiveFailures;
 
+    // Track when we disconnected for stale state recovery
+    if (globalDisconnectedAt === null) {
+      globalDisconnectedAt = Date.now();
+    }
+
     if (globalConsecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
       console.error('[SSE] Max consecutive failures reached, stopping');
       store.connectionStatus = 'disconnected';
@@ -345,6 +390,7 @@ function disconnectGlobalSse(setSseStatus: (status: 'connected' | 'reconnecting'
   store.lastEvent = null;
   store.eventHistory = [];
   store.lastEventId = null;
+  globalDisconnectedAt = null;
   emitChange();
   setSseStatus('disconnected');
 }

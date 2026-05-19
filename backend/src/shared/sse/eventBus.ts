@@ -2,8 +2,140 @@
 // Local events for same-instance, Redis pub/sub for cross-instance event distribution.
 
 import { EventEmitter } from 'events';
+import { z } from 'zod';
 import { logger } from '../logger.js';
 import { getRedisClient } from '../redis/client.js';
+
+// ─── Zod validation schemas for SSE event payloads ─────────────────────────
+const syncStartedPayload = z.object({
+  platform: z.string(),
+  syncId: z.string(),
+  startedAt: z.string(),
+});
+
+const syncCompletedPayload = z.object({
+  platform: z.string(),
+  syncId: z.string(),
+  duration: z.number(),
+  stats: z.object({
+    ingested: z.number(),
+    updated: z.number(),
+    skipped: z.number(),
+  }),
+  completedAt: z.string(),
+});
+
+const syncFailedPayload = z.object({
+  platform: z.string(),
+  syncId: z.string(),
+  error: z.string(),
+  retryable: z.boolean(),
+  failedAt: z.string(),
+});
+
+const missionProgressPayload = z.object({
+  missionId: z.string(),
+  title: z.string(),
+  currentCount: z.number(),
+  targetCount: z.number(),
+  completed: z.boolean(),
+  progressPercent: z.number(),
+});
+
+const levelUpPayload = z.object({
+  newLevel: z.number(),
+  totalXp: z.number(),
+  levelName: z.string(),
+  levelTitle: z.string(),
+});
+
+const streakMilestonePayload = z.object({
+  days: z.number(),
+  xpBonus: z.number(),
+  milestone: z.string(),
+});
+
+const achievementUnlockedPayload = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  icon: z.string(),
+  rarity: z.enum(['common', 'rare', 'epic', 'legendary']),
+  xpReward: z.number(),
+  unlockedAt: z.string(),
+});
+
+const behavioralMessagePayload = z.object({
+  messageId: z.string(),
+  tone: z.enum(['encouraging', 'calm', 'celebratory', 'gentle-nudge', 'supportive', 'silent']),
+  text: z.string(),
+  action: z.object({ label: z.string(), route: z.string() }).optional(),
+  expiresAt: z.string().optional(),
+});
+
+const notificationCreatedPayload = z.object({
+  notificationId: z.string(),
+  type: z.string(),
+  title: z.string(),
+  body: z.string(),
+  tone: z.string(),
+  priority: z.string(),
+});
+
+const runtimeStatePatchPayload = z.record(z.unknown());
+const runtimeStateFullPayload = z.object({ state: z.record(z.unknown()) });
+
+function validateEventPayload(type: string, payload: unknown): Record<string, unknown> {
+  let schema: z.ZodSchema<any>;
+  switch (type) {
+    case 'sync_started':
+      schema = syncStartedPayload;
+      break;
+    case 'sync_completed':
+      schema = syncCompletedPayload;
+      break;
+    case 'sync_failed':
+      schema = syncFailedPayload;
+      break;
+    case 'mission_progress':
+      schema = missionProgressPayload;
+      break;
+    case 'level_up':
+      schema = levelUpPayload;
+      break;
+    case 'streak_milestone':
+      schema = streakMilestonePayload;
+      break;
+    case 'achievement_unlocked':
+      schema = achievementUnlockedPayload;
+      break;
+    case 'behavioral_message':
+      schema = behavioralMessagePayload;
+      break;
+    case 'notification_created':
+      schema = notificationCreatedPayload;
+      break;
+    case 'runtime_state_patch':
+      schema = runtimeStatePatchPayload;
+      break;
+    case 'runtime_state_full':
+      schema = runtimeStateFullPayload;
+      break;
+    default:
+      return payload as Record<string, unknown>;
+  }
+
+  const result = schema.safeParse(payload);
+  if (!result.success) {
+    const errorDetails = result.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ');
+    logger.warn('[sse] Payload contract validation failed, proceeding with fallback parsing', {
+      type,
+      errorDetails,
+      payload,
+    });
+  }
+  return payload as Record<string, unknown>;
+}
 
 const SSE_CHANNEL = 'devtrack:sse:events';
 
@@ -40,6 +172,7 @@ export type SseEventType =
   | 'goal_completed'
   | 'challenge_completed'
   | 'near_milestone'
+  | 'mission_progress'
   // Sync
   | 'sync_started'
   | 'sync_completed'
@@ -67,6 +200,7 @@ export interface SseEvent {
   timestamp: string;
   userId?: string;
   platform?: string;
+  payload?: any;
   stats?: {
     totalSolved?: number;
     easySolved?: number;
@@ -106,6 +240,7 @@ class EventBus extends EventEmitter {
   private readonly HEARTBEAT_INTERVAL_MS = 25_000;
   private readonly MAX_CLIENTS = 10_000;
   private redisSubscriber: ReturnType<typeof getRedisClient>['duplicate'] | null = null;
+  private redisPublisher: ReturnType<typeof getRedisClient>['duplicate'] | null = null;
 
   // Operational metrics
   private totalConnections = 0;
@@ -130,14 +265,21 @@ class EventBus extends EventEmitter {
   private async initRedisPubSub(): Promise<void> {
     try {
       const Redis = (await import('ioredis')).default;
-      const subscriber = new (Redis as unknown as { new(options: Record<string, unknown>): unknown })({
+      const connectionOptions = {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379', 10),
         password: process.env.REDIS_PASSWORD || undefined,
         lazyConnect: true,
-      });
+        retryStrategy(times: number) {
+          const delay = Math.min(times * 100, 3000);
+          logger.warn('[sse-redis] Reconnecting to Redis', { attempt: times, delayMs: delay });
+          return delay;
+        }
+      };
 
-      (subscriber as unknown as { on(event: string, cb: (channel: string, message: string) => void): void }).on('message', (_channel: string, message: string) => {
+      // Persistent subscriber
+      const subscriber = new (Redis as unknown as { new(options: Record<string, unknown>): unknown })(connectionOptions);
+      (subscriber as any).on('message', (_channel: string, message: string) => {
         try {
           const event = JSON.parse(message) as SseEvent;
           this.publishLocal(event, event.userId);
@@ -145,25 +287,37 @@ class EventBus extends EventEmitter {
           logger.warn('[sse] Failed to parse Redis message', { error: err });
         }
       });
+      (subscriber as any).on('error', (err: Error) => {
+        logger.error('[sse-redis] Subscriber error', err);
+      });
 
-      await (subscriber as unknown as { subscribe(channel: string): Promise<void> }).subscribe(SSE_CHANNEL);
-      this.redisSubscriber = subscriber as typeof this.redisSubscriber;
-      logger.info('[sse] Redis pub/sub initialized', { channel: SSE_CHANNEL });
+      await (subscriber as any).connect().catch(() => {});
+      await (subscriber as any).subscribe(SSE_CHANNEL);
+      this.redisSubscriber = subscriber as any;
+
+      // Shared singleton publisher
+      const publisher = new (Redis as unknown as { new(options: Record<string, unknown>): unknown })(connectionOptions);
+      (publisher as any).on('error', (err: Error) => {
+        logger.error('[sse-redis] Publisher error', err);
+      });
+      await (publisher as any).connect().catch(() => {});
+      this.redisPublisher = publisher as any;
+
+      logger.info('[sse] Redis PubSub & Publisher singletons initialized', { channel: SSE_CHANNEL });
     } catch (err) {
-      logger.warn('[sse] Redis pub/sub unavailable, using local only', { error: err });
+      logger.warn('[sse] Redis PubSub initialization failed, using local fallback', { error: err });
     }
   }
 
   private async publishToRedis(event: SseEvent): Promise<void> {
     try {
-      const Redis = (await import('ioredis')).default;
-      const publisher = new (Redis as unknown as { new(options: Record<string, unknown>): unknown })({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379', 10),
-        password: process.env.REDIS_PASSWORD || undefined,
-      });
-      await (publisher as unknown as { publish(channel: string, message: string): Promise<number> }).publish(SSE_CHANNEL, JSON.stringify(event));
-      await (publisher as unknown as { quit(): Promise<void> }).quit();
+      if (this.redisPublisher && (this.redisPublisher as any).status === 'ready') {
+        await (this.redisPublisher as any).publish(SSE_CHANNEL, JSON.stringify(event));
+      } else {
+        // Fallback to getRedisClient() if the singleton publisher is not ready or failed
+        const publisher = getRedisClient();
+        await publisher.publish(SSE_CHANNEL, JSON.stringify(event));
+      }
     } catch (err) {
       logger.debug('[sse] Redis publish failed', { error: err });
     }
@@ -330,12 +484,19 @@ class EventBus extends EventEmitter {
   // Broadcast helpers (convenience wrappers)
   // ---------------------------------------------------------------------------
 
-  emitSyncStarted(userId: string): void {
+  emitSyncStarted(userId: string, platform?: string): void {
+    const defaultPlatform = platform || 'leetcode';
     this.publish(
       {
         type: 'sync_started',
         timestamp: new Date().toISOString(),
         userId,
+        platform: defaultPlatform,
+        payload: {
+          platform: defaultPlatform,
+          syncId: `sync_${defaultPlatform}_${Date.now()}`,
+          startedAt: new Date().toISOString(),
+        },
         stats: { totalSolved: 0 },
       },
       userId
@@ -350,6 +511,17 @@ class EventBus extends EventEmitter {
         userId,
         platform,
         stats,
+        payload: {
+          platform,
+          syncId: `sync_${platform}_${Date.now()}`,
+          duration: stats?.rating ?? 0,
+          stats: {
+            ingested: stats?.ingested ?? 0,
+            updated: stats?.successCount ?? 0,
+            skipped: stats?.failedCount ?? 0,
+          },
+          completedAt: new Date().toISOString(),
+        },
       },
       userId
     );
@@ -363,6 +535,13 @@ class EventBus extends EventEmitter {
         userId,
         platform,
         stats: { error },
+        payload: {
+          platform,
+          syncId: `sync_${platform}_${Date.now()}`,
+          error,
+          retryable: true,
+          failedAt: new Date().toISOString(),
+        },
       },
       userId
     );
@@ -376,6 +555,14 @@ class EventBus extends EventEmitter {
         userId,
         platform,
         stats: { ingested },
+        payload: {
+          platform,
+          problemId: 'accepted',
+          problemTitle: 'New DSA Activity',
+          status: 'accepted',
+          language: 'javascript',
+          submittedAt: new Date().toISOString(),
+        },
       },
       userId
     );
@@ -387,6 +574,12 @@ class EventBus extends EventEmitter {
         type: 'xp_updated',
         timestamp: new Date().toISOString(),
         userId,
+        payload: {
+          xpAwarded: gainedXp,
+          newTotalXp: totalXp,
+          source: 'manual',
+          reason: 'Activity completed',
+        },
         stats: {
           totalSolved: totalXp,
           easySolved: gainedXp,
@@ -404,6 +597,12 @@ class EventBus extends EventEmitter {
         type: 'level_up',
         timestamp: new Date().toISOString(),
         userId,
+        payload: {
+          newLevel,
+          totalXp,
+          levelName: `Level ${newLevel}`,
+          levelTitle: `Level ${newLevel}`,
+        },
         stats: {
           totalSolved: totalXp,
           rating: newLevel,
@@ -419,6 +618,11 @@ class EventBus extends EventEmitter {
         type: 'streak_milestone',
         timestamp: new Date().toISOString(),
         userId,
+        payload: {
+          days: streakDays,
+          xpBonus: 100,
+          milestone: streakDays >= 30 ? 'monthly' : streakDays >= 14 ? 'biweekly' : 'weekly',
+        },
         stats: {
           totalSolved: streakDays,
           easySolved: streakType === 'dsa' ? 1 : 0,
@@ -430,21 +634,47 @@ class EventBus extends EventEmitter {
     );
   }
 
-  emitBadgeEarned(userId: string, badgeId: string, badgeName: string): void {
+  emitAchievementUnlocked(
+    userId: string,
+    achievement: {
+      id: string;
+      name: string;
+      description: string;
+      icon: string;
+      rarity: 'common' | 'rare' | 'epic' | 'legendary';
+      xpReward: number;
+    }
+  ): void {
+    const payload = {
+      id: achievement.id,
+      name: achievement.name,
+      description: achievement.description,
+      icon: achievement.icon,
+      rarity: achievement.rarity,
+      xpReward: achievement.xpReward,
+      unlockedAt: new Date().toISOString(),
+    };
     this.publish(
       {
-        type: 'badge_earned',
+        type: 'achievement_unlocked',
         timestamp: new Date().toISOString(),
         userId,
-        stats: {
-          totalSolved: 0,
-          easySolved: 0,
-          mediumSolved: 0,
-          hardSolved: 0,
-        },
+        payload,
+        stats: payload as any,
       },
       userId
     );
+  }
+
+  emitBadgeEarned(userId: string, badgeId: string, badgeName: string): void {
+    this.emitAchievementUnlocked(userId, {
+      id: badgeId,
+      name: badgeName,
+      description: 'You unlocked an achievement!',
+      icon: '🏆',
+      rarity: 'common',
+      xpReward: 0,
+    });
   }
 
   // ─── New SSE event emitters for unified runtime state ─────────────────────
@@ -511,6 +741,26 @@ class EventBus extends EventEmitter {
     });
   }
 
+  async emitMissionProgress(
+    userId: string,
+    missionData: {
+      missionId: string;
+      title: string;
+      currentCount: number;
+      targetCount: number;
+      completed: boolean;
+    }
+  ): Promise<void> {
+    await this.publishEnvelope(userId, 'mission_progress', {
+      missionId: missionData.missionId,
+      title: missionData.title,
+      currentCount: missionData.currentCount,
+      targetCount: missionData.targetCount,
+      completed: missionData.completed,
+      progressPercent: Math.round((missionData.currentCount / missionData.targetCount) * 100),
+    });
+  }
+
   // ─── Helper to publish envelope with sequence number ─────────────────────
 
   async publishEnvelope(
@@ -520,6 +770,7 @@ class EventBus extends EventEmitter {
     correlationId?: string,
     schemaVersion?: number
   ): Promise<void> {
+    const validatedPayload = validateEventPayload(type, payload);
     const redis = getRedisClient();
     
     // Get next sequence number for this user
@@ -537,7 +788,7 @@ class EventBus extends EventEmitter {
       sequence,
       timestamp: new Date().toISOString(),
       userId,
-      payload,
+      payload: validatedPayload,
       correlationId: correlationId || eventId,
       schemaVersion: schemaVersion || 1,
     };
@@ -552,7 +803,7 @@ class EventBus extends EventEmitter {
       'sequence',
       sequence.toString(),
       'payload',
-      JSON.stringify(payload),
+      JSON.stringify(validatedPayload),
       'timestamp',
       envelope.timestamp,
       'correlationId',
@@ -569,7 +820,7 @@ class EventBus extends EventEmitter {
         type,
         timestamp: envelope.timestamp,
         userId,
-        stats: payload as SseEvent['stats'],
+        stats: validatedPayload as SseEvent['stats'],
       },
       userId
     );

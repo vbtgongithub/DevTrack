@@ -7,7 +7,6 @@ import { User, RefreshToken, hashPassword, type IUser } from '../../db/models/in
 import type { ApiAuthTokens, ApiLoginResponse, ApiRegisterResponse, ApiUser } from '../../types/api.types.js';
 import { logger } from '../../shared/logger.js';
 import type { SignOptions } from 'jsonwebtoken';
-import { getFeatureFlags } from '../feature-flags/index.js';
 
 export interface RegisterInput {
   email: string;
@@ -62,13 +61,7 @@ function mapUserToApiUser(user: IUser): ApiUser {
 }
 
 export async function register(input: RegisterInput): Promise<ApiRegisterResponse> {
-  // If closed beta is enabled, check inviteCode presence
-  if (env.CLOSED_BETA && !input.inviteCode) {
-    throw Object.assign(new Error('DevTrack is currently in closed beta. A valid invite code is required to register.'), {
-      statusCode: 403,
-      code: 'BETA_INVITE_REQUIRED',
-    });
-  }
+
 
   // Check if email exists
   const existingEmail = await User.findOne({ email: input.email });
@@ -93,20 +86,7 @@ export async function register(input: RegisterInput): Promise<ApiRegisterRespons
     displayName: input.displayName,
   });
 
-  // If closed beta is enabled, validate and accept the invite
-  if (env.CLOSED_BETA && input.inviteCode) {
-    try {
-      const { betaManagement } = await import('../beta/betaManagement.service.js');
-      await betaManagement.acceptInvite(user._id, user.email, input.inviteCode);
-    } catch (err: any) {
-      // Clean up the created user
-      await User.deleteOne({ _id: user._id });
-      throw Object.assign(new Error(err.message || 'Invalid or expired invite code'), {
-        statusCode: 403,
-        code: 'INVALID_INVITE_CODE',
-      });
-    }
-  }
+
 
   // Create default settings and profile
   const { UserSettings, UserProfile } = await import('../../db/models/index.js');
@@ -142,7 +122,6 @@ export async function register(input: RegisterInput): Promise<ApiRegisterRespons
       refreshToken: refreshTokenString,
       expiresIn: 900, // 15 minutes
     },
-    featureFlags: getFeatureFlags(),
   };
 }
 
@@ -162,17 +141,7 @@ export async function login(input: LoginInput): Promise<ApiLoginResponse> {
     throw Object.assign(new Error('Invalid credentials'), { statusCode: 401, code: 'INVALID_CREDENTIALS' });
   }
 
-  // If closed beta is enabled, check beta access
-  if (env.CLOSED_BETA) {
-    const { BetaUser } = await import('../../db/models/index.js');
-    const betaUser = await BetaUser.findOne({ userId: user._id, status: 'active' });
-    if (!betaUser && user.role !== 'admin') {
-      throw Object.assign(new Error('DevTrack is currently in closed beta. Please join the waitlist.'), { 
-        statusCode: 403, 
-        code: 'BETA_ACCESS_REQUIRED' 
-      });
-    }
-  }
+
 
   // Update last active
   user.lastActiveAt = new Date();
@@ -205,7 +174,6 @@ export async function login(input: LoginInput): Promise<ApiLoginResponse> {
       refreshToken: refreshTokenString,
       expiresIn: 900, // 15 minutes
     },
-    featureFlags: getFeatureFlags(),
   };
 }
 

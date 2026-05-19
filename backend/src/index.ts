@@ -7,7 +7,9 @@ import mongoose from 'mongoose';
 import { env, API_BASE_PATH } from './config/index.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { requestContextMiddleware } from './middleware/requestContext.js';
+import { authMiddleware, adminMiddleware } from './middleware/auth.js';
 import { requestMetricsMiddleware, getMetricsSnapshot, getEndpointLatencies } from './shared/requestMetrics.js';
+import { sanitizeRequest } from './middleware/validation.js';
 import { logger } from './shared/logger.js';
 import { eventBus } from './shared/sse/index.js';
 import { syncState } from './shared/syncState.js';
@@ -18,7 +20,7 @@ import { orchestrator } from './shared/runtime/index.js';
 import { getInfrastructureState } from './shared/runtime/infrastructureRegistry.js';
 import routes from './routes/index.js';
 
-async function bootstrap() {
+export async function createApp(): Promise<express.Express> {
   const app = express();
 
   // Phase 1: Core middleware (before any async work)
@@ -57,6 +59,7 @@ async function bootstrap() {
   app.use(morgan(env.IS_DEV ? 'dev' : 'combined'));
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  app.use(sanitizeRequest);
 
   // Phase 2: Health & observability endpoints (before routes)
   setupHealthEndpoints(app, getRedisHealth, getWorkerStatus, getXpWorkerStatus, getOrCreateQueue, QueueNames, eventBus, syncState, getInfrastructureState);
@@ -69,19 +72,19 @@ async function bootstrap() {
   app.use(errorHandler);
 
   // Phase 5: Orchestrated infrastructure boot
-  const startup = await orchestrator.startup(app);
+  await orchestrator.startup(app);
+
+  return app;
+}
+
+async function bootstrap() {
+  const app = await createApp();
 
   // Phase 6: HTTP server start
   const server = app.listen(env.PORT, () => {
     logger.info(`DevTrack backend listening on port ${env.PORT}`);
     logger.info(`Environment: ${env.NODE_ENV}`);
     logger.info(`API base path: ${API_BASE_PATH}`);
-    if (startup.degraded) {
-      logger.warn('[startup] Operating in DEGRADED mode', {
-        warnings: startup.warnings,
-        event: 'degraded_mode_active',
-      });
-    }
   });
 
   // Phase 7: Graceful shutdown — drain infrastructure before exiting
@@ -131,7 +134,7 @@ function setupHealthEndpoints(
     });
   });
 
-  app.get('/health/detailed', (req, res) => {
+  app.get('/health/detailed', authMiddleware, adminMiddleware, (req, res) => {
     const state = getInfrastructureState();
     const sseMetrics = eventBus.getMetrics();
     const syncSnapshot = syncState.getSnapshot();
@@ -188,8 +191,7 @@ function setupHealthEndpoints(
     });
   });
 
-  // ─── /metrics endpoint ────────────────────────────────────────────────
-  app.get('/metrics', (_req, res) => {
+  app.get('/metrics', authMiddleware, adminMiddleware, (_req, res) => {
     const snapshot = getMetricsSnapshot();
     const endpoints = getEndpointLatencies();
 
@@ -244,12 +246,12 @@ function setupHealthEndpoints(
     res.send(lines.join('\n'));
   });
 
-  app.get('/api/system/realtime-status', (_req, res) => {
+  app.get('/api/system/realtime-status', authMiddleware, adminMiddleware, (_req, res) => {
     const metrics = eventBus.getMetrics();
     res.json({ success: true, data: metrics });
   });
 
-  app.get('/api/system/scheduler-status', (_req, res) => {
+  app.get('/api/system/scheduler-status', authMiddleware, adminMiddleware, (_req, res) => {
     const snapshot = syncState.getSnapshot();
     res.json({
       success: true,
@@ -266,7 +268,7 @@ function setupHealthEndpoints(
     });
   });
 
-  app.get('/api/system/queue-status', async (_req, res) => {
+  app.get('/api/system/queue-status', authMiddleware, adminMiddleware, async (_req, res) => {
     const queueNames = [
       QueueNames.PLATFORM_SYNC,
       QueueNames.REALTIME_EVENTS,

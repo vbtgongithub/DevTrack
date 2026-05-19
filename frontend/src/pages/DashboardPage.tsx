@@ -15,6 +15,8 @@ import { ActionsPanel } from '../components/dashboard/ActionsPanel';
 import { MissionCard } from '../components/dashboard/MissionCard';
 import { GithubOverviewCard } from '../components/dashboard/GithubOverviewCard';
 import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
+import { WeeklyMomentumBar } from '../features/gamification';
+import { PomodoroTimer } from '../components/dashboard/PomodoroTimer';
 
 const DashboardPage: React.FC = () => {
   const { data, loading, error } = useDashboardData();
@@ -108,7 +110,7 @@ const DashboardPage: React.FC = () => {
           <StatsGrid stats={data?.stats ?? null} platformStats={data?.platformStats ?? null} />
         </div>
 
-        {/* Productivity & Gamification Core */}
+        {/* Gamification Core */}
         <div className="grid grid-cols-1 gap-6 items-stretch mt-2">
           <div className="flex flex-col gap-6">
             <div className="bg-white/40 backdrop-blur-3xl p-8 lg:p-10 flex flex-col gap-8 shadow-[0_8px_40px_rgba(124,92,252,0.06)] border border-gray-300 rounded-[36px]">
@@ -120,24 +122,27 @@ const DashboardPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Weekly Momentum */}
+      <section className="w-full relative z-10">
+        <WeeklyMomentumBar weeklyXpData={data?.stats?.weeklyXPHistory} />
+      </section>
+
       {/* ─────────────────────────────────────────────────────────────────
-          SECTION 2: AI INSIGHTS & PLATFORM INTEL
+          SECTION 2: CORE INTELLIGENCE & PLATFORM INTEL
       ───────────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <section className="lg:col-span-8 flex flex-col gap-6">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-10 h-10 rounded-xl bg-dt-primary/10 flex items-center justify-center text-dt-primary shadow-sm border border-dt-primary/5">
-              <span className="text-xl">✨</span>
-            </div>
-            <div>
-              <h2 className="text-dashboard-title text-2xl uppercase">AI Intelligence</h2>
-              <p className="text-label text-[12px] !text-dt-textSecondary/70">Neural insights derived from your activity</p>
-            </div>
+        {/* LEFT COLUMN: Stacked tightly with small gap as requested */}
+        <section className="lg:col-span-8 flex flex-col gap-4 h-full">
+          <div className="w-full">
+            <EnhancedInsightsCard />
           </div>
-          <EnhancedInsightsCard />
+          <div className="w-full">
+            <GithubOverviewCard data={data} />
+          </div>
         </section>
 
-        <section className="lg:col-span-4 flex flex-col gap-6">
+        {/* RIGHT COLUMN: Platform Intel */}
+        <section className="lg:col-span-4 flex flex-col gap-6 h-full">
           <div className="flex items-center gap-3 px-2">
             <div className="w-10 h-10 rounded-xl bg-dt-secondary/10 flex items-center justify-center text-dt-secondary shadow-sm border border-dt-secondary/5">
               <span className="text-xl">📊</span>
@@ -147,48 +152,46 @@ const DashboardPage: React.FC = () => {
               <p className="text-label text-[12px] !text-dt-textSecondary/70">Performance across environments</p>
             </div>
           </div>
-          <div className="dt-surface border border-gray-300 p-6 flex flex-col gap-6">
+          <div className="dt-surface border border-gray-300 p-6 flex flex-col gap-6 h-full">
             <ProgressCards platformStats={data?.platformStats ?? null} />
           </div>
         </section>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────────
-          SECTION 3: REPOSITORY ARCHITECTURE
+          SECTION 3: DEEP WORK FOCUS (FULL WIDTH ROW)
       ───────────────────────────────────────────────────────────────── */}
-      <section className="flex flex-col gap-6">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-xl bg-gray-900/5 flex items-center justify-center text-gray-900 shadow-sm border border-gray-900/5">
-            <span className="text-xl">🐙</span>
-          </div>
-          <div>
-            <h2 className="text-dashboard-title text-2xl uppercase">Developer Identity System</h2>
-            <p className="text-label text-[12px] !text-dt-textSecondary/70">Global open-source ecosystem</p>
-          </div>
-        </div>
-        <GithubOverviewCard data={data} />
+      <section className="w-full" id="focus-engine-section">
+        <PomodoroTimer />
       </section>
 
       {/* ─────────────────────────────────────────────────────────────────
-          SECTION 4: PRODUCTIVITY & FOCUS
+          SECTION 3: ACTIVE OPERATIONS & QUICK ACTIONS (ROW-WISE)
       ───────────────────────────────────────────────────────────────── */}
-      <section className="flex flex-col gap-6">
+      <section className="flex flex-col gap-6 pt-4">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-xl bg-dt-success/10 flex items-center justify-center text-dt-success shadow-sm border border-dt-success/5">
-            <span className="text-xl">🎯</span>
+          <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 shadow-sm border border-blue-500/10">
+            <span className="text-xl">⚡</span>
           </div>
           <div>
-            <h2 className="text-dashboard-title text-2xl uppercase">Focus & Productivity</h2>
-            <p className="text-label text-[12px] !text-dt-textSecondary/70">Active missions and workflow shortcuts</p>
+            <h2 className="text-dashboard-title text-2xl uppercase">Operations & Actions</h2>
+            <p className="text-label text-[12px] !text-dt-textSecondary/70">Active missions, announcements, and workflow launchers</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
-          <MissionCard missions={data?.missions ?? []} />
-          <AnnouncementSection contests={contests} />
-          <ActionsPanel />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+          <div className="h-full">
+            <MissionCard missions={data?.missions ?? []} />
+          </div>
+          <div className="h-full">
+            <AnnouncementSection contests={contests} />
+          </div>
+          <div className="h-full">
+            <ActionsPanel />
+          </div>
         </div>
       </section>
+
     </div>
   );
 };

@@ -1,9 +1,9 @@
 // ============================================================================
-// GamificationPanel.tsx — PRIMARY ZONE: Streak + Daily Goal + Achievements
+// GamificationPanel.tsx — PRIMARY ZONE: Streak + XP + Daily Goal
 // ============================================================================
 import React from 'react';
 import { Icon } from '../shared/Icon';
-import { useAchievements } from '../../hooks/useDashboardQueries';
+import { XpProgressWidget } from '../../features/gamification';
 import type { ApiStreakData, ApiMission } from '../../types/api.types';
 
 interface StreakProps {
@@ -12,10 +12,6 @@ interface StreakProps {
 
 interface DailyGoalProps {
   missions: ApiMission[];
-}
-
-interface AchievementsProps {
-  unlockedCount?: number;
 }
 
 /* ─── Streak Card (col-span-2 — LARGE, PRIMARY) ─── */
@@ -154,73 +150,6 @@ const DailyGoalCard: React.FC<DailyGoalProps> = ({ missions }) => {
   );
 };
 
-/* ─── Achievements Grid ─── */
-const AchievementsCard: React.FC<AchievementsProps> = () => {
-  const { data: achievementsData } = useAchievements();
-  const achievements = achievementsData?.achievements ?? [];
-
-  // Take top 2 unlocked achievements
-  const displayAchievements = achievements.filter(a => a.isUnlocked).slice(0, 2);
-
-  // If less than 2 unlocked, just show whatever is first to fill 2 slots
-  if (displayAchievements.length < 2) {
-    const lockedToFill = achievements.filter(a => !a.isUnlocked).slice(0, 2 - displayAchievements.length);
-    displayAchievements.push(...lockedToFill);
-  }
-
-  return (
-    <div
-      className="dt-card p-4 flex flex-col justify-between bg-white rounded-[28px] border border-gray-300 shadow-dt-floating hover:shadow-dt-card-hover hover:border-dt-success/30 transition-all duration-700 relative overflow-hidden"
-      style={{ animation: 'dtFadeIn 800ms cubic-bezier(0.16,1,0.3,1) 200ms both' }}
-    >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,0.03),transparent_40%)]" />
-
-      <div className="relative flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-dt-success/10 flex items-center justify-center shrink-0 border border-dt-success/5 shadow-sm">
-            <Icon name="award" size={20} className="text-dt-success" />
-          </div>
-          <div>
-            <div className="text-[10px] text-dt-success/60 font-black uppercase tracking-[0.2em]">Ecosystem</div>
-            <h3 className="text-lg font-black text-dt-text tracking-tighter leading-tight">Badges</h3>
-          </div>
-        </div>
-      </div>
-
-      <div className="relative flex flex-col gap-2 mt-3">
-        {displayAchievements.map((badge, index) => (
-          <div
-            key={badge.id}
-            className={[
-              'flex items-center gap-3 p-2 rounded-[16px] border transition-all duration-500',
-              badge.isUnlocked
-                ? 'bg-white border-dt-success/10 shadow-sm'
-                : 'bg-dt-bg/40 border-transparent opacity-40 grayscale'
-            ].join(' ')}
-            style={{ animation: `dtFadeIn 500ms ease ${index * 100 + 300}ms both` }}
-            title={badge.description}
-          >
-            <div className={[
-              'w-8 h-8 rounded-full flex items-center justify-center text-lg shrink-0',
-              badge.isUnlocked ? 'bg-dt-success/5' : 'bg-gray-200/50'
-            ].join(' ')}>
-              <span>{badge.icon}</span>
-            </div>
-            <div className="flex flex-col overflow-hidden">
-              <span className="text-[10px] font-black text-dt-textSecondary leading-tight uppercase tracking-[0.1em] truncate">{badge.title}</span>
-            </div>
-            {!badge.isUnlocked && (
-              <div className="ml-auto opacity-50 pr-1">
-                <Icon name="lock-closed" size={12} className="text-dt-textMuted" />
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 /* ─── Exported Panel — PRIMARY ZONE layout ─── */
 interface GamificationPanelProps {
   streakData: ApiStreakData | null | undefined;
@@ -231,8 +160,8 @@ export const GamificationPanel: React.FC<GamificationPanelProps> = ({ streakData
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-stretch">
       <StreakCard streakData={streakData} />
+      <XpProgressWidget />
       <DailyGoalCard missions={missions} />
-      <AchievementsCard />
     </div>
   );
 };

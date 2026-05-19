@@ -14,6 +14,7 @@ import {
   XP_REWARDS,
 } from './rules.js';
 import type { XpSourceType } from '../../db/models/index.js';
+import { updateMissionProgress } from '../missions/missionProgress.service.js';
 
 export interface XpEventPayload {
   userId: string;
@@ -151,6 +152,17 @@ export async function processXpEvent(payload: XpEventPayload): Promise<XpProcess
 
   // ── Step 7: Sync to UserAnalytics ────────────────────────────────────────
   await syncUserAnalytics(userId, newTotalXp, levelAfter, sourceType);
+
+  // ── Step 8: Update mission progress ──────────────────────────────────────
+  if (sourceType === 'dsa_accepted') {
+    await updateMissionProgress(userId, 'dsa_solve', { difficulty });
+  } else if (sourceType === 'dsa_contest') {
+    await updateMissionProgress(userId, 'dsa_contest');
+  } else if (sourceType === 'daily_streak') {
+    await updateMissionProgress(userId, 'streak_day');
+  } else if (sourceType === 'sync_completed') {
+    await updateMissionProgress(userId, 'sync');
+  }
 
   logger.info('[xp] XP awarded', {
     event: 'xp_awarded',

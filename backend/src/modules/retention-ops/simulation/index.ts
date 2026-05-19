@@ -1,2 +1,0 @@
-export { simulationService, type SimulationParameter, type SimulationScenario, type SimulationResult, type CohortSimulation } from './simulation.service.js';
-export { default } from './simulation.service.js';

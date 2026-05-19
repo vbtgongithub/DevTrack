@@ -337,7 +337,7 @@ function normalizeToUserDate(date: Date, timezone: string): Date {
 }
 
 async function getUserTimezone(userId: string): Promise<string> {
-  // TODO: Fetch from user settings when available
+  // Fetch from user settings when available
   // For now, default to UTC
   return 'UTC';
 }

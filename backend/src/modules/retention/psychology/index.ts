@@ -1,2 +1,0 @@
-// src/modules/retention/psychology/index.ts — Retention Psychology barrel export
-export { retentionPsychology, type StreakRiskReport, type NearGoalTrigger, type BurnoutRiskReport, type ComebackTrigger, type RetentionTrigger } from './retentionPsychology.service.js';
