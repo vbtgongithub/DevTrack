@@ -28,7 +28,13 @@ type TelemetryEvent =
   | 'workspace_interruption'
   | 'streak_preservation'
   | 'recovery_success'
-  | 'burnout_signal';
+  | 'burnout_signal'
+  | 'insight_view'
+  | 'insight_dismiss'
+  | 'suggestion_click'
+  | 'challenge_attempt'
+  | 'retention_banner_view'
+  | 'retention_banner_dismiss';
 
 interface TelemetryPayload {
   event: TelemetryEvent;
@@ -315,4 +321,28 @@ export const trackBurnoutSignal = (reason: string, context: Record<string, unkno
     severity: 'high',
     ...context,
   });
+};
+
+export const trackInsightView = (insightId: string, type: string) => {
+  telemetry.track('insight_view', { insightId, type });
+};
+
+export const trackInsightDismiss = (insightId: string, type: string) => {
+  telemetry.track('insight_dismiss', { insightId, type });
+};
+
+export const trackSuggestionClick = (suggestionId: string, type: string) => {
+  telemetry.track('suggestion_click', { suggestionId, type });
+};
+
+export const trackChallengeAttempt = (challengeId: string, platform: string) => {
+  telemetry.track('challenge_attempt', { challengeId, platform });
+};
+
+export const trackRetentionBannerView = (type: string, message: string) => {
+  telemetry.track('retention_banner_view', { type, message });
+};
+
+export const trackRetentionBannerDismiss = (type: string) => {
+  telemetry.track('retention_banner_dismiss', { type });
 };

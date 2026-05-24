@@ -17,7 +17,7 @@ interface TypographyProps {
   color?: TypographyColor;
   className?: string;
   children: React.ReactNode;
-  as?: keyof JSX.IntrinsicElements;
+  as?: React.ElementType;
 }
 
 const VARIANT_STYLES: Record<TypographyVariant, string> = {
@@ -46,7 +46,7 @@ const COLOR_STYLES: Record<TypographyColor, string> = {
   warning: 'text-amber-600',
 };
 
-const DEFAULT_ELEMENTS: Record<TypographyVariant, keyof JSX.IntrinsicElements> = {
+const DEFAULT_ELEMENTS: Record<TypographyVariant, React.ElementType> = {
   hero: 'h1',
   display: 'h2',
   title: 'h3',

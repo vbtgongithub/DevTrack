@@ -8,6 +8,7 @@ interface EmptyStateProps {
   icon?: string;
   action?: React.ReactNode;
   className?: string;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
@@ -16,10 +17,12 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   icon = 'cube',
   action,
   className = '',
+  size = 'md',
 }) => {
+  const isSm = size === 'sm';
   return (
-    <div className={`flex flex-col items-center justify-center py-16 px-6 text-center ${className}`}>
-      <div className="relative mb-8">
+    <div className={`flex flex-col items-center justify-center ${isSm ? 'py-8 px-4' : 'py-16 px-6'} text-center ${className}`}>
+      <div className={`relative ${isSm ? 'mb-4' : 'mb-8'}`}>
         {/* Atmospheric Orbit Glows */}
         <motion.div
           animate={{
@@ -53,7 +56,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="relative w-20 h-20 dt-radius-xl bg-white shadow-dt-floating border border-dt-primary/10 flex items-center justify-center overflow-hidden group"
+          className={`relative ${isSm ? 'w-14 h-14' : 'w-20 h-20'} dt-radius-xl bg-white shadow-dt-floating border border-dt-primary/10 flex items-center justify-center overflow-hidden group`}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-dt-primary/5 to-transparent" />
 
@@ -69,7 +72,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             }}
             className="relative z-10"
           >
-            <Icon name={icon} size={36} className="text-dt-primary drop-shadow-sm" />
+            <Icon name={icon} size={isSm ? 24 : 36} className="text-dt-primary drop-shadow-sm" />
           </motion.div>
 
           {/* Scanning Effect */}
@@ -86,8 +89,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.6 }}
       >
-        <h3 className="text-xl font-bold text-dt-text tracking-tight mb-2">{title}</h3>
-        <p className="text-[14px] text-dt-textSecondary max-w-sm mx-auto leading-relaxed">
+        <h3 className={`${isSm ? 'text-[15px] mb-1' : 'text-xl mb-2'} font-bold text-dt-text tracking-tight`}>{title}</h3>
+        <p className={`${isSm ? 'text-[12px]' : 'text-[14px]'} text-dt-textSecondary max-w-sm mx-auto leading-relaxed`}>
           {description}
         </p>
       </motion.div>

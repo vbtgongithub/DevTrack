@@ -55,8 +55,8 @@ export function getPlatformSyncQueue(): Queue {
   return getOrCreateQueue(QueueNames.PLATFORM_SYNC);
 }
 
-export function getRealtimeEventsQueue(): Queue {
-  return getOrCreateQueue(QueueNames.REALTIME_EVENTS);
+export function getStreakRecalcQueue(): Queue {
+  return getOrCreateQueue(QueueNames.STREAK_RECALC);
 }
 
 export function getSystemMaintenanceQueue(): Queue {

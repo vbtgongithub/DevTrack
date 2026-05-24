@@ -15,6 +15,8 @@ import {
   getWorkerStatus,
 } from '../jobs/workers.js';
 import { startXpWorker, stopXpWorker, getXpWorkerStatus } from '../jobs/xpWorker.js';
+import { startStreakRecalcWorker, stopStreakRecalcWorker } from '../jobs/streakRecalcWorker.js';
+import { startNotificationWorker, stopNotificationWorker } from '../jobs/notificationWorker.js';
 import {
   startSyncScheduler,
   stopSyncScheduler,
@@ -105,7 +107,7 @@ async function bootQueues(redisOk: boolean): Promise<boolean> {
   }
   setQueuesStatus('initializing');
   try {
-    for (const name of [QueueNames.PLATFORM_SYNC, QueueNames.REALTIME_EVENTS, QueueNames.XP_PROCESSING, QueueNames.SYSTEM_MAINTENANCE]) {
+    for (const name of [QueueNames.PLATFORM_SYNC, QueueNames.XP_PROCESSING, QueueNames.STREAK_RECALC, QueueNames.SYSTEM_MAINTENANCE, QueueNames.NOTIFICATIONS]) {
       getOrCreateQueue(name);
     }
     setQueuesStatus('healthy');
@@ -153,6 +155,22 @@ function bootWorkers(redisOk: boolean): { platformSync: boolean; xp: boolean } {
   } catch (err) {
     setXpWorkerStatus('failed', err instanceof Error ? err.message : String(err));
     logger.error('[startup] XP worker failed', err as Error);
+  }
+
+  // Streak recalc worker
+  try {
+    startStreakRecalcWorker();
+    logger.info('[startup] Streak recalc worker started', { event: 'streak_worker_started' });
+  } catch (err) {
+    logger.error('[startup] Streak recalc worker failed', err as Error);
+  }
+
+  // Notification worker
+  try {
+    startNotificationWorker();
+    logger.info('[startup] Notification worker started', { event: 'notification_worker_started' });
+  } catch (err) {
+    logger.error('[startup] Notification worker failed', err as Error);
   }
 
   return { platformSync, xp };
@@ -235,6 +253,9 @@ export async function shutdown(): Promise<void> {
 
   await stopXpWorker();
   setXpWorkerStatus('stopped');
+
+  await stopStreakRecalcWorker();
+  await stopNotificationWorker();
 
   await closeAllQueues();
   setQueuesStatus('stopped');

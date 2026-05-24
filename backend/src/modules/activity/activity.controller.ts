@@ -69,3 +69,63 @@ export async function deleteActivity(req: AuthenticatedRequest, res: Response): 
   }
   deleteResponse(res, id, 'Activity deleted successfully');
 }
+
+// ─── Focus Session Endpoints ────────────────────────────────────────────────
+
+export async function startFocusSession(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const { duration, mode } = req.body;
+  const { unifiedRuntimeStateService } = await import('../runtime-state/unifiedRuntimeState.service.js');
+  const state = await unifiedRuntimeStateService.startFocusSession(req.user!.id, duration, mode);
+  successResponse(res, state.sessionContext, 'Focus session started');
+}
+
+export async function heartbeatFocusSession(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const { unifiedRuntimeStateService } = await import('../runtime-state/unifiedRuntimeState.service.js');
+  const state = await unifiedRuntimeStateService.heartbeatFocusSession(req.user!.id);
+  successResponse(res, state.sessionContext, 'Focus session heartbeat');
+}
+
+export async function stopFocusSession(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const { unifiedRuntimeStateService } = await import('../runtime-state/unifiedRuntimeState.service.js');
+  const state = await unifiedRuntimeStateService.stopFocusSession(req.user!.id);
+
+  // Record as an activity event
+  await service.createActivity(req.user!.id, {
+    type: 'focus_session',
+    title: 'Focus Session Completed',
+    description: `Completed a ${state.sessionContext.duration ?? 25} minute focus session.`,
+    platform: 'devtrack',
+    url: null,
+    tags: [],
+    metadata: {
+      duration: state.sessionContext.duration || 0,
+      mode: state.sessionContext.mode || 'pomodoro',
+    },
+  });
+
+  // Award XP
+  const { getXpProcessingQueue } = await import('../../shared/jobs/index.js');
+  const queue = getXpProcessingQueue();
+  await queue.add('focus-session-completed', {
+    userId: req.user!.id,
+    sourceType: 'focus_session',
+    sourceId: `focus_${Date.now()}`,
+    metadata: { duration: state.sessionContext.duration },
+  });
+
+  // Fetch user's timezone from DB
+  const { User } = await import('../../db/models/index.js');
+  const userObj = await User.findById(req.user!.id).select('timezone').lean();
+  const timezone = (userObj as any)?.timezone || 'UTC';
+
+  // Record streak
+  const { recordActivity } = await import('../streak/streak.service.js');
+  await recordActivity({
+    userId: req.user!.id,
+    streakType: 'focus',
+    source: `focus_${Date.now()}`,
+    timezone,
+  });
+
+  successResponse(res, state.sessionContext, 'Focus session stopped and recorded');
+}

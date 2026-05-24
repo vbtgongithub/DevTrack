@@ -6,12 +6,10 @@ import { Icon } from '../shared/Icon';
 
 interface BadgesMomentumCardProps {
   totalProblems?: number;
-  longestStreak?: number;
 }
 
 export const BadgesMomentumCard: React.FC<BadgesMomentumCardProps> = ({ 
-  totalProblems = 0,
-  longestStreak = 0 
+  totalProblems = 0
 }) => {
   // Calculate badge milestones
   const badges = React.useMemo(() => {

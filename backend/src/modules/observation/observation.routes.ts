@@ -3,6 +3,9 @@ import { Router, Response } from 'express';
 import mongoose from 'mongoose';
 import { authMiddleware, AuthenticatedRequest } from '../../middleware/auth.js';
 import { sessionReplay } from './sessionReplay.service.js';
+import { insightsService } from './insights.service.js';
+import { momentumEngine } from './momentumEngine.service.js';
+import { retentionEngine } from './retentionEngine.service.js';
 import { logger } from '../../shared/logger.js';
 
 const router = Router();
@@ -112,4 +115,59 @@ router.post(
   }
 );
 
+// Get AI momentum & weakness insights
+router.get(
+  '/insights',
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const insights = await insightsService.getInsights(req.user!.id);
+      res.status(200).json({ success: true, data: insights });
+    } catch (err: any) {
+      logger.error('[observation] Failed to get insights', { error: err.message });
+      res.status(500).json({ error: err.message || 'Failed to get insights' });
+    }
+  }
+);
+
+// Get full momentum intelligence payload
+router.get(
+  '/momentum',
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const intelligence = await momentumEngine.getFullIntelligence(req.user!.id);
+      res.status(200).json({ success: true, data: intelligence });
+    } catch (err: any) {
+      logger.error('[observation] Failed to get momentum intelligence', { error: err.message });
+      res.status(500).json({ error: err.message || 'Failed to get momentum intelligence' });
+    }
+  }
+);
+
+// Get retention context (streak pressure, recovery, milestones, messaging)
+router.get(
+  '/retention',
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      // Optionally compute momentum first for context-aware retention
+      let momentumScore;
+      try {
+        const momentum = await momentumEngine.calculateMomentumScore(req.user!.id);
+        momentumScore = momentum;
+      } catch {
+        // Non-fatal — retention works without momentum
+      }
+
+      const context = await retentionEngine.getRetentionContext(req.user!.id, momentumScore);
+      res.status(200).json({ success: true, data: context });
+    } catch (err: any) {
+      logger.error('[observation] Failed to get retention context', { error: err.message });
+      res.status(500).json({ error: err.message || 'Failed to get retention context' });
+    }
+  }
+);
+
 export const observationRoutes = router;
+

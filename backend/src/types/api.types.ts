@@ -185,7 +185,7 @@ export interface ApiActivityDay {
 
 export interface ApiActivityEntry {
   id: string;
-  type: 'problem_solved' | 'commit_pushed' | 'pr_merged' | 'project_created' | 'project_updated' | 'project_deleted' | 'contest_participated' | 'contest_joined' | 'streak_milestone' | 'note_added' | 'settings_updated' | 'github_sync_completed';
+  type: 'problem_solved' | 'commit_pushed' | 'pr_merged' | 'project_created' | 'project_updated' | 'project_deleted' | 'contest_participated' | 'contest_joined' | 'streak_milestone' | 'note_added' | 'settings_updated' | 'github_sync_completed' | 'focus_session';
   title: string;
   description: string;
   platform: string;

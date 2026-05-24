@@ -4,9 +4,7 @@
 export { leetcodeAdapter, LeetCodeAdapter } from './leetcode.adapter.js';
 export { githubAdapter, GitHubAdapter } from './github.adapter.js';
 export { codeforcesAdapter, CodeforcesAdapter } from './codeforces.adapter.js';
-export { gfgAdapter, GeeksForGeeksAdapter } from './gfg.adapter.js';
 export { codechefAdapter, CodeChefAdapter } from './codechef.adapter.js';
-export { hackerrankAdapter, HackerRankAdapter } from './hackerrank.adapter.js';
 export type {
   PlatformAdapter,
   PlatformSubmission,
@@ -18,9 +16,7 @@ export type {
 import { leetcodeAdapter } from './leetcode.adapter.js';
 import { githubAdapter } from './github.adapter.js';
 import { codeforcesAdapter } from './codeforces.adapter.js';
-import { gfgAdapter } from './gfg.adapter.js';
 import { codechefAdapter } from './codechef.adapter.js';
-import { hackerrankAdapter } from './hackerrank.adapter.js';
 import type { PlatformAdapter } from './types.js';
 
 /**
@@ -35,12 +31,8 @@ export function getAdapter(platform: string): PlatformAdapter {
       return githubAdapter;
     case 'codeforces':
       return codeforcesAdapter;
-    case 'gfg':
-      return gfgAdapter;
     case 'codechef':
       return codechefAdapter;
-    case 'hackerrank':
-      return hackerrankAdapter;
     default:
       throw new Error(`No adapter registered for platform: ${platform}`);
   }

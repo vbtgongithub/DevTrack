@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from '../shared/Icon';
+import { EmptyState } from '../shared/EmptyState';
 import type { ApiMission } from '../../types/api.types';
 
 interface MissionCardProps {
@@ -21,24 +22,14 @@ export const MissionCard: React.FC<MissionCardProps> = ({ missions = [] }) => {
 
   if (dailyMissions.length === 0) {
     return (
-      <div className="h-full dt-card bg-gradient-to-br from-white to-dt-bg/50 border border-gray-300 rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-dt-primary/30 transition-all duration-300 ease-out flex flex-col relative overflow-hidden group">
+      <div className="h-full dt-card bg-gradient-to-br from-white to-dt-bg/50 border border-gray-300 rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-dt-primary/30 transition-all duration-300 ease-out flex flex-col justify-center relative overflow-hidden group">
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-dt-primary to-dt-secondary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <div className="flex justify-between items-center mb-2">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-dt-primary/10 flex items-center justify-center border border-dt-primary/20">
-              <Icon name="target" size={16} className="text-dt-primary" />
-            </div>
-            <h3 className="text-[15px] font-bold text-dt-text tracking-tight">Today's Mission</h3>
-          </div>
-          <div className="text-xl font-extrabold text-dt-textDisabled tabular-nums">—</div>
-        </div>
-        <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
-          <div className="w-14 h-14 rounded-2xl bg-dt-primary/5 flex items-center justify-center mb-4 border border-dt-primary/10">
-            <Icon name="target" size={24} className="text-dt-textMuted" />
-          </div>
-          <p className="text-[14px] text-dt-textSecondary font-semibold">No active missions</p>
-          <p className="text-xs text-dt-textMuted mt-1.5 font-medium">Connect platforms to get started</p>
-        </div>
+        <EmptyState
+          size="sm"
+          icon="target"
+          title="No Active Missions"
+          description="Connect platforms or wait for daily missions to drop."
+        />
       </div>
     );
   }

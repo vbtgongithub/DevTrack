@@ -191,8 +191,9 @@ axiosClient.interceptors.response.use(
       details: error.response?.data?.details,
     };
 
-    // Global Toast Notification (skip for 401 and requests marked to skip toast)
-    if (normalized.statusCode !== 401 && !originalRequest._skipToast) {
+    // Global Toast Notification (skip for 401, canceled requests, and requests marked to skip toast)
+    const isCanceled = error.code === 'ERR_CANCELED' || error.message === 'canceled';
+    if (normalized.statusCode !== 401 && !isCanceled && !originalRequest._skipToast) {
       const { addToast } = useUIStore.getState();
       addToast({
         type: 'error',

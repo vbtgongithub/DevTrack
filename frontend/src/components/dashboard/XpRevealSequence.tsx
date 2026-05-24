@@ -9,7 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Zap } from 'lucide-react';
-import { useGamificationStore } from '../../store/gamificationStore';
+
 import { prefersReducedMotion } from '../../design-system/motion';
 
 export interface XpRevealItem {
@@ -58,7 +58,7 @@ export const XpRevealSequence: React.FC<XpRevealSequenceProps> = ({
 }) => {
   const [revealedIndices, setRevealedIndices] = useState<Set<number>>(new Set());
   const [isComplete, setIsComplete] = useState(false);
-  const reducedMotion = prefersReducedMotion();
+  const reducedMotion = prefersReducedMotion;
 
   // Stagger reveal of items
   useEffect(() => {

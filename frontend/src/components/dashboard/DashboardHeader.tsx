@@ -6,6 +6,7 @@ import { Icon } from '../shared/Icon';
 import { useUserStore } from '../../store/userStore';
 import { useProfileStore } from '../../store/profileStore';
 import { useDashboardData } from '../../hooks/useDashboardData';
+import { useCoachingStore } from '../../store/coachingStore';
 
 const MOTIVATIONAL_INSIGHTS = [
   "You're in the top 15% of active developers this week.",
@@ -16,8 +17,10 @@ const MOTIVATIONAL_INSIGHTS = [
 
 export const DashboardHeader: React.FC = () => {
   const displayName = useUserStore((s) => s.user?.displayName) || 'there';
-  const { fetchAllPlatforms, syncState } = useProfileStore();
+  const fetchAllPlatforms = useProfileStore((s) => s.fetchAllPlatforms);
+  const syncState = useProfileStore((s) => s.syncState);
   const { refetch } = useDashboardData();
+  const { insights } = useCoachingStore();
 
   const handleSync = async () => {
     await fetchAllPlatforms();
@@ -69,16 +72,44 @@ export const DashboardHeader: React.FC = () => {
     }, 300);
   };
 
+  const emotionalState = insights?.emotionalState || 'calm';
+
+  let bgGradient = 'from-indigo-500/10 via-purple-500/5 to-transparent';
+  let textGradient = 'from-indigo-600 via-violet-500 to-rose-400';
+  let pulseColor = 'bg-emerald-500';
+  let pulseShadow = 'shadow-[0_0_8px_rgba(16,185,129,0.8)]';
+  let badgeColor = 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+
+  if (emotionalState === 'streak_risk') {
+    bgGradient = 'from-orange-500/15 via-red-500/10 to-transparent';
+    textGradient = 'from-orange-600 via-red-500 to-rose-500';
+    pulseColor = 'bg-orange-500';
+    pulseShadow = 'shadow-[0_0_8px_rgba(249,115,22,0.8)]';
+    badgeColor = 'bg-orange-500/10 text-orange-600 border-orange-500/20';
+  } else if (emotionalState === 'burnout_risk') {
+    bgGradient = 'from-teal-500/10 via-emerald-500/5 to-transparent';
+    textGradient = 'from-teal-600 via-emerald-500 to-cyan-500';
+    pulseColor = 'bg-teal-500';
+    pulseShadow = 'shadow-[0_0_8px_rgba(20,184,166,0.8)]';
+    badgeColor = 'bg-teal-500/10 text-teal-600 border-teal-500/20';
+  } else if (emotionalState === 'high_momentum') {
+    bgGradient = 'from-fuchsia-500/15 via-purple-500/10 to-transparent';
+    textGradient = 'from-fuchsia-600 via-purple-500 to-pink-500';
+    pulseColor = 'bg-fuchsia-500';
+    pulseShadow = 'shadow-[0_0_8px_rgba(217,70,239,0.8)]';
+    badgeColor = 'bg-fuchsia-500/10 text-fuchsia-600 border-fuchsia-500/20';
+  }
+
   return (
     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-dt-primary/10 relative overflow-hidden group">
       {/* Subtle cinematic atmosphere */}
       <div className="absolute inset-0 bg-gradient-to-r from-dt-primary/[0.03] via-transparent to-transparent pointer-events-none rounded-t-3xl -mx-4 px-4" />
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent blur-[80px] rounded-full pointer-events-none -translate-x-1/2 -translate-y-1/2 group-hover:opacity-100 opacity-70 transition-opacity duration-1000" />
+      <div className={`absolute top-0 left-0 w-[500px] h-[500px] bg-gradient-to-br ${bgGradient} blur-[80px] rounded-full pointer-events-none -translate-x-1/2 -translate-y-1/2 group-hover:opacity-100 opacity-70 transition-colors duration-1000`} />
       
       <div className="flex flex-col gap-4 relative z-10">
         <h1 className="text-display text-4xl md:text-[3.5rem] text-dt-text leading-[1.05] tracking-tight relative drop-shadow-sm">
           {greeting}, <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-violet-500 to-rose-400 drop-shadow-[0_2px_10px_rgba(124,92,252,0.2)]">{displayName.split(' ')[0]}</span> <span className="text-3xl md:text-4xl align-middle ml-1 hover:animate-[wiggle_1s_ease-in-out_infinite] inline-block origin-bottom">{emoji}</span>
+          <span className={`text-transparent bg-clip-text bg-gradient-to-r ${textGradient} drop-shadow-[0_2px_10px_rgba(124,92,252,0.2)] transition-colors duration-1000`}>{displayName.split(' ')[0]}</span> <span className="text-3xl md:text-4xl align-middle ml-1 hover:animate-[wiggle_1s_ease-in-out_infinite] inline-block origin-bottom">{emoji}</span>
         </h1>
 
         <div className="flex flex-col gap-2.5">
@@ -88,10 +119,10 @@ export const DashboardHeader: React.FC = () => {
               <span className="font-semibold text-dt-textSecondary/90 tracking-tight">{dateStr}</span>
             </span>
             <div className="w-1 h-1 rounded-full bg-dt-textDisabled/30 hidden sm:inline" />
-            <span className="text-[9px] font-black tracking-[0.2em] uppercase flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.05)] transition-all hover:bg-emerald-500/15 hover:border-emerald-500/30 cursor-default">
+            <span className={`text-[9px] font-black tracking-[0.2em] uppercase flex items-center gap-2 px-2.5 py-1 rounded-md ${badgeColor} transition-all cursor-default`}>
               <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${pulseColor} opacity-75`}></span>
+                <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${pulseColor} ${pulseShadow}`}></span>
               </span>
               Neural Link Active
             </span>

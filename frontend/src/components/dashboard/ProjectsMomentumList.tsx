@@ -8,6 +8,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProjectsData } from '../../hooks/useProjectsData';
 import { Icon } from '../shared/Icon';
+import { EmptyState } from '../shared/EmptyState';
 import { motion } from 'framer-motion';
 
 export const ProjectsMomentumList: React.FC = () => {
@@ -132,12 +133,21 @@ export const ProjectsMomentumList: React.FC = () => {
         })}
 
         {activeProjects.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-8 text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
-            <Icon name="folder" size={24} className="text-dt-textMuted/45 mb-2" />
-            <p className="text-[13px] font-bold text-dt-textSecondary">No Active Workspaces</p>
-            <p className="text-[11px] text-dt-textMuted/70 max-w-[200px] mt-0.5">
-              Create a project to track development velocity.
-            </p>
+          <div className="py-2">
+            <EmptyState
+              size="sm"
+              icon="folder"
+              title="No Active Workspaces"
+              description="Create a project to track development velocity."
+              action={
+                <button
+                  onClick={() => navigate('/projects')}
+                  className="dt-btn dt-btn-primary dt-btn-sm"
+                >
+                  Create Project
+                </button>
+              }
+            />
           </div>
         )}
       </div>

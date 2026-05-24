@@ -67,7 +67,7 @@ interface ApiXpTransactionsResponse {
 
 export const xpService = {
   /**
-   * GET /api/xp — current user's XP state (level, progress, lifetime stats).
+   * GET /xp — current user's XP state (level, progress, lifetime stats).
    */
   getCurrent: async (): Promise<ApiXpState> => {
     const { data } = await axiosClient.get<ApiXpResponse>('/xp');
@@ -76,7 +76,7 @@ export const xpService = {
   },
 
   /**
-   * GET /api/xp/history — XP history over time
+   * GET /xp/history — XP history over time
    */
   getHistory: async (): Promise<ApiXpHistoryEntry[]> => {
     const { data } = await axiosClient.get<ApiXpHistoryResponse>('/xp/history');
@@ -85,7 +85,7 @@ export const xpService = {
   },
 
   /**
-   * GET /api/xp/transactions — Recent XP transactions
+   * GET /xp/transactions — Recent XP transactions
    */
   getTransactions: async (limit = 10): Promise<ApiXpTransaction[]> => {
     const { data } = await axiosClient.get<ApiXpTransactionsResponse>('/xp/transactions', {

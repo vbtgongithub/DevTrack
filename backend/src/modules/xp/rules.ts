@@ -6,6 +6,8 @@ export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 
 // ─── Level thresholds (XP required to reach each level) ───────────────────
 
+export const MAX_LEVEL = 15;
+
 export const XP_LEVEL_THRESHOLDS: Record<number, number> = {
   1: 0,
   2: 100,
@@ -58,6 +60,14 @@ export const XP_REWARDS = {
 
 // ─── Level helpers ─────────────────────────────────────────────────────────
 
+export interface XpLevelInfo {
+  level: number;
+  xpToNextLevel: number;
+  xpInCurrentLevel: number;
+  progressPercent: number;
+  isMaxLevel: boolean;
+}
+
 export function calculateLevel(totalXp: number): number {
   let level = 1;
   for (const [lvl, threshold] of Object.entries(XP_LEVEL_THRESHOLDS)) {
@@ -67,10 +77,42 @@ export function calculateLevel(totalXp: number): number {
       break;
     }
   }
-  return level;
+  return Math.min(level, MAX_LEVEL);
+}
+
+export function getXpLevelInfo(totalXp: number): XpLevelInfo {
+  const currentLevel = calculateLevel(totalXp);
+  const isMaxLevel = currentLevel >= MAX_LEVEL;
+  
+  const thresholds = Object.entries(XP_LEVEL_THRESHOLDS).sort((a, b) => Number(a[0]) - Number(b[0]));
+  const prevLevelEntry = thresholds.find(([lvl]) => Number(lvl) === currentLevel - 1);
+  const currentThreshold = prevLevelEntry ? Number(prevLevelEntry[1]) : 0;
+  const nextLevelEntry = thresholds.find(([lvl]) => Number(lvl) === currentLevel + 1);
+  
+  const xpInCurrentLevel = Math.max(0, totalXp - currentThreshold);
+  const xpToNextLevel = isMaxLevel ? 0 : (nextLevelEntry ? Math.max(0, Number(nextLevelEntry[1]) - totalXp) : 0);
+  
+  const progressPercent = isMaxLevel ? 100 : (() => {
+    if (!nextLevelEntry) return 100;
+    const nextThreshold = Number(nextLevelEntry[1]);
+    const range = nextThreshold - currentThreshold;
+    if (range <= 0) return 100;
+    return Math.min(100, Math.round(((totalXp - currentThreshold) / range) * 100));
+  })();
+
+  return {
+    level: currentLevel,
+    xpToNextLevel,
+    xpInCurrentLevel,
+    progressPercent,
+    isMaxLevel,
+  };
 }
 
 export function xpToNextLevel(currentXp: number, currentLevel: number): number {
+  const isMaxLevel = currentLevel >= MAX_LEVEL;
+  if (isMaxLevel) return 0;
+  
   const thresholds = Object.entries(XP_LEVEL_THRESHOLDS).sort((a, b) => Number(a[0]) - Number(b[0]));
   const nextLevelEntry = thresholds.find(([lvl]) => Number(lvl) === currentLevel + 1);
   if (!nextLevelEntry) return 0; // max level

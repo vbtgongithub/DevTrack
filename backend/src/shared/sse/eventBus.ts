@@ -55,6 +55,12 @@ const streakMilestonePayload = z.object({
   milestone: z.string(),
 });
 
+const streakAtRiskPayload = z.object({
+  currentStreak: z.number(),
+  hoursRemaining: z.number(),
+  riskLevel: z.enum(['low', 'medium', 'high', 'critical']),
+});
+
 const achievementUnlockedPayload = z.object({
   id: z.string(),
   name: z.string(),
@@ -82,6 +88,13 @@ const notificationCreatedPayload = z.object({
   priority: z.string(),
 });
 
+const challengeCompletedPayload = z.object({
+  challengeId: z.string(),
+  title: z.string(),
+  xpReward: z.number(),
+  completedAt: z.string(),
+});
+
 const runtimeStatePatchPayload = z.record(z.unknown());
 const runtimeStateFullPayload = z.object({ state: z.record(z.unknown()) });
 
@@ -106,6 +119,9 @@ function validateEventPayload(type: string, payload: unknown): Record<string, un
     case 'streak_milestone':
       schema = streakMilestonePayload;
       break;
+    case 'streak_at_risk':
+      schema = streakAtRiskPayload;
+      break;
     case 'achievement_unlocked':
       schema = achievementUnlockedPayload;
       break;
@@ -114,6 +130,9 @@ function validateEventPayload(type: string, payload: unknown): Record<string, un
       break;
     case 'notification_created':
       schema = notificationCreatedPayload;
+      break;
+    case 'challenge_completed':
+      schema = challengeCompletedPayload;
       break;
     case 'runtime_state_patch':
       schema = runtimeStatePatchPayload;
@@ -196,6 +215,7 @@ export interface SseEventEnvelope {
 }
 
 export interface SseEvent {
+  id?: string;
   type: SseEventType;
   timestamp: string;
   userId?: string;
@@ -324,7 +344,11 @@ class EventBus extends EventEmitter {
   }
 
   private publishLocal(event: SseEvent, targetUserId?: string): void {
-    const payload = `data: ${JSON.stringify(event)}\n\n`;
+    let payload = '';
+    if (event.id) {
+      payload += `id: ${event.id}\n`;
+    }
+    payload += `data: ${JSON.stringify(event)}\n\n`;
     const encoded = encoder.encode(payload);
 
     if (targetUserId) {
@@ -503,7 +527,7 @@ class EventBus extends EventEmitter {
     );
   }
 
-  emitSyncCompleted(userId: string, platform: string, stats?: SseEvent['stats']): void {
+  emitSyncCompleted(userId: string, platform: string, stats?: SseEvent['stats'], durationMs?: number): void {
     this.publish(
       {
         type: 'sync_completed',
@@ -514,7 +538,7 @@ class EventBus extends EventEmitter {
         payload: {
           platform,
           syncId: `sync_${platform}_${Date.now()}`,
-          duration: stats?.rating ?? 0,
+          duration: durationMs ?? 0,
           stats: {
             ingested: stats?.ingested ?? 0,
             updated: stats?.successCount ?? 0,
@@ -634,6 +658,19 @@ class EventBus extends EventEmitter {
     );
   }
 
+  emitStreakAtRisk(userId: string, currentStreak: number, hoursRemaining: number): void {
+    const riskLevel =
+      hoursRemaining <= 4 ? 'critical' :
+      hoursRemaining <= 7 ? 'high' :
+      hoursRemaining <= 12 ? 'medium' : 'low';
+
+    void this.publishEnvelope(userId, 'streak_at_risk', {
+      currentStreak,
+      hoursRemaining,
+      riskLevel,
+    });
+  }
+
   emitAchievementUnlocked(
     userId: string,
     achievement: {
@@ -674,6 +711,20 @@ class EventBus extends EventEmitter {
       icon: '🏆',
       rarity: 'common',
       xpReward: 0,
+    });
+  }
+
+  async emitChallengeCompleted(
+    userId: string,
+    challengeId: string,
+    title: string,
+    xpReward: number
+  ): Promise<void> {
+    await this.publishEnvelope(userId, 'challenge_completed', {
+      challengeId,
+      title,
+      xpReward,
+      completedAt: new Date().toISOString(),
     });
   }
 
@@ -817,10 +868,12 @@ class EventBus extends EventEmitter {
     // Publish as legacy event for backward compatibility
     this.publish(
       {
+        id: eventId,
         type,
         timestamp: envelope.timestamp,
         userId,
         stats: validatedPayload as SseEvent['stats'],
+        payload: validatedPayload, // Include payload for full compatibility
       },
       userId
     );

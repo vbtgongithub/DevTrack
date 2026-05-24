@@ -118,7 +118,7 @@ function setupHealthEndpoints(
   getWorkerStatus: () => { running: boolean },
   getXpWorkerStatus: () => { running: boolean },
   getOrCreateQueue: (name: string) => { getJobCounts(): Promise<{ active?: number; waiting?: number; failed?: number; completed?: number; delayed?: number }> },
-  QueueNames: { PLATFORM_SYNC: string; REALTIME_EVENTS: string; SYSTEM_MAINTENANCE: string; XP_PROCESSING: string },
+  QueueNames: { PLATFORM_SYNC: string; SYSTEM_MAINTENANCE: string; XP_PROCESSING: string; STREAK_RECALC: string; NOTIFICATIONS: string },
   eventBus: { getMetrics(): { activeConnections: number; totalConnections: number; totalDisconnects: number; totalReconnects: number; heartbeatFailures: number; eventsPublished: number; uptimeSeconds: number } },
   syncState: { getSnapshot(): { status: string; lastSyncStartedAt: string | null; lastSyncCompletedAt: string | null; lastSyncStatus: 'success' | 'partial' | 'failed' | null; lastSyncDurationMs: number | null; totalSyncs: number; failedSyncs: number } },
   getInfrastructureState: () => { api: { status: string }; mongodb: { status: string }; redis: { status: string }; queues: { status: string }; platformSyncWorker: { status: string }; xpWorker: { status: string }; scheduler: { status: string }; sse: { status: string }; degraded: boolean; degradedComponents: string[]; startedAt: number },
@@ -271,9 +271,10 @@ function setupHealthEndpoints(
   app.get('/api/system/queue-status', authMiddleware, adminMiddleware, async (_req, res) => {
     const queueNames = [
       QueueNames.PLATFORM_SYNC,
-      QueueNames.REALTIME_EVENTS,
       QueueNames.SYSTEM_MAINTENANCE,
       QueueNames.XP_PROCESSING,
+      QueueNames.STREAK_RECALC,
+      QueueNames.NOTIFICATIONS,
     ];
 
     const queueStatuses = await Promise.all(

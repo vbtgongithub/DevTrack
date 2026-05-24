@@ -6,6 +6,7 @@ import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
 
 const DashboardPage = lazy(() => import('../pages/DashboardPage'));
+const FocusPage = lazy(() => import('../pages/FocusPage'));
 const DsaPage = lazy(() => import('../pages/DsaPage'));
 const ProjectsPage = lazy(() => import('../pages/ProjectsPage'));
 const SettingsPage = lazy(() => import('../pages/SettingsPage'));
@@ -48,6 +49,16 @@ export const AppRouter: React.FC = () => {
           <ErrorBoundary pageName="Dashboard">
             <Suspense fallback={<PageFallback useDashboardSkeleton />}>
               <DashboardPage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+      <Route
+        path="/focus"
+        element={
+          <ErrorBoundary pageName="Focus">
+            <Suspense fallback={<PageFallback />}>
+              <FocusPage />
             </Suspense>
           </ErrorBoundary>
         }

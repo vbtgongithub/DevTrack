@@ -15,7 +15,6 @@ export { XpProgressBar } from './XpProgressBar';
 export { DailyChallengeCard } from './DailyChallengeCard';
 export { SyncButton } from './SyncButton';
 export { MissionCard } from './MissionCard';
-export { StreakCard } from './StreakCard';
 
 // New Components
 export { XpRevealSequence } from './XpRevealSequence';
@@ -41,3 +40,7 @@ export { EnhancedInsightsCard } from './EnhancedInsightsCard';
 export { AnnouncementSection } from './AnnouncementSection';
 export { GithubOverviewCard } from './GithubOverviewCard';
 export { PomodoroTimer } from './PomodoroTimer';
+
+// Intelligence & Retention
+export { RetentionBanner } from './RetentionBanner';
+

@@ -35,7 +35,7 @@ export const onboardingDiagnostics = {
   async getOnboardingDiagnostics(dateRange: { start: Date; end: Date }): Promise<OnboardingDiagnostics> {
     const onboardingData = await OnboardingAnalytics.find({
       startedAt: { $gte: dateRange.start, $lte: dateRange.end },
-    });
+    }).lean();
 
     const totalStarted = onboardingData.length;
     const totalCompleted = onboardingData.filter(o => o.completedAt).length;
@@ -94,7 +94,7 @@ export const onboardingDiagnostics = {
   async analyzeConfusionHotspots(dateRange: { start: Date; end: Date }): Promise<Array<{ step: string; confusionCount: number }>> {
     const sessionReplays = await SessionReplay.find({
       startTime: { $gte: dateRange.start, $lte: dateRange.end },
-    });
+    }).lean();
 
     const confusionByStep = new Map<string, number>();
 
@@ -117,7 +117,7 @@ export const onboardingDiagnostics = {
   async analyzeHesitationPoints(dateRange: { start: Date; end: Date }): Promise<Array<{ step: string; hesitationCount: number }>> {
     const sessionReplays = await SessionReplay.find({
       startTime: { $gte: dateRange.start, $lte: dateRange.end },
-    });
+    }).lean();
 
     const hesitationByStep = new Map<string, number>();
 
@@ -174,7 +174,7 @@ export const onboardingDiagnostics = {
   async analyzeInteractionFlow(dateRange: { start: Date; end: Date }): Promise<InteractionFlowAnalysis> {
     const sessionReplays = await SessionReplay.find({
       startTime: { $gte: dateRange.start, $lte: dateRange.end },
-    });
+    }).lean();
 
     // Extract paths from page views
     const paths: string[][] = [];
@@ -267,14 +267,14 @@ export const onboardingDiagnostics = {
     frictionEvents: number;
     completedOnboarding: boolean;
   }> {
-    const betaUser = await BetaUser.findOne({ userId });
+    const betaUser = await BetaUser.findOne({ userId }).lean();
     if (!betaUser) {
       throw new Error('User not found in beta');
     }
 
     const firstSession = await SessionReplay.findOne({
       betaUserId: betaUser._id,
-    }).sort({ startTime: 1 });
+    }).sort({ startTime: 1 }).lean();
 
     if (!firstSession) {
       return {
@@ -286,7 +286,7 @@ export const onboardingDiagnostics = {
       };
     }
 
-    const onboardingData = await OnboardingAnalytics.findOne({ userId });
+    const onboardingData = await OnboardingAnalytics.findOne({ userId }).lean();
     const completedOnboarding = onboardingData?.completedAt !== undefined;
 
     return {

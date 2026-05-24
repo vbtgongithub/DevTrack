@@ -38,10 +38,11 @@ export interface SseConnectionState {
 interface SseStore {
   connectionState: SseConnectionState;
   eventHistory: SseEvent[];
+  lastEventId: string | null;
   listeners: Map<SseEventType, Set<(event: SseEvent) => void>>;
   connect: () => void;
   disconnect: () => void;
-  handleEvent: (event: SseEvent) => void;
+  handleEvent: (event: SseEvent, id?: string) => void;
   subscribe: (type: SseEventType, callback: (event: SseEvent) => void) => () => void;
   clearHistory: () => void;
 }
@@ -55,7 +56,8 @@ let reconnectAttempts = 0;
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 const seenEventIds = new Set<string>();
 
-function eventKey(event: SseEvent): string {
+function eventKey(event: SseEvent, id?: string): string {
+  if (id) return id;
   return `${event.type}:${event.timestamp}:${JSON.stringify(event.data)}`;
 }
 
@@ -67,6 +69,7 @@ export const useSseStore = create<SseStore>((set, get) => ({
     error: null,
   },
   eventHistory: [],
+  lastEventId: null,
   listeners: new Map(),
 
   connect: async () => {
@@ -76,6 +79,7 @@ export const useSseStore = create<SseStore>((set, get) => ({
 
     const baseUrl = import.meta.env.VITE_API_BASE_URL ?? '';
     const token = localStorage.getItem('devtrack_access_token');
+    const lastId = get().lastEventId;
 
     if (!token) {
       set((state) => ({
@@ -101,7 +105,11 @@ export const useSseStore = create<SseStore>((set, get) => ({
       return;
     }
 
-    const url = `${baseUrl}/api/events?ticket=${encodeURIComponent(ticket)}`;
+    let url = `${baseUrl}/api/events?ticket=${encodeURIComponent(ticket)}`;
+    if (lastId) {
+      url += `&lastEventId=${encodeURIComponent(lastId)}`;
+    }
+    
     eventSource = new EventSource(url);
 
     eventSource.onopen = () => {
@@ -126,14 +134,19 @@ export const useSseStore = create<SseStore>((set, get) => ({
           userId: parsed.userId,
           data: parsed.data ?? (parsed.stats ? { ...parsed.stats } : {}),
         };
-        const key = eventKey(normalized);
+        
+        const id = event.lastEventId;
+        const key = eventKey(normalized, id);
+        
         if (seenEventIds.has(key)) return;
         seenEventIds.add(key);
+        
         if (seenEventIds.size > 200) {
           const first = seenEventIds.values().next().value;
           if (first) seenEventIds.delete(first);
         }
-        get().handleEvent(normalized);
+        
+        get().handleEvent(normalized, id);
       } catch (err) {
         console.error('[SSE] Failed to parse event:', err);
       }
@@ -185,11 +198,12 @@ export const useSseStore = create<SseStore>((set, get) => ({
     });
   },
 
-  handleEvent: (event) => {
+  handleEvent: (event, id) => {
     const { listeners, eventHistory } = get();
     const newHistory = [event, ...eventHistory].slice(0, MAX_HISTORY);
     set({
       eventHistory: newHistory,
+      lastEventId: id || get().lastEventId,
       connectionState: {
         ...get().connectionState,
         lastEvent: event.type,

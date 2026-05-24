@@ -40,7 +40,7 @@ export interface ApiUnreadCountResponse {
 
 export const notificationService = {
   /**
-   * GET /api/notifications — paginated notification list.
+   * GET /notifications — paginated notification list.
    */
   getAll: async (params?: {
     limit?: number;
@@ -55,7 +55,7 @@ export const notificationService = {
   },
 
   /**
-   * GET /api/notifications/unread-count — lightweight unread badge count.
+   * GET /notifications/unread-count — lightweight unread badge count.
    */
   getUnreadCount: async (): Promise<number> => {
     const { data } = await axiosClient.get<ApiUnreadCountResponse>(

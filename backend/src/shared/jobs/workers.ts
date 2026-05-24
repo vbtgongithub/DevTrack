@@ -9,7 +9,7 @@ import { eventBus } from '../sse/index.js';
 import { syncState } from '../syncState.js';
 import { syncPlatform } from '../../modules/platform-sync/sync.service.js';
 import { PlatformSyncJobData, QueueNames, JobRetryConfig } from './types.js';
-import { getXpProcessingQueue } from './queueFactory.js';
+import { getXpProcessingQueue, getStreakRecalcQueue } from './queueFactory.js';
 import { dlqService } from './dlq.service.js';
 import { injectTraceIntoJob, runJobInTrace } from '../tracing/tracing.js';
 
@@ -62,7 +62,7 @@ export function startPlatformSyncWorker(): Worker<PlatformSyncJobData> {
           syncState.completeSync(result.success ? 'success' : 'failed', durationMs);
 
           if (result.success) {
-            eventBus.emitSyncCompleted(userId, platformName, result.stats);
+            eventBus.emitSyncCompleted(userId, platformName, result.stats, durationMs);
 
             // Enqueue XP award — inject current trace so XP worker logs are correlated
             try {
@@ -92,6 +92,31 @@ export function startPlatformSyncWorker(): Worker<PlatformSyncJobData> {
                 userId,
                 platform: platformName,
                 error: xpErr instanceof Error ? xpErr.message : String(xpErr),
+              });
+            }
+
+            // Enqueue streak recalculation after sync
+            try {
+              const streakQueue = getStreakRecalcQueue();
+              await streakQueue.add(
+                'post-sync-recalc',
+                {
+                  userId,
+                  streakType: 'unified' as const,
+                  requestId: requestId ?? jobId,
+                },
+                { jobId: `streak-${userId}-${Date.now()}` }
+              );
+              logger.debug('[worker] Streak recalc enqueued', {
+                event: 'streak_recalc_enqueued',
+                userId,
+                platform: platformName,
+              });
+            } catch (streakErr) {
+              logger.warn('[worker] Streak recalc enqueue failed (non-fatal)', {
+                event: 'streak_enqueue_failed',
+                userId,
+                error: streakErr instanceof Error ? streakErr.message : String(streakErr),
               });
             }
           } else {

@@ -6,7 +6,7 @@
 // Real-time status updates via SSE
 // ============================================================================
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, AlertCircle, Loader } from 'lucide-react';
 import { prefersReducedMotion } from '../../design-system/motion';
@@ -44,14 +44,6 @@ const STATUS_ICON: Record<PlatformStatus, React.ReactNode> = {
   skipped: <div className="w-5 h-5 rounded-full bg-slate-300 dark:bg-slate-600" />,
 };
 
-const STATUS_COLOR: Record<PlatformStatus, string> = {
-  pending: 'text-slate-500 dark:text-slate-400',
-  syncing: 'text-blue-500',
-  success: 'text-green-500',
-  error: 'text-red-500',
-  skipped: 'text-slate-400 dark:text-slate-600',
-};
-
 const STATUS_BG: Record<PlatformStatus, string> = {
   pending: 'bg-slate-100 dark:bg-slate-800',
   syncing: 'bg-blue-50 dark:bg-blue-950',
@@ -68,7 +60,6 @@ const PlatformProgressItem: React.FC<{
   reducedMotion: boolean;
 }> = ({ platform, reducedMotion }) => {
   const config = PLATFORM_CONFIG[platform.platform];
-  const progressPercent = platform.progress ?? 0;
 
   return (
     <motion.div
@@ -111,7 +102,6 @@ const PlatformProgressItem: React.FC<{
 const CompactSyncProgress: React.FC<{ platforms: PlatformProgress[] }> = ({
   platforms,
 }) => {
-  const total = platforms.length;
   const completed = platforms.filter((p) => p.status === 'success').length;
   const failed = platforms.filter((p) => p.status === 'error').length;
   const syncing = platforms.filter((p) => p.status === 'syncing').length;
@@ -159,7 +149,7 @@ export const SyncProgressIndicator: React.FC<SyncProgressIndicatorProps> = ({
   isVisible = true,
   compact = false,
 }) => {
-  const reducedMotion = prefersReducedMotion();
+  const reducedMotion = prefersReducedMotion;
   const allCompleted = platforms.every(
     (p) => p.status === 'success' || p.status === 'error' || p.status === 'skipped'
   );

@@ -371,8 +371,11 @@ async function connectGlobalSse(setSseStatus: (status: 'connected' | 'reconnecti
 
     es.close();
     globalEventSource = null;
+    // Exponential backoff with jitter
+    const exponentialDelay = RECONNECT_DELAY_MS * Math.pow(1.5, store.reconnectAttempt);
+    const jitter = Math.random() * 1000;
     const delay = Math.min(
-      RECONNECT_DELAY_MS * Math.pow(1.5, store.reconnectAttempt),
+      exponentialDelay + jitter,
       MAX_RECONNECT_DELAY_MS
     );
     store.reconnectDelays.push(delay);

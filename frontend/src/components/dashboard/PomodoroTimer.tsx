@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Activity, Clock, Target, ChevronDown, BarChart2, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useGamificationStore } from '../../store/gamificationStore';
+
 import { ConfirmationModal } from '../ui/ConfirmationModal';
+import { useRuntimeState } from '../../hooks/useRuntimeState';
+import { activityService } from '../../services/activityService';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Web Audio API Synthesizer for high-fidelity notification sound
 const playFocusChime = () => {
@@ -53,18 +56,39 @@ const SESSION_MODES = [
 ];
 
 export const PomodoroTimer = () => {
+  const { data: runtimeState } = useRuntimeState();
+  const queryClient = useQueryClient();
+
   const [activeMode, setActiveMode] = useState(SESSION_MODES[0]);
   const [selectedDuration, setSelectedDuration] = useState<number>(SESSION_MODES[0].dur);
   const [timeLeft, setTimeLeft] = useState<number>(SESSION_MODES[0].dur * 60);
   const [status, setStatus] = useState<'idle' | 'running' | 'paused' | 'finished'>('idle');
-  const [streak, setStreak] = useState<number>(() => Number(localStorage.getItem('devtrack_focus_streak') || '0'));
-  const [completedSessions, setCompletedSessions] = useState<number>(() => Number(localStorage.getItem('devtrack_completed_sessions') || '0'));
-
-  const { liveXp, setLiveXp, setPendingXpGain } = useGamificationStore();
+  
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const [modeConfirmOpen, setModeConfirmOpen] = useState(false);
   const [pendingMode, setPendingMode] = useState<typeof SESSION_MODES[0] | null>(null);
+
+  // Recovery logic: Sync with backend session state
+  useEffect(() => {
+    if (runtimeState?.sessionContext?.isActive) {
+      const startedAt = new Date(runtimeState.sessionContext.startedAt!).getTime();
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - startedAt) / 1000);
+      const totalSeconds = (runtimeState.sessionContext as any).duration * 60;
+      
+      const remaining = Math.max(0, totalSeconds - elapsedSeconds);
+      
+      const modeId = (runtimeState.sessionContext as any).mode;
+      const mode = SESSION_MODES.find(m => m.id === modeId) || SESSION_MODES[0];
+      
+      setActiveMode(mode);
+      setSelectedDuration((runtimeState.sessionContext as any).duration);
+      setTimeLeft(remaining);
+      setStatus(remaining > 0 ? 'running' : 'finished');
+    }
+  }, [runtimeState]);
 
   useEffect(() => {
     if (status === 'idle') {
@@ -72,33 +96,36 @@ export const PomodoroTimer = () => {
     }
   }, [selectedDuration, status]);
 
-  useEffect(() => {
-    const handleStartFocus = () => {
-      const focusSection = document.getElementById('focus-engine-section');
-      if (focusSection) focusSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const handleStartFocus = async () => {
+    try {
       setStatus('running');
-    };
-    window.addEventListener('start-focus-session', handleStartFocus);
-    return () => window.removeEventListener('start-focus-session', handleStartFocus);
-  }, []);
+      await activityService.startFocusSession(selectedDuration, activeMode.id);
+      queryClient.invalidateQueries({ queryKey: ['runtime-state'] });
+    } catch (err) {
+      console.error('Failed to start focus session', err);
+    }
+  };
+
+  const handleStopFocus = async () => {
+    try {
+      setStatus('idle');
+      await activityService.stopFocusSession();
+      queryClient.invalidateQueries({ queryKey: ['runtime-state'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    } catch (err) {
+      console.error('Failed to stop focus session', err);
+    }
+  };
 
   const handleFinished = () => {
     setStatus('finished');
     playFocusChime();
-    const newSessions = completedSessions + 1;
-    const newStreak = streak + 1;
-    setCompletedSessions(newSessions);
-    setStreak(newStreak);
-    localStorage.setItem('devtrack_completed_sessions', String(newSessions));
-    localStorage.setItem('devtrack_focus_streak', String(newStreak));
-    const currentXpVal = liveXp !== null ? liveXp : 0;
-    setLiveXp(currentXpVal + 50);
-    setPendingXpGain(50);
-    setTimeout(() => setPendingXpGain(null), 4000);
+    handleStopFocus();
   };
 
   useEffect(() => {
     if (status === 'running') {
+      // Main timer
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -108,17 +135,37 @@ export const PomodoroTimer = () => {
           return prev - 1;
         });
       }, 1000);
+
+      // Heartbeat for persistence recovery
+      heartbeatRef.current = setInterval(() => {
+        activityService.heartbeatFocusSession().catch(() => {});
+      }, 30000);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  const handleStartPause = () => setStatus(status === 'running' ? 'paused' : 'running');
-  const handleReset = () => { setStatus('idle'); setTimeLeft(selectedDuration * 60); };
+  const handleStartPause = () => {
+    if (status === 'idle') {
+      handleStartFocus();
+    } else {
+      setStatus(status === 'running' ? 'paused' : 'running');
+    }
+  };
+  
+  const handleReset = () => { 
+    if (status !== 'idle') {
+      handleStopFocus();
+    }
+    setStatus('idle'); 
+    setTimeLeft(selectedDuration * 60); 
+  };
 
   const selectMode = (mode: typeof SESSION_MODES[0]) => {
     if (status === 'idle') {
@@ -137,6 +184,7 @@ export const PomodoroTimer = () => {
     const mode = pendingMode;
     setModeConfirmOpen(false);
     setPendingMode(null);
+    handleStopFocus();
     setActiveMode(mode);
     setSelectedDuration(mode.dur);
     setStatus('idle');
@@ -152,7 +200,7 @@ export const PomodoroTimer = () => {
 
   return (
     <>
-      <div className={`bg-white rounded-[32px] p-5 lg:p-6 relative overflow-hidden flex flex-col group transition-all duration-700 w-full shadow-[0_8px_40px_rgba(15,23,42,0.04)] hover:shadow-[0_20px_60px_rgba(15,23,42,0.06)] border border-slate-100 ${status === 'running' ? 'ring-1 ring-black/5' : ''}`}>
+      <div className={`bg-white/60 backdrop-blur-3xl rounded-[40px] p-6 lg:p-8 relative overflow-hidden flex flex-col group transition-all duration-700 w-full shadow-[0_8px_40px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_60px_rgba(0,0,0,0.08)] border border-white/60 shadow-inner ${status === 'running' ? 'ring-2 ring-white/50' : ''}`}>
         
         {/* Top Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10 mb-6">
@@ -167,13 +215,13 @@ export const PomodoroTimer = () => {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 bg-white border border-slate-200/80 rounded-[18px] px-5 py-3 shadow-[0_2px_10px_rgba(15,23,42,0.02)]">
-              <div className="w-8 h-8 rounded-full bg-violet-50 flex items-center justify-center border border-violet-100 shrink-0">
-                <Target size={14} className="text-violet-500" />
+            <div className="flex items-center gap-3 bg-white/50 backdrop-blur-xl border border-white/60 rounded-[20px] px-5 py-3 shadow-[0_2px_10px_rgba(15,23,42,0.02)] transition-all hover:bg-white/70">
+              <div className="w-8 h-8 rounded-full bg-violet-100/50 flex items-center justify-center border border-violet-200/50 shrink-0">
+                <Target size={14} className="text-violet-600" />
               </div>
               <div className="flex flex-col pr-2">
-                <span className="text-[9px] font-black text-violet-500 uppercase tracking-[0.2em]">Active Mission</span>
-                <span className="text-[12px] font-bold text-slate-700 leading-tight">Refactoring orchestration pipeline</span>
+                <span className="text-[9px] font-black text-violet-600 uppercase tracking-[0.2em]">Active Mission</span>
+                <span className="text-[12px] font-bold text-slate-800 leading-tight">Refactoring orchestration pipeline</span>
               </div>
             </div>
           </div>
@@ -184,9 +232,9 @@ export const PomodoroTimer = () => {
           
           {/* Left Panel: LIVE INTELLIGENCE */}
           <motion.div 
-            animate={{ backgroundColor: `${activeMode.stroke}08`, borderColor: `${activeMode.stroke}15` }}
+            animate={{ backgroundColor: `${activeMode.stroke}05`, borderColor: `${activeMode.stroke}15` }}
             transition={{ duration: 0.5 }}
-            className="hidden lg:flex lg:col-span-3 flex-col gap-5 rounded-[24px] p-5 border shadow-[0_2px_15px_rgba(15,23,42,0.02)] h-full"
+            className="hidden lg:flex lg:col-span-3 flex-col gap-5 rounded-[28px] p-6 border shadow-[0_2px_15px_rgba(15,23,42,0.02)] h-full bg-white/40 backdrop-blur-md"
           >
             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] flex items-center gap-2">
               <Activity size={14} className={activeMode.color} /> Live Intelligence
@@ -306,9 +354,9 @@ export const PomodoroTimer = () => {
 
           {/* Right Panel: SESSION MEMORY */}
           <motion.div 
-            animate={{ backgroundColor: `${activeMode.stroke}08`, borderColor: `${activeMode.stroke}15` }}
+            animate={{ backgroundColor: `${activeMode.stroke}05`, borderColor: `${activeMode.stroke}15` }}
             transition={{ duration: 0.5 }}
-            className="hidden lg:flex lg:col-span-3 flex-col gap-5 rounded-[24px] p-5 border shadow-[0_2px_15px_rgba(15,23,42,0.02)] h-full"
+            className="hidden lg:flex lg:col-span-3 flex-col gap-5 rounded-[28px] p-6 border shadow-[0_2px_15px_rgba(15,23,42,0.02)] h-full bg-white/40 backdrop-blur-md"
           >
              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] flex items-center gap-2">
                <Clock size={14} className={activeMode.color} /> Session Memory
@@ -316,33 +364,38 @@ export const PomodoroTimer = () => {
              
              <div className="flex flex-col gap-4 flex-1">
                <div>
-                 <span className="text-[11px] font-bold text-slate-400 block mb-1">Last Session</span>
-                 <span className="text-[14px] font-black text-slate-800 line-clamp-1">Optimize Kanban DnD</span>
+                 <span className="text-[11px] font-bold text-slate-400 block mb-1">Current Mode</span>
+                 <span className="text-[14px] font-black text-slate-800 line-clamp-1">{activeMode.label}</span>
                </div>
                
                <div className="flex flex-col gap-3">
                  <div className="flex items-center justify-between">
                    <span className="text-[12px] font-bold text-slate-400">Duration</span>
-                   <span className="text-[13px] font-black text-slate-800">80m</span>
+                   <span className="text-[13px] font-black text-slate-800">{selectedDuration}m</span>
                  </div>
                  <div className="flex items-center justify-between">
-                   <span className="text-[12px] font-bold text-slate-400">Files Modified</span>
-                   <span className="text-[13px] font-black text-slate-800">14</span>
+                   <span className="text-[12px] font-bold text-slate-400">Session XP</span>
+                   <span className="text-[13px] font-black text-emerald-500">+{runtimeState?.sessionContext?.xpThisSession ?? 0}</span>
                  </div>
                  <div className="flex items-center justify-between">
-                   <span className="text-[12px] font-bold text-slate-400">Commits</span>
-                   <span className="text-[13px] font-black text-slate-800">3</span>
+                   <span className="text-[12px] font-bold text-slate-400">Problems</span>
+                   <span className="text-[13px] font-black text-slate-800">{runtimeState?.sessionContext?.problemsThisSession ?? 0}</span>
                  </div>
                  <div className="flex items-center justify-between">
                    <span className="text-[12px] font-bold text-slate-400">Focus Score</span>
-                   <span className="text-[13px] font-black text-emerald-500">94%</span>
+                   <span className={`text-[13px] font-black ${
+                     status === 'running' ? 'text-emerald-500 animate-pulse' : 'text-slate-400'
+                   }`}>
+                     {status === 'running' ? 'Active' : status === 'finished' ? '100%' : 'Ready'}
+                   </span>
                  </div>
                </div>
 
-               <motion.button 
-                 animate={{ backgroundColor: `${activeMode.stroke}15`, color: activeMode.stroke, borderColor: `${activeMode.stroke}30` }}
-                 className="mt-auto w-full py-2.5 rounded-xl font-bold text-[12px] flex items-center justify-center gap-2 transition-colors border"
-               >
+                <motion.button 
+                  animate={{ backgroundColor: `${activeMode.stroke}10`, color: activeMode.stroke, borderColor: `${activeMode.stroke}20` }}
+                  whileHover={{ backgroundColor: `${activeMode.stroke}15` }}
+                  className="mt-auto w-full py-3 rounded-[16px] font-bold text-[12px] flex items-center justify-center gap-2 transition-colors border shadow-sm"
+                >
                  <BarChart2 size={14} /> View Session History
                </motion.button>
              </div>
@@ -350,16 +403,16 @@ export const PomodoroTimer = () => {
         </div>
 
         {/* Bottom Mode Selector */}
-        <div className="flex justify-center mt-2 relative z-10">
-          <div className="flex flex-wrap items-center justify-center gap-2 bg-slate-50 border border-slate-100 rounded-full px-2 py-2 shadow-inner">
+        <div className="flex justify-center mt-4 relative z-10">
+          <div className="flex flex-wrap items-center justify-center gap-2 bg-white/40 backdrop-blur-md border border-white/60 rounded-full px-2 py-2 shadow-inner">
             {SESSION_MODES.map(mode => {
               const isSelected = activeMode.id === mode.id;
               return (
                 <button
                   key={mode.id}
                   onClick={() => selectMode(mode)}
-                  className={`relative px-4 py-2 rounded-full text-[12px] font-bold transition-all duration-300 flex items-center gap-2 ${
-                    isSelected ? `bg-white shadow-[0_2px_10px_rgba(15,23,42,0.06)] ${mode.color}` : 'bg-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                  className={`relative px-5 py-2.5 rounded-full text-[13px] font-bold transition-all duration-300 flex items-center gap-2 hover:-translate-y-0.5 ${
+                    isSelected ? `bg-white shadow-[0_4px_12px_rgba(0,0,0,0.06)] ${mode.color}` : 'bg-transparent text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? mode.bg : 'bg-transparent'}`} />

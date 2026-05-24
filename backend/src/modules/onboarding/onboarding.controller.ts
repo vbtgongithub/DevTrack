@@ -78,11 +78,14 @@ export const onboardingController = {
       }
 
       res.json({
-        isCompleted: !!analytics.completedAt,
-        currentStep: currentStepIdx,
-        steps,
-        startedAt: analytics.startedAt.toISOString(),
-        completedAt: analytics.completedAt ? analytics.completedAt.toISOString() : null,
+        success: true,
+        data: {
+          isCompleted: !!analytics.completedAt,
+          currentStep: currentStepIdx,
+          steps,
+          startedAt: analytics.startedAt.toISOString(),
+          completedAt: analytics.completedAt ? analytics.completedAt.toISOString() : null,
+        },
       });
     } catch (error) {
       logger.error('[onboarding] Failed to get progress', { error });

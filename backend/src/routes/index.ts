@@ -19,6 +19,8 @@ import { observationRoutes } from '../modules/observation/index.js';
 import missionsRoutes from '../modules/missions/missions.routes.js';
 import notificationRoutes from '../modules/notifications/notification.routes.js';
 import onboardingRoutes from '../modules/onboarding/onboarding.routes.js';
+import { dailyChallengeRoutes } from '../modules/daily-challenge/index.js';
+import { coachingRoutes } from '../modules/coaching/index.js';
 
 const router = Router();
 
@@ -54,5 +56,7 @@ router.use('/observation', observationRoutes);
 router.use('/missions', missionsRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/onboarding', onboardingRoutes);
+router.use('/daily-challenge', dailyChallengeRoutes);
+router.use('/coaching', coachingRoutes);
 
 export default router;

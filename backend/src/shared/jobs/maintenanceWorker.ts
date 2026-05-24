@@ -8,6 +8,9 @@ import { logger } from '../logger.js';
 import { dlqService } from './dlq.service.js';
 import { QueueNames, SystemMaintenanceJobData } from './types.js';
 import { generateDailyMissions, generateWeeklyMissions } from '../../modules/missions/missionGenerator.service.js';
+import { cleanupStaleLocks } from '../redis/syncLock.service.js';
+import { UserAnalytics, DailyChallenge } from '../../db/models/index.js';
+import { getNotificationQueue } from './queueFactory.js';
 
 let _worker: Worker<SystemMaintenanceJobData> | null = null;
 let _queue: Queue<SystemMaintenanceJobData> | null = null;
@@ -24,7 +27,7 @@ async function runCleanupFailedJobs(): Promise<void> {
     const queues = [
       QueueNames.PLATFORM_SYNC,
       QueueNames.XP_PROCESSING,
-      QueueNames.ORCHESTRATION_COMPENSATION,
+      QueueNames.STREAK_RECALC,
       QueueNames.SYSTEM_MAINTENANCE,
     ];
     for (const q of queues) {
@@ -126,6 +129,99 @@ async function runGenerateWeeklyMissions(): Promise<void> {
   }
 }
 
+async function runCleanupStaleSyncLocks(): Promise<void> {
+  logger.info('[maintenance] Cleaning up stale sync locks');
+  try {
+    const cleaned = await cleanupStaleLocks();
+    logger.info('[maintenance] Stale sync lock cleanup completed', { cleaned });
+  } catch (err) {
+    logger.error('[maintenance] Stale sync lock cleanup failed', err);
+  }
+}
+
+async function runStreakAtRiskCheck(): Promise<void> {
+  logger.info('[maintenance] Running streak at risk check');
+  try {
+    // Query all users with currentStreak > 0 and not active today
+    const atRiskUsers = await UserAnalytics.find({
+      currentStreak: { $gt: 0 },
+      isActiveToday: false,
+    }).select('userId currentStreak');
+
+    const notificationQueue = getNotificationQueue();
+    let notifiedCount = 0;
+
+    for (const user of atRiskUsers) {
+      try {
+        await notificationQueue.add(
+          'streak-at-risk',
+          {
+            type: 'streak_at_risk',
+            userId: user.userId.toString(),
+            data: { currentStreak: user.currentStreak },
+          },
+          { jobId: `streak-risk-${user.userId}-${Date.now()}` }
+        );
+        notifiedCount++;
+      } catch (err) {
+        logger.warn('[maintenance] Failed to enqueue streak at risk notification', {
+          userId: user.userId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    logger.info('[maintenance] Streak at risk check completed', {
+      atRiskUsers: atRiskUsers.length,
+      notifiedCount,
+    });
+  } catch (err) {
+    logger.error('[maintenance] Streak at risk check failed', err);
+  }
+}
+
+async function runGenerateDailyChallenge(): Promise<void> {
+  logger.info('[maintenance] Generating daily challenge');
+  try {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dateStr = tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // Check if challenge already exists for tomorrow
+    const existing = await DailyChallenge.findOne({ date: dateStr });
+    if (existing) {
+      logger.info('[maintenance] Daily challenge already exists for tomorrow', { date: dateStr });
+      return;
+    }
+
+    // Simple challenge generation - rotate through a predefined set
+    const challenges = [
+      { title: 'Two Sum', difficulty: 'easy' as const, platform: 'leetcode' as const, xpReward: 25 },
+      { title: 'Longest Substring Without Repeating Characters', difficulty: 'medium' as const, platform: 'leetcode' as const, xpReward: 50 },
+      { title: 'Median of Two Sorted Arrays', difficulty: 'hard' as const, platform: 'leetcode' as const, xpReward: 100 },
+    ];
+
+    const dayOfMonth = tomorrow.getDate();
+    const challenge = challenges[dayOfMonth % challenges.length];
+
+    await DailyChallenge.create({
+      date: dateStr,
+      title: challenge.title,
+      titleSlug: challenge.title.toLowerCase().replace(/\s+/g, '-'),
+      description: `Complete the ${challenge.title} problem on ${challenge.platform}`,
+      difficulty: challenge.difficulty,
+      platform: challenge.platform,
+      problemUrl: `https://${challenge.platform}.com/problemset/`,
+      xpReward: challenge.xpReward,
+      completionCount: 0,
+    });
+
+    logger.info('[maintenance] Daily challenge generated', { date: dateStr, title: challenge.title });
+  } catch (err) {
+    logger.error('[maintenance] Daily challenge generation failed', err);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Worker
 // ---------------------------------------------------------------------------
@@ -160,6 +256,15 @@ export function startMaintenanceWorker(): Worker<SystemMaintenanceJobData> {
           break;
         case 'generate_weekly_missions':
           await runGenerateWeeklyMissions();
+          break;
+        case 'cleanup_stale_sync_locks':
+          await runCleanupStaleSyncLocks();
+          break;
+        case 'streak_at_risk_check':
+          await runStreakAtRiskCheck();
+          break;
+        case 'generate_daily_challenge':
+          await runGenerateDailyChallenge();
           break;
         default:
           logger.warn('[maintenance] Unknown task type', { task });
@@ -245,6 +350,42 @@ export async function scheduleMaintenanceTasks(): Promise<void> {
     {
       repeat: { pattern: '5 0 * * 1' }, // 00:05 UTC on Mondays
       jobId: 'maintenance-weekly-missions',
+      removeOnComplete: { count: 5 },
+      removeOnFail: { count: 10 },
+    }
+  );
+
+  // Cleanup stale sync locks every hour
+  await _queue.add(
+    'cleanup-stale-sync-locks',
+    { task: 'cleanup_stale_sync_locks' },
+    {
+      repeat: { every: 60 * 60 * 1000 },
+      jobId: 'maintenance-cleanup-sync-locks',
+      removeOnComplete: { count: 5 },
+      removeOnFail: { count: 10 },
+    }
+  );
+
+  // Streak at risk check daily at 18:00 UTC
+  await _queue.add(
+    'streak-at-risk-check',
+    { task: 'streak_at_risk_check' },
+    {
+      repeat: { pattern: '0 18 * * *' }, // 18:00 UTC daily
+      jobId: 'maintenance-streak-at-risk',
+      removeOnComplete: { count: 5 },
+      removeOnFail: { count: 10 },
+    }
+  );
+
+  // Generate daily challenge at 23:00 UTC
+  await _queue.add(
+    'generate-daily-challenge',
+    { task: 'generate_daily_challenge' },
+    {
+      repeat: { pattern: '0 23 * * *' }, // 23:00 UTC daily
+      jobId: 'maintenance-daily-challenge',
       removeOnComplete: { count: 5 },
       removeOnFail: { count: 10 },
     }

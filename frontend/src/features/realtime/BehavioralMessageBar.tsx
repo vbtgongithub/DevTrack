@@ -19,40 +19,40 @@ interface BehavioralMessage {
 
 const TONE_STYLES: Record<string, { bg: string; border: string; text: string; icon: React.ReactNode }> = {
   encouraging: {
-    bg: 'bg-emerald-500/10',
-    border: 'border-emerald-500/20',
-    text: 'text-emerald-300',
-    icon: <Sparkles className="w-4 h-4 text-emerald-400" />,
+    bg: 'bg-emerald-50/90 backdrop-blur-md',
+    border: 'border-emerald-200/50',
+    text: 'text-emerald-700',
+    icon: <Sparkles className="w-4 h-4 text-emerald-500" />,
   },
   calm: {
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/20',
-    text: 'text-blue-300',
-    icon: <Info className="w-4 h-4 text-blue-400" />,
+    bg: 'bg-blue-50/90 backdrop-blur-md',
+    border: 'border-blue-200/50',
+    text: 'text-blue-700',
+    icon: <Info className="w-4 h-4 text-blue-500" />,
   },
   celebratory: {
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/20',
-    text: 'text-amber-300',
-    icon: <Zap className="w-4 h-4 text-amber-400" />,
+    bg: 'bg-amber-50/90 backdrop-blur-md',
+    border: 'border-amber-200/50',
+    text: 'text-amber-700',
+    icon: <Zap className="w-4 h-4 text-amber-500" />,
   },
   'gentle-nudge': {
-    bg: 'bg-orange-500/10',
-    border: 'border-orange-500/20',
-    text: 'text-orange-300',
-    icon: <Info className="w-4 h-4 text-orange-400" />,
+    bg: 'bg-orange-50/90 backdrop-blur-md',
+    border: 'border-orange-200/50',
+    text: 'text-orange-700',
+    icon: <Info className="w-4 h-4 text-orange-500" />,
   },
   supportive: {
-    bg: 'bg-purple-500/10',
-    border: 'border-purple-500/20',
-    text: 'text-purple-300',
-    icon: <Heart className="w-4 h-4 text-purple-400" />,
+    bg: 'bg-violet-50/90 backdrop-blur-md',
+    border: 'border-violet-200/50',
+    text: 'text-violet-700',
+    icon: <Heart className="w-4 h-4 text-violet-500" />,
   },
   silent: {
-    bg: 'bg-zinc-500/10',
-    border: 'border-zinc-500/20',
-    text: 'text-zinc-300',
-    icon: <Info className="w-4 h-4 text-zinc-400" />,
+    bg: 'bg-slate-50/90 backdrop-blur-md',
+    border: 'border-slate-200/50',
+    text: 'text-slate-600',
+    icon: <Info className="w-4 h-4 text-slate-400" />,
   },
 };
 
@@ -112,7 +112,7 @@ export function BehavioralMessageBar() {
             onClick={() => {
               // Dismiss by removing from history (simplified - in production, track dismissed messages)
             }}
-            className="ml-auto text-zinc-500 hover:text-zinc-300 transition-colors"
+            className="ml-auto text-slate-400 hover:text-slate-600 transition-colors"
             aria-label="Dismiss"
           >
             <X className="w-4 h-4" />

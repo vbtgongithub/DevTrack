@@ -17,7 +17,7 @@ export interface RealtimeEventJobData {
 }
 
 export interface SystemMaintenanceJobData {
-  task: 'cleanup_failed_jobs' | 'prune_old_events' | 'health_check' | 'generate_daily_missions' | 'generate_weekly_missions';
+  task: 'cleanup_failed_jobs' | 'prune_old_events' | 'health_check' | 'generate_daily_missions' | 'generate_weekly_missions' | 'cleanup_stale_sync_locks' | 'streak_at_risk_check' | 'generate_daily_challenge';
   requestId?: string;
 }
 
@@ -30,18 +30,28 @@ export interface XpProcessingJobData {
   requestId?: string;
 }
 
-export type JobData = PlatformSyncJobData | RealtimeEventJobData | SystemMaintenanceJobData | XpProcessingJobData;
+export interface StreakRecalcJobData {
+  userId: string;
+  streakType: 'dsa' | 'github' | 'unified';
+  requestId?: string;
+}
+
+export interface NotificationJobData {
+  type: 'streak_at_risk' | 'streak_milestone' | 'level_up' | 'inactivity';
+  userId: string;
+  data: Record<string, unknown>;
+  requestId?: string;
+}
+
+export type JobData = PlatformSyncJobData | RealtimeEventJobData | SystemMaintenanceJobData | XpProcessingJobData | StreakRecalcJobData | NotificationJobData;
 
 // Job name constants
 export const QueueNames = {
   PLATFORM_SYNC: 'platform-sync',
-  REALTIME_EVENTS: 'realtime-events',
   SYSTEM_MAINTENANCE: 'system-maintenance',
   XP_PROCESSING: 'xp-processing',
   STREAK_RECALC: 'streak-recalc',
-  ANALYTICS_SYNC: 'analytics-sync',
   NOTIFICATIONS: 'notifications',
-  ORCHESTRATION_COMPENSATION: 'orchestration-compensation',
 } as const;
 
 // Retry configuration

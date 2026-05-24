@@ -1,6 +1,7 @@
 // Onboarding flow integration with progress tracking
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { telemetry } from '../lib/telemetry/analytics';
+import axiosClient from '../utils/axiosClient';
 
 interface OnboardingStep {
   id: string;
@@ -20,33 +21,23 @@ interface OnboardingProgress {
 
 const onboardingApi = {
   getProgress: async (): Promise<OnboardingProgress> => {
-    const response = await fetch('/api/onboarding/progress');
-    if (!response.ok) throw new Error('Failed to fetch onboarding progress');
-    return response.json();
+    const { data } = await axiosClient.get('/onboarding/progress');
+    return data.data;
   },
 
   completeStep: async (stepId: string): Promise<{ success: boolean }> => {
-    const response = await fetch(`/api/onboarding/step/${stepId}/complete`, {
-      method: 'POST',
-    });
-    if (!response.ok) throw new Error('Failed to complete onboarding step');
-    return response.json();
+    const { data } = await axiosClient.post(`/onboarding/step/${stepId}/complete`);
+    return data;
   },
 
   skipStep: async (stepId: string): Promise<{ success: boolean }> => {
-    const response = await fetch(`/api/onboarding/step/${stepId}/skip`, {
-      method: 'POST',
-    });
-    if (!response.ok) throw new Error('Failed to skip onboarding step');
-    return response.json();
+    const { data } = await axiosClient.post(`/onboarding/step/${stepId}/skip`);
+    return data;
   },
 
   completeOnboarding: async (): Promise<{ success: boolean }> => {
-    const response = await fetch('/api/onboarding/complete', {
-      method: 'POST',
-    });
-    if (!response.ok) throw new Error('Failed to complete onboarding');
-    return response.json();
+    const { data } = await axiosClient.post('/onboarding/complete');
+    return data;
   },
 };
 

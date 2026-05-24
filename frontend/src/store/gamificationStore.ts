@@ -93,6 +93,7 @@ interface GamificationState {
   liveXp: number | null;
   liveLevel: number | null;
   liveStreak: number | null;
+  liveFocusStreak: number | null;
 
   // Pending animation data
   pendingXpGain: number | null;
@@ -111,6 +112,7 @@ interface GamificationState {
   setLiveXp: (xp: number) => void;
   setLiveLevel: (level: number) => void;
   setLiveStreak: (streak: number) => void;
+  setLiveFocusStreak: (streak: number) => void;
   setPendingXpGain: (gain: number | null, reason?: string | null) => void;
 
   enqueueXpReveal: (gain: number, reason: string | null) => void;
@@ -137,6 +139,7 @@ const initialState = {
   liveXp: null as number | null,
   liveLevel: null as number | null,
   liveStreak: null as number | null,
+  liveFocusStreak: null as number | null,
   pendingXpGain: null as number | null,
   pendingXpReason: null as string | null,
   xpRevealQueue: [] as Array<{ gain: number; reason: string | null }>,
@@ -164,6 +167,7 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
   setLiveXp: (xp) => set({ liveXp: xp }),
   setLiveLevel: (level) => set({ liveLevel: level }),
   setLiveStreak: (streak) => set({ liveStreak: streak }),
+  setLiveFocusStreak: (streak) => set({ liveFocusStreak: streak }),
 
   setPendingXpGain: (gain, reason) => set({ pendingXpGain: gain, pendingXpReason: reason || null }),
 

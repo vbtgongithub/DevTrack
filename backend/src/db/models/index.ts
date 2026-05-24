@@ -20,6 +20,8 @@ export { XpTransaction, type IXpTransaction, type XpSourceType } from './xpTrans
 export { UserStreakLog, type IUserStreakLog, type StreakType } from './userStreakLog.model.js';
 export { UserAnalytics, type IUserAnalytics } from './userAnalytics.model.js';
 export { ProcessedEvent, type IProcessedEvent } from './processedEvent.model.js';
+export { DailyChallenge, type IDailyChallenge } from './dailyChallenge.model.js';
+export { UserDailyChallenge, type IUserDailyChallenge } from './userDailyChallenge.model.js';
 
 // Phase-I Validation Models
 // Removed
@@ -30,5 +32,5 @@ export { ProcessedEvent, type IProcessedEvent } from './processedEvent.model.js'
 // Retention module models (imported directly from modules)
 // Removed
 
-// Unified Runtime State model
 export { UnifiedRuntimeState, type IUnifiedRuntimeState, type MomentumState, type FatigueState, type EmotionalState, type RecoveryState, type OnboardingStage, type EngagementPressure, type ActiveGoalRef, type ActiveChallengeRef, type ActiveAchievementRef, type NearMilestoneRef, type ProgressionPacing } from './unifiedRuntimeState.model.js';
+export { FocusSession, type IFocusSession } from './focusSession.model.js';

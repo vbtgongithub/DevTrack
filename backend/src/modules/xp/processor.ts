@@ -15,6 +15,8 @@ import {
 } from './rules.js';
 import type { XpSourceType } from '../../db/models/index.js';
 import { updateMissionProgress } from '../missions/missionProgress.service.js';
+import { cacheManager } from '../../shared/cache/cacheManager.js';
+import { unifiedRuntimeStateService } from '../runtime-state/unifiedRuntimeState.service.js';
 
 export interface XpEventPayload {
   userId: string;
@@ -63,7 +65,7 @@ export async function processXpEvent(payload: XpEventPayload): Promise<XpProcess
   }
 
   // ── Step 2: Calculate XP award ───────────────────────────────────────────
-  const xpAwarded = calculateXpAward(sourceType, difficulty);
+  const xpAwarded = calculateXpAward(sourceType, difficulty, metadata);
 
   // ── Step 3: Get current UserXp state (or create default) ─────────────────
   let userXp = await UserXp.findOne({ userId: userObjId });
@@ -114,11 +116,10 @@ export async function processXpEvent(payload: XpEventPayload): Promise<XpProcess
   }
 
   // ── Step 5: Atomic aggregate update ─────────────────────────────────────
+  // IMPORTANT: currentLevel MUST NOT be in both $inc and $set — Mongoose will throw.
+  // We use $set exclusively for currentLevel and xpToNextLevel, $inc only for counters.
   const incSet: Record<string, number> = {
     totalXp: xpAwarded,
-    currentLevel: leveledUp ? 1 : 0,
-    xpToNextLevel: leveledUp ? xpToNextLevel(newTotalXp, levelAfter) : 0,
-    lastXpGainedAt: 0,
     'lifetimeStats.totalXpEarned': xpAwarded,
   };
   if (sourceType === 'dsa_accepted' && difficulty) {
@@ -131,16 +132,15 @@ export async function processXpEvent(payload: XpEventPayload): Promise<XpProcess
   if (sourceType === 'daily_streak') incSet['lifetimeStats.dailyStreaks'] = 1;
   if (sourceType === 'sync_completed') incSet['lifetimeStats.totalSyncs'] = 1;
 
-  const updateSet: Record<string, unknown> = {};
-  if (leveledUp) {
-    updateSet.currentLevel = levelAfter;
-    updateSet.xpToNextLevel = xpToNextLevel(newTotalXp, levelAfter);
-  }
-  updateSet.lastXpGainedAt = new Date();
+  const updateSet: Record<string, unknown> = {
+    currentLevel: levelAfter,
+    xpToNextLevel: xpToNextLevel(newTotalXp, levelAfter),
+    lastXpGainedAt: new Date(),
+  };
 
   await UserXp.findByIdAndUpdate(userXp._id, {
     $inc: incSet,
-    ...(Object.keys(updateSet).length > 0 ? { $set: updateSet } : {}),
+    $set: updateSet,
   });
 
   // ── Step 6: Emit SSE events ────────────────────────────────────────────────
@@ -162,6 +162,32 @@ export async function processXpEvent(payload: XpEventPayload): Promise<XpProcess
     await updateMissionProgress(userId, 'streak_day');
   } else if (sourceType === 'sync_completed') {
     await updateMissionProgress(userId, 'sync');
+  }
+
+  // ── Step 9: Cache invalidation ───────────────────────────────────────────
+  try {
+    await cacheManager.invalidateAllUserCache(userId);
+  } catch (err) {
+    logger.warn('[xp] Cache invalidation failed (non-fatal)', { error: err });
+  }
+
+  // ── Step 10: Runtime state sync ──────────────────────────────────────────
+  try {
+    await unifiedRuntimeStateService.updateFromEvent({
+      eventId: `xp_${sourceId}_${Date.now()}`,
+      eventType: 'xp_awarded',
+      userId,
+      timestamp: new Date(),
+      data: {
+        xpAwarded,
+        newTotalXp,
+        levelBefore,
+        levelAfter,
+        xpToNextLevel: xpToNextLevel(newTotalXp, levelAfter),
+      },
+    });
+  } catch (err) {
+    logger.warn('[xp] Runtime state sync failed (non-fatal)', { error: err });
   }
 
   logger.info('[xp] XP awarded', {
@@ -190,12 +216,18 @@ export async function processXpEvent(payload: XpEventPayload): Promise<XpProcess
 
 // ─── XP award calculator ────────────────────────────────────────────────────
 
-function calculateXpAward(sourceType: XpSourceType, difficulty?: 'easy' | 'medium' | 'hard'): number {
+function calculateXpAward(
+  sourceType: XpSourceType,
+  difficulty?: 'easy' | 'medium' | 'hard',
+  metadata?: Record<string, unknown>
+): number {
   switch (sourceType) {
     case 'dsa_accepted': return xpForDifficulty(difficulty);
     case 'dsa_contest': return XP_REWARDS.contestParticipated;
     case 'daily_streak': return XP_REWARDS.dailyStreak;
     case 'sync_completed': return XP_REWARDS.syncCompleted;
+    case 'focus_session': return 50; // Pomodoro/Focus session reward
+    case 'challenge_completed': return typeof metadata?.xpReward === 'number' ? metadata.xpReward : 35;
     case 'milestone': return 0;
     case 'manual': return 0;
     default: return 0;
@@ -245,8 +277,12 @@ export async function processMilestoneXp(
     });
 
     await UserXp.findByIdAndUpdate(userXp._id, {
-      $inc: { totalXp: milestoneXp, currentLevel: levelAfter > levelBefore ? 1 : 0, 'lifetimeStats.totalXpEarned': milestoneXp },
-      $set: levelAfter > levelBefore ? { currentLevel: levelAfter, xpToNextLevel: xpToNextLevel(newTotalXp, levelAfter), lastXpGainedAt: new Date() } : { lastXpGainedAt: new Date() },
+      $inc: { totalXp: milestoneXp, 'lifetimeStats.totalXpEarned': milestoneXp },
+      $set: {
+        currentLevel: levelAfter,
+        xpToNextLevel: xpToNextLevel(newTotalXp, levelAfter),
+        lastXpGainedAt: new Date(),
+      },
     });
 
     eventBus.emitXpUpdated(userId, newTotalXp, milestoneXp, levelAfter, xpToNextLevel(newTotalXp, levelAfter));

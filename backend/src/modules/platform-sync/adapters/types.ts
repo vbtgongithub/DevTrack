@@ -10,7 +10,7 @@ export interface PlatformSubmission {
   /** Provider-specific unique ID (e.g., LeetCode slug, GH commit sha) */
   externalId: string;
   /** Canonical platform name */
-  platform: 'leetcode' | 'github' | 'codeforces' | 'gfg' | 'codechef' | 'hackerrank';
+  platform: 'leetcode' | 'github' | 'codeforces' | 'codechef';
   /** Problem/contribution title */
   title: string;
   /** Difficulty classification (normalized) */
@@ -34,7 +34,7 @@ export interface PlatformSubmission {
 // ---------------------------------------------------------------------------
 
 export interface PlatformProfile {
-  platform: 'leetcode' | 'github' | 'codeforces' | 'gfg' | 'codechef' | 'hackerrank';
+  platform: 'leetcode' | 'github' | 'codeforces' | 'codechef';
   username: string;
   displayName?: string;
   avatarUrl?: string;
@@ -48,7 +48,7 @@ export interface PlatformProfile {
 // ---------------------------------------------------------------------------
 
 export interface PlatformStats {
-  platform: 'leetcode' | 'github' | 'codeforces' | 'gfg' | 'codechef' | 'hackerrank';
+  platform: 'leetcode' | 'github' | 'codeforces' | 'codechef';
   totalSolved: number;
   easySolved: number;
   mediumSolved: number;
@@ -86,7 +86,7 @@ export interface AdapterSyncResult {
 
 export interface PlatformAdapter {
   /** Canonical platform name */
-  readonly platform: 'leetcode' | 'github' | 'codeforces' | 'gfg' | 'codechef' | 'hackerrank';
+  readonly platform: 'leetcode' | 'github' | 'codeforces' | 'codechef';
 
   /** Fetch submissions from the provider */
   fetchSubmissions(username: string, since?: Date): Promise<PlatformSubmission[]>;

@@ -45,7 +45,7 @@ interface ApiStreakMilestonesResponse {
 
 export const streakService = {
   /**
-   * GET /api/streak — unified streak status (current, longest, history).
+   * GET /streak — unified streak status (current, longest, history).
    */
   getCurrent: async (): Promise<ApiStreakData> => {
     const { data } = await axiosClient.get<ApiStreakResponse>('/streak');
@@ -54,7 +54,7 @@ export const streakService = {
   },
 
   /**
-   * GET /api/streak/:type — streak for a specific type (dsa | github | unified).
+   * GET /streak/:type — streak for a specific type (dsa | github | unified).
    */
   getByType: async (type: 'dsa' | 'github' | 'unified'): Promise<ApiStreakData> => {
     const { data } = await axiosClient.get<ApiStreakResponse>(`/streak/${type}`);
@@ -63,7 +63,7 @@ export const streakService = {
   },
 
   /**
-   * GET /api/streak/history — Detailed streak history
+   * GET /streak/history — Detailed streak history
    */
   getHistory: async (): Promise<ApiStreakHistoryEntry[]> => {
     const { data } = await axiosClient.get<ApiStreakHistoryResponse>('/streak/history');
@@ -72,7 +72,7 @@ export const streakService = {
   },
 
   /**
-   * GET /api/streak/milestones — Streak milestones
+   * GET /streak/milestones — Streak milestones
    */
   getMilestones: async (): Promise<ApiStreakMilestone[]> => {
     const { data } = await axiosClient.get<ApiStreakMilestonesResponse>('/streak/milestones');

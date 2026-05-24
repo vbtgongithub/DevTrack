@@ -9,6 +9,8 @@ export type XpSourceType =
   | 'dsa_contest'
   | 'daily_streak'
   | 'sync_completed'
+  | 'challenge_completed'
+  | 'focus_session'
   | 'milestone'
   | 'manual';
 
@@ -36,6 +38,8 @@ const xpTransactionSchema = new Schema<IXpTransaction>(
         'dsa_contest',
         'daily_streak',
         'sync_completed',
+        'challenge_completed',
+        'focus_session',
         'milestone',
         'manual',
       ],

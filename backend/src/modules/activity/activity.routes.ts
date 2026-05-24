@@ -7,7 +7,7 @@ import { z } from 'zod';
 const router = Router();
 
 const activityCreateSchema = z.object({
-  type: z.enum(['problem_solved', 'commit_pushed', 'pr_merged', 'project_created', 'project_updated', 'project_deleted', 'contest_participated', 'streak_milestone', 'note_added', 'settings_updated']),
+  type: z.enum(['problem_solved', 'commit_pushed', 'pr_merged', 'project_created', 'project_updated', 'project_deleted', 'contest_participated', 'streak_milestone', 'note_added', 'settings_updated', 'focus_session']),
   title: z.string().min(1),
   description: z.string(),
   platform: z.string(),
@@ -16,8 +16,18 @@ const activityCreateSchema = z.object({
   metadata: z.record(z.union([z.string(), z.number(), z.boolean()])).optional(),
 });
 
+const focusSessionSchema = z.object({
+  duration: z.number().min(1),
+  mode: z.string(),
+});
+
 // Unified: GET /api/activity → events + heatmap in single response
 router.get('/', authMiddleware, asyncHandler(controller.getAll));
+
+// Focus Sessions
+router.post('/focus/start', authMiddleware, validateBody(focusSessionSchema), asyncHandler(controller.startFocusSession));
+router.post('/focus/heartbeat', authMiddleware, asyncHandler(controller.heartbeatFocusSession));
+router.post('/focus/stop', authMiddleware, asyncHandler(controller.stopFocusSession));
 
 // Granular (kept for backward compat)
 router.get('/heatmap', authMiddleware, asyncHandler(controller.getHeatmap));

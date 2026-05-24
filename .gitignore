@@ -51,6 +51,7 @@ cursor/
 !ARCHITECTURE.md
 !DEPLOYMENT.md
 !SECURITY.md
+!PHASE2_EXECUTION_PLAN.md
 
 # Local documentation (not needed for production)
 docs/

@@ -60,6 +60,9 @@ export interface RuntimeState {
   // Session & messaging
   sessionContext: {
     isActive: boolean;
+    sessionId?: string;
+    mode?: string;
+    duration?: number;
     startedAt?: string;
     lastHeartbeat?: string;
     problemsThisSession: number;

@@ -10,6 +10,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Target, Clock, Users, ExternalLink, CheckCircle2, Zap } from 'lucide-react';
 import { prefersReducedMotion } from '../../design-system/motion';
+import { trackChallengeAttempt } from '../../lib/telemetry/analytics';
+import { EmptyState } from '../shared/EmptyState';
 
 interface DailyChallengeCardProps {
   challenge?: {
@@ -21,7 +23,7 @@ interface DailyChallengeCardProps {
     problemUrl: string;
     xpReward: number;
     completionCount: number;
-    userCompleted: boolean;
+    userCompleted?: boolean;
   } | null;
 }
 
@@ -158,19 +160,18 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ challeng
   if (!challenge) {
     return (
       <div
-        className="w-full bg-white/40 backdrop-blur-3xl rounded-[28px] border border-gray-300 shadow-[0_8px_40px_rgba(124,92,252,0.06)] p-6 relative overflow-hidden"
+        className="w-full bg-white/40 backdrop-blur-3xl rounded-[28px] border border-gray-300 shadow-[0_8px_40px_rgba(124,92,252,0.06)] p-6 relative overflow-hidden h-full flex flex-col justify-center"
         style={{ animation: 'dtFadeIn 800ms cubic-bezier(0.16,1,0.3,1) 150ms both' }}
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(124,92,252,0.03),transparent_40%)]" />
         
-        <div className="relative flex flex-col items-center justify-center py-8 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-dt-primary/10 flex items-center justify-center mb-4 border border-dt-primary/5 shadow-sm">
-            <Target size={32} className="text-dt-primary/60" />
-          </div>
-          <h3 className="text-lg font-black text-dt-text mb-2">No Challenge Seeded</h3>
-          <p className="text-sm text-dt-textSecondary/70 font-bold">
-            Please check back in a moment or sync your account
-          </p>
+        <div className="relative z-10">
+          <EmptyState
+            size="sm"
+            icon="target"
+            title="No Challenge Seeded"
+            description="Please check back in a moment or sync your account"
+          />
         </div>
       </div>
     );
@@ -193,7 +194,7 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ challeng
   return (
     <div
       className={[
-        'w-full rounded-[28px] border transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] p-6 relative overflow-hidden group',
+        'w-full rounded-[28px] border transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] p-5 relative overflow-hidden group',
         isCompleted 
           ? 'bg-gradient-to-br from-emerald-500/[0.03] via-white/70 to-emerald-500/[0.01] border-emerald-500/35 shadow-[0_20px_50px_rgba(16,185,129,0.12),0_0_0_1px_rgba(16,185,129,0.05)]' 
           : isExpired 
@@ -217,7 +218,7 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ challeng
       ].join(' ')} />
 
       {/* Header Row */}
-      <div className="relative flex items-start justify-between mb-5 z-10">
+      <div className="relative flex items-start justify-between mb-3.5 z-10">
         <div className="flex items-center gap-3.5">
           <div className={[
             'w-12 h-12 rounded-2xl flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-105 border',
@@ -254,10 +255,16 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ challeng
       </div>
 
       {/* Challenge Title & Info */}
-      <div className="relative mb-5 z-10">
-        <h3 className="text-2xl font-black text-dt-text tracking-tight leading-tight mb-3">
+      <div className="relative mb-3.5 z-10">
+        <h3 className="text-xl font-black text-dt-text tracking-tight leading-tight mb-2">
           {challenge.title}
         </h3>
+        
+        {/* Adaptive Rationale */}
+        <p className="text-[11px] font-bold text-slate-400 mb-3 flex items-center gap-1.5">
+          <Zap size={12} className="text-dt-primary/70" />
+          Selected for your current {challenge.difficulty} momentum
+        </p>
         
         {/* XP reward display */}
         <div className="flex items-center gap-2">
@@ -276,7 +283,7 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ challeng
       </div>
 
       {/* Progress & Countdown Summary */}
-      <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 pb-5 border-b border-gray-200/80 z-10">
+      <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 pb-4 border-b border-gray-200/80 z-10">
         {/* Social Proof */}
         <div className="flex items-center gap-2 text-sm text-dt-textSecondary/80 font-semibold">
           <Users size={16} className="text-dt-primary/60" />
@@ -322,12 +329,12 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ challeng
       {/* Quick Action Trigger */}
       <div className="relative z-10">
         {isCompleted ? (
-          <div className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-extrabold text-sm shadow-lg shadow-emerald-500/20 border border-emerald-400/20">
+          <div className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-extrabold text-sm shadow-lg shadow-emerald-500/20 border border-emerald-400/20">
             <CheckCircle2 size={18} />
             <span>Completed — +{challenge.xpReward} XP Added to Profile!</span>
           </div>
         ) : isExpired ? (
-          <div className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-slate-200 text-slate-500 font-bold text-sm border border-slate-300/40">
+          <div className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-200 text-slate-500 font-bold text-sm border border-slate-300/40">
             <Clock size={18} />
             <span>Expired — A new daily challenge will seed tomorrow</span>
           </div>
@@ -336,7 +343,8 @@ export const DailyChallengeCard: React.FC<DailyChallengeCardProps> = ({ challeng
             href={challenge.problemUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#7C5CFC] to-[#A78BFA] text-white font-extrabold text-sm shadow-[0_4px_20px_rgba(124,92,252,0.3)] transition-all duration-200 hover:shadow-[0_8px_30px_rgba(124,92,252,0.4)]"
+            onClick={() => trackChallengeAttempt(challenge._id || 'daily', challenge.platform)}
+            className="flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#7C5CFC] to-[#A78BFA] text-white font-extrabold text-sm shadow-[0_4px_20px_rgba(124,92,252,0.3)] transition-all duration-200 hover:shadow-[0_8px_30px_rgba(124,92,252,0.4)]"
             whileHover={reducedMotion ? {} : { y: -2 }}
             whileTap={reducedMotion ? {} : { scale: 0.98 }}
           >

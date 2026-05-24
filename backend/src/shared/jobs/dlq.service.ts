@@ -262,7 +262,7 @@ export const dlqService = {
 
   // Get all DLQ metrics
   async getAllDlqMetrics(): Promise<Record<string, Awaited<ReturnType<DlqManager['getDlqMetrics']>>>> {
-    const queues = [QueueNames.XP_PROCESSING, QueueNames.STREAK_RECALC, QueueNames.ANALYTICS_SYNC, QueueNames.NOTIFICATIONS];
+    const queues = [QueueNames.XP_PROCESSING, QueueNames.STREAK_RECALC, QueueNames.NOTIFICATIONS];
 
     const metrics: Record<string, Awaited<ReturnType<DlqManager['getDlqMetrics']>>> = {};
 

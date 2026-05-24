@@ -2,10 +2,12 @@
 // Timezone-safe streak computation with anti-cheat, deduplication, and freeze support.
 
 import { Types } from 'mongoose';
-import { UserStreakLog, UserAnalytics, type StreakType, type IUserStreakLog } from '../../db/models/index.js';
+import { User, UserStreakLog, UserAnalytics, type StreakType, type IUserStreakLog } from '../../db/models/index.js';
 import { logger } from '../../shared/logger.js';
 import { eventBus } from '../../shared/sse/index.js';
 import { getXpProcessingQueue } from '../../shared/jobs/index.js';
+import { cacheManager } from '../../shared/cache/cacheManager.js';
+import { unifiedRuntimeStateService } from '../runtime-state/unifiedRuntimeState.service.js';
 
 const STREAK_FREEZE_DAYS = 1; // Freeze grants 1 day of protection
 const MAX_VALID_AGE_DAYS = 2; // Reject activity older than 2 days (anti-cheat)
@@ -119,11 +121,15 @@ export async function recalculateStreak(userId: string, streakType: StreakType):
     return resetStreak(userId, streakType);
   }
 
-  // Calculate current streak
-  const { currentStreak, streakDays } = calculateCurrentStreak(logs, timezone);
+  // Fetch analytics for freeze data before calculating streak
+  const analytics = await UserAnalytics.findOne({ userId: userObjId });
+
+  // Calculate current streak (freeze-aware)
+  const { currentStreak, streakDays, freezeConsumed } = calculateCurrentStreak(
+    logs, timezone, analytics?.streakFreezeUntil ?? null
+  );
 
   // Update best streak if current exceeds it
-  const analytics = await UserAnalytics.findOne({ userId: userObjId });
   const bestStreak = Math.max(analytics?.bestStreak ?? 0, currentStreak);
 
   // Determine if streak is active today
@@ -138,7 +144,7 @@ export async function recalculateStreak(userId: string, streakType: StreakType):
     streakType,
     lastActiveDate: streakDays[0] ?? null,
     isActiveToday,
-    streakFreezeUntil: analytics?.streakFreezeUntil ?? null,
+    streakFreezeUntil: freezeConsumed ? null : (analytics?.streakFreezeUntil ?? null),
   };
 
   // ── Step 5: Update UserAnalytics ─────────────────────────────────────────
@@ -150,6 +156,11 @@ export async function recalculateStreak(userId: string, streakType: StreakType):
     updatedAt: new Date(),
     computedAt: new Date(),
   };
+
+  // Consume streak freeze if it was used during calculation
+  if (freezeConsumed) {
+    update.streakFreezeUntil = null;
+  }
 
   // Handle streak freeze expiry
   if (analytics?.streakFreezeUntil && analytics.streakFreezeUntil < new Date()) {
@@ -163,8 +174,13 @@ export async function recalculateStreak(userId: string, streakType: StreakType):
   );
 
   // ── Step 6: Emit streak milestone events and trigger XP ───────────────
+  const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100, 365];
   const previousStreak = analytics?.currentStreak ?? 0;
-  if (currentStreak > 0 && currentStreak % 7 === 0 && currentStreak > previousStreak) {
+  const hitMilestone = STREAK_MILESTONES.find(
+    (m) => currentStreak >= m && previousStreak < m
+  );
+
+  if (hitMilestone) {
     eventBus.emitStreakMilestone(userId, currentStreak, streakType);
 
     // Trigger streak bonus XP via queue
@@ -186,6 +202,39 @@ export async function recalculateStreak(userId: string, streakType: StreakType):
     }
   }
 
+  // ── Step 7: Emit streak-at-risk if applicable ──────────────────────────
+  if (currentStreak > 0 && !isActiveToday && !status.streakFreezeUntil) {
+    const now = new Date();
+    const localHourFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone, hour: 'numeric', hour12: false,
+    });
+    const localHour = parseInt(localHourFormatter.format(now), 10);
+    const hoursRemaining = Math.max(0, 24 - localHour);
+
+    eventBus.emitStreakAtRisk(userId, currentStreak, hoursRemaining);
+  }
+
+  // ── Step 8: Cache invalidation ─────────────────────────────────────────
+  try {
+    await cacheManager.invalidateUserStreak(userId);
+    await cacheManager.invalidateDashboard(userId);
+  } catch (err) {
+    logger.warn('[streak] Cache invalidation failed (non-fatal)', { error: err });
+  }
+
+  // ── Step 9: Runtime state sync ──────────────────────────────────────────
+  try {
+    await unifiedRuntimeStateService.updateFromEvent({
+      eventId: `streak_${streakType}_${Date.now()}`,
+      eventType: 'streak_updated',
+      userId,
+      timestamp: new Date(),
+      data: status as unknown as Record<string, unknown>,
+    });
+  } catch (err) {
+    logger.warn('[streak] Runtime state sync failed (non-fatal)', { error: err });
+  }
+
   logger.info('[streak] Recalculated', {
     event: 'streak_recalculated',
     userId,
@@ -193,14 +242,20 @@ export async function recalculateStreak(userId: string, streakType: StreakType):
     currentStreak,
     bestStreak,
     isActiveToday,
+    freezeConsumed,
   });
 
   return status;
 }
 
-function calculateCurrentStreak(logs: IUserStreakLog[], timezone: string): { currentStreak: number; streakDays: Date[] } {
+function calculateCurrentStreak(
+  logs: IUserStreakLog[],
+  timezone: string,
+  streakFreezeUntil: Date | null
+): { currentStreak: number; streakDays: Date[]; freezeConsumed: boolean } {
   const streakDays: Date[] = [];
   let streakCount = 0;
+  let freezeConsumed = false;
 
   // Group by date
   const dateMap = new Map<string, number>();
@@ -210,21 +265,31 @@ function calculateCurrentStreak(logs: IUserStreakLog[], timezone: string): { cur
     dateMap.set(dateKey, existing + log.activityCount);
   }
 
-  // Sort dates
+  // Sort dates descending
   const sortedDates = Array.from(dateMap.keys()).sort().reverse();
 
-  // Check for freeze
   const today = normalizeToUserDate(new Date(), timezone);
   let expectedDate = new Date(today);
 
-  for (const dateKey of sortedDates) {
-    const logDate = new Date(dateKey);
-    const daysDiff = Math.floor((expectedDate.getTime() - logDate.getTime()) / (1000 * 60 * 60 * 24));
+  // Determine if freeze is currently active
+  const freezeActive = streakFreezeUntil !== null && streakFreezeUntil >= today;
 
-    // Allow for streak freeze
+  for (const dateKey of sortedDates) {
+    const logDate = new Date(dateKey + 'T00:00:00.000Z');
+    const daysDiff = Math.round((expectedDate.getTime() - logDate.getTime()) / (1000 * 60 * 60 * 24));
+
     if (daysDiff > 1) {
-      // Check if within freeze period
-      // For now, just break the streak
+      // Gap detected — check if freeze covers it
+      if (freezeActive && !freezeConsumed && daysDiff === 2) {
+        // Freeze covers exactly one missed day — consume it and continue
+        freezeConsumed = true;
+        // Adjust expectedDate to skip the gap day
+        expectedDate = new Date(logDate.getTime() - 24 * 60 * 60 * 1000);
+        streakDays.push(logDate);
+        streakCount++;
+        continue;
+      }
+      // No freeze available or gap too large — streak breaks
       break;
     }
 
@@ -234,7 +299,7 @@ function calculateCurrentStreak(logs: IUserStreakLog[], timezone: string): { cur
     expectedDate = new Date(logDate.getTime() - 24 * 60 * 60 * 1000);
   }
 
-  return { currentStreak: streakCount, streakDays };
+  return { currentStreak: streakCount, streakDays, freezeConsumed };
 }
 
 // ─── Reset streak ────────────────────────────────────────────────────────────
@@ -329,17 +394,31 @@ export async function getUnifiedStreak(userId: string): Promise<StreakStatus> {
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 function normalizeToUserDate(date: Date, timezone: string): Date {
-  // Convert to user's timezone and get midnight
-  // This is a simplified version - in production, use date-fns-tz or luxon
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
+  // Get the calendar date string in the user's timezone using Intl API
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const dateStr = formatter.format(date); // "YYYY-MM-DD"
+    return new Date(dateStr + 'T00:00:00.000Z');
+  } catch {
+    // Fallback if timezone string is invalid
+    const d = new Date(date);
+    d.setUTCHours(0, 0, 0, 0);
+    return d;
+  }
 }
 
 async function getUserTimezone(userId: string): Promise<string> {
-  // Fetch from user settings when available
-  // For now, default to UTC
-  return 'UTC';
+  try {
+    const user = await User.findById(userId).select('timezone').lean();
+    return (user as Record<string, unknown>)?.timezone as string || 'UTC';
+  } catch {
+    return 'UTC';
+  }
 }
 
 // ─── Streak status getter ──────────────────────────────────────────────────

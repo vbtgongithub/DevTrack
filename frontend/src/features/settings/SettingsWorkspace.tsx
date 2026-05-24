@@ -18,7 +18,8 @@ import { SystemHealthBar } from './components/SystemHealthBar';
 import { generateRecommendations, getSettingHint } from './types/recommendations';
 
 export const SettingsWorkspace: React.FC = () => {
-  const { settings, fetchSettings } = useSettingsStore();
+  const settings = useSettingsStore((s) => s.settings);
+  const fetchSettings = useSettingsStore((s) => s.fetchSettings);
   const addToast = useUIStore((s) => s.addToast);
 
   const [activeSection, setActiveSection] = useState(SETTINGS_SCHEMA[0].id);

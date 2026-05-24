@@ -121,9 +121,9 @@ export const opsController = {
     // Get queue metrics
     const queueMetrics: QueueMetrics[] = [];
     const queueNames = [
+      QueueNames.PLATFORM_SYNC,
       QueueNames.XP_PROCESSING,
       QueueNames.STREAK_RECALC,
-      QueueNames.ANALYTICS_SYNC,
       QueueNames.NOTIFICATIONS,
     ];
 

@@ -6,6 +6,7 @@
 // ============================================================================
 
 import { useEffect, useCallback, useRef } from 'react';
+import { useShallow } from 'zustand/shallow';
 import { useProjectsStore } from '../store/projectsStore';
 import {
   fetchProjects,
@@ -65,7 +66,23 @@ export function useProjectsData(): HookReturn<ProjectsPageVM> & {
     setFilter,
     setSearch,
     clearFilters,
-  } = useProjectsStore();
+  } = useProjectsStore(
+    useShallow((state) => ({
+      listData: state.listData,
+      listStatus: state.listStatus,
+      listError: state.listError,
+      listLastFetchedAt: state.listLastFetchedAt,
+      currentPage: state.currentPage,
+      filters: state.filters,
+      setListData: state.setListData,
+      setListStatus: state.setListStatus,
+      setListError: state.setListError,
+      setPage: state.setPage,
+      setFilter: state.setFilter,
+      setSearch: state.setSearch,
+      clearFilters: state.clearFilters,
+    }))
+  );
 
   const retriesRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
@@ -191,7 +208,19 @@ export function useProjectDetail(
     setDetailStatus: setStatus,
     setDetailError: setError,
     setActiveProject,
-  } = useProjectsStore();
+  } = useProjectsStore(
+    useShallow((state) => ({
+      detailData: state.detailData,
+      detailStatus: state.detailStatus,
+      detailError: state.detailError,
+      detailLastFetchedAt: state.detailLastFetchedAt,
+      activeProjectId: state.activeProjectId,
+      setDetailData: state.setDetailData,
+      setDetailStatus: state.setDetailStatus,
+      setDetailError: state.setDetailError,
+      setActiveProject: state.setActiveProject,
+    }))
+  );
 
   const retriesRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);

@@ -46,18 +46,19 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
   deletingId,
 }) => {
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-      {/* Header row */}
-      <div className="grid grid-cols-[1fr_110px_80px_80px_100px_44px] gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50/50">
-        <span className="text-[10px] font-bold text-dt-textMuted uppercase tracking-wider">Project</span>
-        <span className="text-[10px] font-bold text-dt-textMuted uppercase tracking-wider">Status</span>
-        <span className="text-[10px] font-bold text-dt-textMuted uppercase tracking-wider text-right">Progress</span>
-        <span className="text-[10px] font-bold text-dt-textMuted uppercase tracking-wider text-right">Stars</span>
-        <span className="text-[10px] font-bold text-dt-textMuted uppercase tracking-wider text-right">Updated</span>
-        <span />
-      </div>
+    <div className="bg-white border border-gray-200 rounded-2xl overflow-x-auto scrollbar-none">
+      <div className="min-w-[700px]">
+        {/* Header row */}
+        <div className="grid grid-cols-[1fr_110px_80px_80px_100px_44px] gap-4 px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+          <span className="text-[10px] font-bold text-dt-textMuted uppercase tracking-wider">Project</span>
+          <span className="text-[10px] font-bold text-dt-textMuted uppercase tracking-wider">Status</span>
+          <span className="text-[10px] font-bold text-dt-textMuted uppercase tracking-wider text-right">Progress</span>
+          <span className="text-[10px] font-bold text-dt-textMuted uppercase tracking-wider text-right">Stars</span>
+          <span className="text-[10px] font-bold text-dt-textMuted uppercase tracking-wider text-right">Updated</span>
+          <span />
+        </div>
 
-      {/* Rows */}
+        {/* Rows */}
       {projects.map((p, i) => {
         const status = statusBadge(p.status);
         const progress = progressPercent(p);
@@ -130,6 +131,7 @@ export const ProjectListView: React.FC<ProjectListViewProps> = ({
           <p className="text-[13px] text-dt-textMuted">No projects to display</p>
         </div>
       )}
+      </div>
     </div>
   );
 };

@@ -5,15 +5,16 @@
 // Uses TanStack Query for caching and automatic refetching.
 // ============================================================================
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axiosClient from '../utils/axiosClient';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export interface DailyChallenge {
+export interface DailyChallengeData {
   id: string;
+  _id?: string;
   date: string; // ISO date
   title: string;
   description: string;
@@ -22,13 +23,16 @@ export interface DailyChallenge {
   problemUrl: string;
   xpReward: number;
   completionCount: number;
-  userCompleted: boolean;
+  userCompleted?: boolean;
   expiresAt: string; // ISO timestamp
 }
 
 export interface DailyChallengeResponse {
   success: boolean;
-  data: DailyChallenge | null;
+  data: {
+    challenge: DailyChallengeData | null;
+    userCompleted: boolean;
+  };
   message?: string;
 }
 
@@ -36,33 +40,20 @@ export interface DailyChallengeResponse {
 // API Functions
 // ---------------------------------------------------------------------------
 
-async function fetchTodayChallenge(): Promise<DailyChallenge | null> {
-  try {
-    const response = await axiosClient.get<DailyChallengeResponse>('/api/daily-challenge/today');
-    return response.data.data;
-  } catch (error) {
-    console.error('Failed to fetch daily challenge:', error);
-    return null;
-  }
+/**
+ * Fetches the daily challenge for the current user.
+ */
+export async function getTodayChallenge() {
+  return await axiosClient.get<DailyChallengeResponse>('/daily-challenge/today');
 }
 
-async function markChallengeComplete(challengeId: string): Promise<void> {
-  await axiosClient.post(`/api/daily-challenge/${challengeId}/complete`);
+export async function markChallengeComplete(challengeId: string): Promise<void> {
+  await axiosClient.post(`/daily-challenge/${challengeId}/complete`);
 }
 
 // ---------------------------------------------------------------------------
 // React Query Hooks
 // ---------------------------------------------------------------------------
-
-export function useDailyChallenge() {
-  return useQuery({
-    queryKey: ['dailyChallenge', 'today'],
-    queryFn: fetchTodayChallenge,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchInterval: 60 * 1000, // Refetch every minute to update countdown
-    refetchOnWindowFocus: true,
-  });
-}
 
 export function useMarkChallengeComplete() {
   const queryClient = useQueryClient();
@@ -80,7 +71,7 @@ export function useMarkChallengeComplete() {
 // Mock Data (for development/demo)
 // ---------------------------------------------------------------------------
 
-export function getMockDailyChallenge(): DailyChallenge {
+export function getMockDailyChallenge(): DailyChallengeData {
   const today = new Date();
   const expiresAt = new Date(today);
   expiresAt.setHours(23, 59, 59, 999);

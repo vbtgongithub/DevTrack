@@ -7,17 +7,17 @@ import type { ApiMission, ApiMutationResponse } from '../types/api.types';
 // API client functions
 const goalsApi = {
   getGoals: async (): Promise<ApiMission[]> => {
-    const response = await axiosClient.get('/api/goals');
+    const response = await axiosClient.get('/goals');
     return response.data.data || [];
   },
 
   completeGoal: async (goalId: string): Promise<ApiMutationResponse> => {
-    const response = await axiosClient.post(`/api/goals/${goalId}/complete`);
+    const response = await axiosClient.post(`/goals/${goalId}/complete`);
     return response.data;
   },
 
   updateProgress: async (goalId: string, progress: number): Promise<ApiMutationResponse> => {
-    const response = await axiosClient.patch(`/api/goals/${goalId}/progress`, { progress });
+    const response = await axiosClient.patch(`/goals/${goalId}/progress`, { progress });
     return response.data;
   },
 };

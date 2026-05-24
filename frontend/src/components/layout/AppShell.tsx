@@ -22,6 +22,7 @@ import {
   Clock,
   Wifi,
   RefreshCw,
+  Target,
 } from 'lucide-react';
 import { cn } from '../../lib/design-system/tokens.css';
 import { useSse } from '../../hooks/useSse';
@@ -42,6 +43,7 @@ interface NavItem {
 
 const coreNav: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
+  { id: 'focus', label: 'Focus', icon: <Target size={20} />, path: '/focus' },
   { id: 'dsa', label: 'DSA', icon: <Code2 size={20} />, path: '/dsa' },
   { id: 'projects', label: 'Projects', icon: <FolderKanban size={20} />, path: '/projects' },
   { id: 'profile', label: 'Profile', icon: <UserRound size={20} />, path: '/profile' },
@@ -67,7 +69,10 @@ export const AppShell = () => {
     const runPing = async () => {
       const start = performance.now();
       try {
-        await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/health`, {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+        // Health endpoint is at root level, not under API base path
+        const healthUrl = baseUrl.replace(/\/api$/, '') + '/health';
+        await fetch(healthUrl, {
           method: 'GET',
           cache: 'no-store',
         });

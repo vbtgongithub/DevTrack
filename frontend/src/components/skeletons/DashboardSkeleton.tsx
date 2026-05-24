@@ -25,16 +25,7 @@ const StatCardSkeleton: React.FC = () => (
   </div>
 );
 
-const PlatformCardSkeleton: React.FC = () => (
-  <div className="dt-card-base dt-card-pad-md flex flex-col gap-3">
-    <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-lg bg-dt-primary/5" />
-      <SkeletonLine className="w-20 h-3" />
-    </div>
-    <SkeletonLine className="w-12" style={{ height: '24px' }} />
-    <SkeletonLine className="w-16" />
-  </div>
-);
+
 
 const SectionHeaderSkeleton: React.FC = () => (
   <div className="flex items-center gap-3">
@@ -52,7 +43,7 @@ const SyncButtonSkeleton: React.FC = () => (
 
 export const DashboardSkeleton: React.FC = () => {
   return (
-    <div className="flex flex-col gap-10 max-w-[1600px] mx-auto w-full pb-16">
+    <div className="flex flex-col gap-10 max-w-[1600px] mx-auto w-full pb-16 px-4 lg:px-8">
       {/* Header skeleton */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
@@ -66,7 +57,7 @@ export const DashboardSkeleton: React.FC = () => {
       </div>
 
       {/* Stats grid skeleton — matches StatsGrid layout */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 items-stretch">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
         {[0, 1, 2, 3].map((i) => (
           <motion.div
             key={`stat-${i}`}
@@ -79,50 +70,39 @@ export const DashboardSkeleton: React.FC = () => {
         ))}
       </div>
 
-      {/* Platform cards skeleton */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 items-stretch">
-        {[0, 1, 2, 3].map((i) => (
-          <motion.div
-            key={`platform-${i}`}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 60 + 100, duration: 0.4 }}
-          >
-            <PlatformCardSkeleton />
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Gamification panel skeleton */}
-      <div className="dt-radius-2xl dt-card-base dt-card-pad-xl space-y-6">
-        <div className="flex items-center justify-between">
-          <SkeletonLine className="w-48 h-6" />
-          <SkeletonLine className="w-24 h-3" />
-        </div>
-        <div className="h-px bg-gradient-to-r from-transparent via-dt-primary/15 to-transparent" />
-        <div className="flex items-center gap-6">
-          {[0, 1, 2, 3].map((i) => (
+      {/* Daily Progression Zone skeleton */}
+      <div className="space-y-4">
+        <SectionHeaderSkeleton />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+          {[0, 1, 2].map((i) => (
             <motion.div
-              key={`mission-${i}`}
-              initial={{ opacity: 0, scale: 0.95 }}
+              key={`progression-${i}`}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 80 + 300, duration: 0.3 }}
-              className="flex-1"
+              transition={{ delay: i * 80 + 200, duration: 0.4 }}
+              className="h-[200px]"
             >
-              <div className="dt-card-base dt-card-pad-sm space-y-3">
-                <SkeletonBlock className="w-8 h-8 dt-radius-md" />
-                <SkeletonLine className="w-full" />
-                <SkeletonLine className="w-3/4" />
+              <div className="dt-card-base h-full dt-card-pad-lg space-y-4">
+                <div className="flex items-center gap-4">
+                  <SkeletonBlock className="w-12 h-12 dt-radius-xl" />
+                  <div className="space-y-2">
+                    <SkeletonLine className="w-24" />
+                    <SkeletonLine className="w-32 h-4" />
+                  </div>
+                </div>
+                <SkeletonLine className="w-full h-8" />
+                <SkeletonBlock className="w-full h-2 dt-radius-full" />
               </div>
             </motion.div>
           ))}
         </div>
+        <SkeletonBlock className="w-full h-[60px] dt-radius-xl" />
       </div>
 
       {/* AI Insights & Platform Intel skeleton */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-8">
-          <div className="dt-radius-2xl dt-card-base dt-card-pad-lg space-y-4">
+          <div className="dt-radius-2xl dt-card-base dt-card-pad-lg space-y-6">
             <SectionHeaderSkeleton />
             <div className="space-y-3 mt-4">
               {[0, 1, 2, 3].map((i) => (
@@ -132,13 +112,13 @@ export const DashboardSkeleton: React.FC = () => {
           </div>
         </div>
         <div className="lg:col-span-4">
-          <div className="dt-radius-2xl dt-card-base dt-card-pad-lg space-y-4">
+          <div className="dt-radius-2xl dt-card-base dt-card-pad-lg space-y-6">
             <SectionHeaderSkeleton />
-            <div className="space-y-3 mt-4">
+            <div className="space-y-4 mt-4">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="dt-radius-md dt-card-base dt-card-pad-sm space-y-2">
-                  <SkeletonLine className="w-20" />
-                  <SkeletonLine className="w-full" style={{ height: '20px' }} />
+                <div key={i} className="dt-radius-xl dt-card-base dt-card-pad-md space-y-3">
+                  <SkeletonLine className="w-24" />
+                  <SkeletonLine className="w-full h-6" />
                 </div>
               ))}
             </div>
@@ -149,27 +129,19 @@ export const DashboardSkeleton: React.FC = () => {
       {/* Focus & Productivity skeleton */}
       <div className="space-y-6">
         <SectionHeaderSkeleton />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={`focus-${i}`}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 80 + 600, duration: 0.4 }}
-            >
-              <div className="dt-radius-2xl dt-card-base dt-card-pad-lg space-y-4">
-                <div className="flex items-center gap-3">
-                  <SkeletonBlock className="w-8 h-8 dt-radius-md" />
-                  <SkeletonLine className="w-28 h-4" />
-                </div>
-                <SkeletonLine className="w-full" />
-                <SkeletonLine className="w-4/5" />
-                <SkeletonLine className="w-3/5" />
-                <SkeletonBlock className="w-24 h-9 dt-radius-md mt-2" />
-              </div>
-            </motion.div>
-          ))}
+        <div className="max-w-[1200px] mx-auto w-full">
+           <SkeletonBlock className="w-full h-[350px] dt-radius-[32px]" />
         </div>
+      </div>
+
+      {/* Bottom Grid skeleton */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="space-y-4">
+            <SectionHeaderSkeleton />
+            <SkeletonBlock className="w-full h-[300px] dt-radius-2xl" />
+          </div>
+        ))}
       </div>
     </div>
   );

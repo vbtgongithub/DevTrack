@@ -6,7 +6,7 @@ import { ApiResponse } from '../../shared/response.js';
 import { logger } from '../../shared/logger.js';
 import type { AuthenticatedRequest } from '../../middleware/auth.js';
 
-const VALID_STREAK_TYPES = ['dsa', 'github', 'unified'] as const;
+const VALID_STREAK_TYPES = ['dsa', 'github', 'unified', 'focus'] as const;
 
 export const streakController = {
   async getStreak(req: AuthenticatedRequest, res: Response): Promise<void> {
@@ -35,7 +35,7 @@ export const streakController = {
     const { type } = req.params;
 
     if (!VALID_STREAK_TYPES.includes(type as StreakType)) {
-      ApiResponse.badRequest(res, 'Invalid streak type. Use: dsa, github, or unified');
+      ApiResponse.badRequest(res, 'Invalid streak type. Use: dsa, github, unified, or focus');
       return;
     }
 

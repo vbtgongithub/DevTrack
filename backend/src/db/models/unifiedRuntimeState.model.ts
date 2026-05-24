@@ -58,6 +58,9 @@ export interface NearMilestoneRef {
 // Session context
 export interface SessionContext {
   isActive: boolean;
+  sessionId?: string;
+  mode?: string;
+  duration?: number;
   startedAt?: Date;
   lastHeartbeat?: Date;
   problemsThisSession: number;
@@ -195,6 +198,9 @@ const unifiedRuntimeStateSchema = new Schema<IUnifiedRuntimeState>(
     // Session & messaging
     sessionContext: {
       isActive: { type: Boolean, default: false },
+      sessionId: { type: String },
+      mode: { type: String },
+      duration: { type: Number },
       startedAt: { type: Date },
       lastHeartbeat: { type: Date },
       problemsThisSession: { type: Number, default: 0 },

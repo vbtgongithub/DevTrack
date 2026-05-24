@@ -140,6 +140,21 @@ export class UnifiedRuntimeStateService {
         updates.streakRisk = this.calculateStreakRisk(data as any);
         updates.momentumState = this.calculateMomentumState(data as any, state as any);
         break;
+      case 'focus_session_started':
+        updates['sessionContext.isActive'] = true;
+        updates['sessionContext.startedAt'] = data.startedAt;
+        updates['sessionContext.lastHeartbeat'] = data.startedAt;
+        updates['sessionContext.duration'] = data.duration;
+        updates['sessionContext.mode'] = data.mode;
+        if (data.sessionId) updates['sessionContext.sessionId'] = data.sessionId;
+        break;
+      case 'focus_session_heartbeat':
+        updates['sessionContext.lastHeartbeat'] = new Date();
+        break;
+      case 'focus_session_stopped':
+        updates['sessionContext.isActive'] = false;
+        updates['sessionContext.lastHeartbeat'] = new Date();
+        break;
       default:
         return await this.rebuildRuntimeState(userId, { fromEventId: event.eventId });
     }
@@ -160,6 +175,56 @@ export class UnifiedRuntimeStateService {
     }
 
     return updatedState!;
+  }
+
+  async startFocusSession(userId: string, duration: number, mode: string): Promise<IUnifiedRuntimeState> {
+    const { focusEngine } = await import('../activity/focusEngine.service.js');
+    const sessionId = await focusEngine.startSession(userId, mode, duration);
+
+    return await this.updateFromEvent({
+      eventId: `focus_start_${userId}_${Date.now()}`,
+      eventType: 'focus_session_started',
+      userId,
+      timestamp: new Date(),
+      data: { startedAt: new Date(), duration, mode, sessionId },
+    });
+  }
+
+  async heartbeatFocusSession(userId: string): Promise<IUnifiedRuntimeState> {
+    const state = await this.getRuntimeStateFresh(userId);
+    if (state?.sessionContext?.sessionId) {
+      const { focusEngine } = await import('../activity/focusEngine.service.js');
+      await focusEngine.recordHeartbeat(state.sessionContext.sessionId);
+    }
+
+    return await this.updateFromEvent({
+      eventId: `focus_hb_${userId}_${Date.now()}`,
+      eventType: 'focus_session_heartbeat',
+      userId,
+      timestamp: new Date(),
+      data: {},
+    });
+  }
+
+  async stopFocusSession(userId: string): Promise<IUnifiedRuntimeState> {
+    const state = await this.getRuntimeStateFresh(userId);
+    let qualityScore = 100;
+    
+    if (state?.sessionContext?.sessionId) {
+      const { focusEngine } = await import('../activity/focusEngine.service.js');
+      const result = await focusEngine.completeSession(state.sessionContext.sessionId);
+      if (result) {
+        qualityScore = result.qualityScore;
+      }
+    }
+
+    return await this.updateFromEvent({
+      eventId: `focus_stop_${userId}_${Date.now()}`,
+      eventType: 'focus_session_stopped',
+      userId,
+      timestamp: new Date(),
+      data: { stoppedAt: new Date(), qualityScore },
+    });
   }
 
   async invalidateState(userId: string): Promise<void> {

@@ -7,6 +7,7 @@ import { eventBus } from '../../shared/sse/index.js';
 import * as cheerio from 'cheerio';
 import { env } from '../../config/env.js';
 import { circuitBreakers, CircuitOpenError } from '../../shared/circuit-breaker/circuitBreaker.js';
+import { acquireSyncLockWithRetry, releaseSyncLock } from '../../shared/redis/syncLock.service.js';
 
 const SYNC_TIMEOUT_MS = 15000;
 
@@ -651,6 +652,51 @@ export async function syncAllPlatforms(userId: string): Promise<SyncResult[]> {
 }
 
 export async function syncPlatform(userId: string, platformName: string): Promise<SyncResult> {
+  // TASK 2: Acquire distributed mutex lock to prevent concurrent syncs
+  // Prevents data corruption from concurrent writes
+  const lockAcquired = await acquireSyncLockWithRetry(userId, platformName, 10);
+  
+  if (!lockAcquired) {
+    logger.warn('[syncLock] Failed to acquire lock, rejecting sync', {
+      event: 'sync_lock_rejected',
+      userId,
+      platformName,
+    });
+    return {
+      platform: platformName,
+      success: false,
+      error: 'Another sync is already running for this platform. Please wait and try again.',
+    };
+  }
+
+  try {
+    // Execute actual sync with lock held
+    return await syncPlatformWithLock(userId, platformName);
+  } finally {
+    // Always release lock, even if sync fails
+    try {
+      await releaseSyncLock(userId, platformName);
+      logger.info('[syncLock] Lock released', {
+        event: 'sync_lock_released',
+        userId,
+        platformName,
+      });
+    } catch (releaseErr) {
+      logger.error('[syncLock] Failed to release lock', releaseErr as Error, {
+        userId,
+        platformName,
+        error: releaseErr instanceof Error ? releaseErr.message : String(releaseErr),
+      });
+    }
+  }
+}
+
+/**
+ * Internal sync implementation — MUST be called with lock held
+ * Do not call directly; use syncPlatform() which handles locking
+ */
+async function syncPlatformWithLock(userId: string, platformName: string): Promise<SyncResult> {
+  const syncStartedAt = Date.now();
   const platform = await ConnectedPlatform.findOneAndUpdate(
     { userId: new Types.ObjectId(userId), platformName },
     { syncStatus: 'syncing', syncError: null },
@@ -664,14 +710,14 @@ export async function syncPlatform(userId: string, platformName: string): Promis
   // ─── Production Hardening: Cooldown Logic (5 minutes) ────────────────────
   const COOLDOWN_MS = 5 * 60 * 1000;
   const timeSinceLastSync = platform.lastSyncedAt ? Date.now() - new Date(platform.lastSyncedAt).getTime() : Infinity;
-  
+
   if (timeSinceLastSync < COOLDOWN_MS && platform.syncStatus === 'success') {
     const remainingSec = Math.ceil((COOLDOWN_MS - timeSinceLastSync) / 1000);
     logger.info(`Sync cooldown active for ${platformName}`, { userId, remainingSec });
-    return { 
-      platform: platformName, 
-      success: false, 
-      error: `Cooldown active. Please wait ${remainingSec}s before syncing ${platformName} again.` 
+    return {
+      platform: platformName,
+      success: false,
+      error: `Cooldown active. Please wait ${remainingSec}s before syncing ${platformName} again.`
     };
   }
 
@@ -754,6 +800,18 @@ export async function syncPlatform(userId: string, platformName: string): Promis
       itemsProcessed: fetched.totalSolved,
       itemsUpdated: fetched.totalSolved,
     });
+
+    const syncDurationMs = Date.now() - syncStartedAt;
+
+    // Emit SSE completion event with actual duration
+    eventBus.emitSyncCompleted(userId, platformName, {
+      totalSolved: fetched.totalSolved,
+      easySolved: fetched.easySolved,
+      mediumSolved: fetched.mediumSolved,
+      hardSolved: fetched.hardSolved,
+      rating: fetched.rating ?? undefined,
+      totalContests: fetched.totalContests,
+    }, syncDurationMs);
 
     return {
       platform: platformName,
@@ -1052,6 +1110,11 @@ async function ingestCodeforcesSubmissions(userId: string, handle: string): Prom
           }
 
           ingested++;
+
+          if (sub.verdict === 'OK') {
+            const { checkChallengeCompletion } = await import('../daily-challenge/daily-challenge.service.js');
+            void checkChallengeCompletion(userId, 'codeforces', problemKey);
+          }
         } catch (subErr: any) {
           // Duplicate key on unique index (userId + platform + externalId) → skip
           if (subErr?.code === 11000) {
@@ -1283,6 +1346,9 @@ export async function ingestLeetCodeSubmissions(userId: string, username: string
         }
 
         ingested++;
+
+        const { checkChallengeCompletion } = await import('../daily-challenge/daily-challenge.service.js');
+        void checkChallengeCompletion(userId, 'leetcode', problemKey);
       } catch (createErr: any) {
         if (createErr?.code === 11000) {
           duplicates++;

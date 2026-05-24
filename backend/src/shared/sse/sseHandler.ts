@@ -8,6 +8,7 @@ import { eventBus, SseClient } from './eventBus.js';
 import { logger } from '../logger.js';
 import { env } from '../../config/env.js';
 import { getRedisClient } from '../redis/client.js';
+import { trackSseConnectionSuccess, trackSseConnectionFailure, trackSseDisconnection } from '../monitoring.js';
 
 const encoder = new TextEncoder();
 
@@ -117,7 +118,11 @@ function createSseStream(
         emit(event) {
           if (!controllerRef) return;
           try {
-            const payload = `data: ${JSON.stringify(event)}\n\n`;
+            let payload = '';
+            if (event.id) {
+              payload += `id: ${event.id}\n`;
+            }
+            payload += `data: ${JSON.stringify(event)}\n\n`;
             controllerRef.enqueue(encoder.encode(payload));
           } catch {
             // Stream closed
@@ -168,12 +173,14 @@ export async function handleSseRequest(req: Request, res: Response): Promise<voi
       
       if (!ticketUserId) {
         logger.warn('[sse] Ticket handshake failed — expired or invalid ticket', { ticket, requestId });
+        trackSseConnectionFailure('unknown', 'invalid_ticket');
         res.status(401).json({ error: 'Invalid or expired handshake ticket' });
         return;
       }
-      
+
       userId = ticketUserId;
       logger.info('[sse] Handshake authenticated successfully via ticket', { userId, ticket, requestId });
+      trackSseConnectionSuccess(userId);
     } catch (err) {
       logger.error('[sse] Ticket handshake error', err as Error, { ticket, requestId });
       res.status(500).json({ error: 'Internal Server Error' });
@@ -234,6 +241,7 @@ export async function handleSseRequest(req: Request, res: Response): Promise<voi
 
   res.on('close', () => {
     eventBus.unregister(clientId);
+    trackSseDisconnection(userId);
     logger.info('[sse] Response closed', {
       event: 'sse_response_closed',
       clientId,

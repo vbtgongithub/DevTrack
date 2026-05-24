@@ -37,7 +37,7 @@ export interface FrictionEvent {
 export const sessionReplay = {
   // ─── Start Session Replay ────────────────────────────────────────────────
   async startSession(metadata: SessionMetadata): Promise<void> {
-    const betaUser = await BetaUser.findOne({ userId: metadata.userId });
+    const betaUser = await BetaUser.findOne({ userId: metadata.userId }).lean();
 
     await SessionReplay.create({
       sessionId: metadata.sessionId,
@@ -169,14 +169,15 @@ export const sessionReplay = {
 
   // ─── Get Session Replay ───────────────────────────────────────────────
   async getSessionReplay(sessionId: string) {
-    return SessionReplay.findOne({ sessionId });
+    return SessionReplay.findOne({ sessionId }).lean();
   },
 
   // ─── Get User Session Replays ─────────────────────────────────────────
   async getUserSessionReplays(userId: mongoose.Types.ObjectId, limit: number = 10) {
     return SessionReplay.find({ userId })
       .sort({ startTime: -1 })
-      .limit(limit);
+      .limit(limit)
+      .lean();
   },
 
   // ─── Get Friction Summary ──────────────────────────────────────────────
@@ -188,7 +189,7 @@ export const sessionReplay = {
   }> {
     const replays = await SessionReplay.find({
       startTime: { $gte: dateRange.start, $lte: dateRange.end },
-    });
+    }).lean();
 
     const byType: Record<string, number> = {};
     const bySeverity: Record<string, number> = {};
