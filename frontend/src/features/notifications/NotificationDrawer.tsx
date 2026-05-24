@@ -24,6 +24,7 @@ const NOTIFICATION_ICONS: Record<NotificationType, { icon: React.ReactNode; colo
   sync_failed:          { icon: <AlertTriangle size={16} />,  color: '#EF4444', bg: '#FEF2F2' },
   achievement_unlocked: { icon: <Trophy size={16} />,         color: '#10B981', bg: '#ECFDF5' },
   mission_completed:    { icon: <Star size={16} />,           color: '#F59E0B', bg: '#FEF3C7' },
+  challenge_completed:  { icon: <Trophy size={16} />,         color: '#F59E0B', bg: '#FEF3C7' },
   notification_created: { icon: <Info size={16} />,           color: '#3B82F6', bg: '#EFF6FF' },
   general:              { icon: <Bell size={16} />,           color: '#64748B', bg: '#F1F5F9' },
 };

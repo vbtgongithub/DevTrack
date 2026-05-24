@@ -90,7 +90,7 @@ function handleGamificationEvent(event: SseEvent, stores: Stores) {
       // Show level-up overlay
       const newLevel = event.stats?.rating ?? 1;
       const totalXp = event.stats?.totalSolved ?? 0;
-      gamificationStore.showLevelUpOverlay({ newLevel, totalXp });
+      gamificationStore.triggerLevelUp(newLevel, totalXp);
 
       // Invalidate XP query
       queryClient.invalidateQueries({ queryKey: xpQueryKeys.current });
@@ -115,7 +115,7 @@ function handleGamificationEvent(event: SseEvent, stores: Stores) {
 
       // Show streak milestone overlay
       const streakDays = event.stats?.totalSolved ?? 0;
-      gamificationStore.showStreakMilestoneOverlay({ days: streakDays });
+      gamificationStore.triggerStreakMilestone(streakDays);
 
       // Invalidate streak query
       queryClient.invalidateQueries({ queryKey: streakQueryKeys.current });
@@ -148,7 +148,13 @@ function handleGamificationEvent(event: SseEvent, stores: Stores) {
     case 'achievement_unlocked': {
       // Show achievement overlay
       if (event.payload) {
-        gamificationStore.showAchievementOverlay(event.payload);
+        gamificationStore.triggerAchievementUnlock({
+          id: event.payload?.id ?? `achievement-${Date.now()}`,
+          name: event.payload?.name ?? 'Achievement',
+          description: event.payload?.description ?? 'You earned an achievement!',
+          icon: event.payload?.icon ?? '🏆',
+          rarity: event.payload?.rarity ?? 'common',
+        });
       }
 
       // Invalidate achievements query

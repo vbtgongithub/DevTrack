@@ -11,6 +11,7 @@ export { XpGainFloat } from './components/XpGainFloat';
 export { LevelUpOverlay } from './overlays/LevelUpOverlay';
 export { StreakMilestoneOverlay } from './overlays/StreakMilestoneOverlay';
 export { AchievementUnlockOverlay } from './overlays/AchievementUnlockOverlay';
+export { ChallengeCompletedOverlay } from './overlays/ChallengeCompletedOverlay';
 
 // Hooks
 export {

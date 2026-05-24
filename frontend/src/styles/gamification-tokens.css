@@ -1,0 +1,295 @@
+/* ============================================================================
+   Gamification Design Tokens
+   ============================================================================
+   Centralized design system for DevTrack's progression experience.
+   All gamification components MUST use these tokens.
+   ============================================================================ */
+
+:root {
+  /* ─── Core Gamification Colors ─────────────────────────────────────────── */
+  --xp-color: #F59E0B;
+  --xp-color-light: #FCD34D;
+  --xp-color-dark: #D97706;
+  
+  --streak-color: #F97316;
+  --streak-color-light: #FB923C;
+  --streak-color-dark: #EA580C;
+  
+  --danger-color: #EF4444;
+  --danger-color-light: #FCA5A5;
+  --danger-color-dark: #DC2626;
+  
+  --success-color: #22C55E;
+  --success-color-light: #86EFAC;
+  --success-color-dark: #16A34A;
+  
+  /* ─── Level Rarity Colors ──────────────────────────────────────────────── */
+  --level-common: #94A3B8;      /* Levels 1-3 */
+  --level-uncommon: #3B82F6;    /* Levels 4-6 */
+  --level-rare: #8B5CF6;        /* Levels 7-9 */
+  --level-epic: #F59E0B;        /* Levels 10-12 */
+  --level-legendary: #EC4899;   /* Levels 13-15 */
+  
+  /* Dynamic level color (updated via JS based on user's current level) */
+  --level-color: var(--level-rare);
+  --level-color-light: #A78BFA;
+  --level-color-dark: #7C3AED;
+  
+  /* ─── Glow System ──────────────────────────────────────────────────────── */
+  --glow-subtle: 0 0 20px;
+  --glow-medium: 0 0 40px;
+  --glow-intense: 0 0 60px;
+  --glow-legendary: 0 0 80px;
+  
+  /* Glow opacity levels */
+  --glow-opacity-subtle: 0.2;
+  --glow-opacity-medium: 0.3;
+  --glow-opacity-intense: 0.4;
+  --glow-opacity-legendary: 0.5;
+  
+  /* ─── Motion Timing ────────────────────────────────────────────────────── */
+  --duration-instant: 100ms;
+  --duration-fast: 200ms;
+  --duration-base: 300ms;
+  --duration-calm: 500ms;
+  --duration-slow: 800ms;
+  --duration-overlay: 400ms;
+  
+  /* Easing curves */
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-bouncy: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  
+  /* ─── Typography Scale ─────────────────────────────────────────────────── */
+  --text-hero: 4rem;        /* 64px — Streak number */
+  --text-display: 3rem;     /* 48px — Level number */
+  --text-title: 1.5rem;     /* 24px — Card titles */
+  --text-body: 1rem;        /* 16px — Body text */
+  --text-label: 0.75rem;    /* 12px — Labels */
+  --text-caption: 0.625rem; /* 10px — Captions */
+  
+  /* Mobile adjustments */
+  --text-hero-mobile: 3rem;     /* 48px */
+  --text-display-mobile: 2rem;  /* 32px */
+  
+  /* ─── Spacing Scale ────────────────────────────────────────────────────── */
+  --space-xs: 0.25rem;   /* 4px */
+  --space-sm: 0.5rem;    /* 8px */
+  --space-md: 1rem;      /* 16px */
+  --space-lg: 1.5rem;    /* 24px */
+  --space-xl: 2rem;      /* 32px */
+  --space-2xl: 3rem;     /* 48px */
+  
+  /* ─── Border Radius ────────────────────────────────────────────────────── */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 36px;
+  --radius-full: 9999px;
+  
+  /* ─── Shadows ──────────────────────────────────────────────────────────── */
+  --shadow-card: 0 8px 30px rgba(124, 92, 252, 0.08);
+  --shadow-card-hover: 0 16px 48px rgba(124, 92, 252, 0.12);
+  --shadow-floating: 0 20px 60px rgba(124, 92, 252, 0.1);
+  --shadow-overlay: 0 40px 120px rgba(0, 0, 0, 0.2);
+  
+  /* ─── Z-Index Layers ───────────────────────────────────────────────────── */
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-fixed: 30;
+  --z-modal-backdrop: 40;
+  --z-modal: 50;
+  --z-overlay: 100;
+  --z-toast: 200;
+}
+
+/* ─── Responsive Typography ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  :root {
+    --text-hero: var(--text-hero-mobile);
+    --text-display: var(--text-display-mobile);
+  }
+}
+
+/* ─── Utility Classes ────────────────────────────────────────────────────── */
+
+/* Glow effects */
+.glow-xp-subtle {
+  box-shadow: var(--glow-subtle) rgba(245, 158, 11, var(--glow-opacity-subtle));
+}
+
+.glow-xp-medium {
+  box-shadow: var(--glow-medium) rgba(245, 158, 11, var(--glow-opacity-medium));
+}
+
+.glow-xp-intense {
+  box-shadow: var(--glow-intense) rgba(245, 158, 11, var(--glow-opacity-intense));
+}
+
+.glow-streak-subtle {
+  box-shadow: var(--glow-subtle) rgba(249, 115, 22, var(--glow-opacity-subtle));
+}
+
+.glow-streak-medium {
+  box-shadow: var(--glow-medium) rgba(249, 115, 22, var(--glow-opacity-medium));
+}
+
+.glow-streak-intense {
+  box-shadow: var(--glow-intense) rgba(249, 115, 22, var(--glow-opacity-intense));
+}
+
+.glow-level-subtle {
+  box-shadow: var(--glow-subtle) rgba(var(--level-color-rgb), var(--glow-opacity-subtle));
+}
+
+.glow-level-medium {
+  box-shadow: var(--glow-medium) rgba(var(--level-color-rgb), var(--glow-opacity-medium));
+}
+
+.glow-level-intense {
+  box-shadow: var(--glow-intense) rgba(var(--level-color-rgb), var(--glow-opacity-intense));
+}
+
+/* Pulse animations */
+@keyframes pulse-glow-xp {
+  0%, 100% {
+    box-shadow: var(--glow-medium) rgba(245, 158, 11, var(--glow-opacity-medium));
+  }
+  50% {
+    box-shadow: var(--glow-intense) rgba(245, 158, 11, var(--glow-opacity-intense));
+  }
+}
+
+@keyframes pulse-glow-streak {
+  0%, 100% {
+    box-shadow: var(--glow-medium) rgba(249, 115, 22, var(--glow-opacity-medium));
+  }
+  50% {
+    box-shadow: var(--glow-intense) rgba(249, 115, 22, var(--glow-opacity-intense));
+  }
+}
+
+@keyframes pulse-scale {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-glow-xp {
+  animation: pulse-glow-xp 2s ease-in-out infinite;
+}
+
+.animate-pulse-glow-streak {
+  animation: pulse-glow-streak 2s ease-in-out infinite;
+}
+
+.animate-pulse-scale {
+  animation: pulse-scale 2s ease-in-out infinite;
+}
+
+/* Shimmer effect for progress bars */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all var(--duration-base) var(--ease-smooth);
+}
+
+.transition-spring {
+  transition: all var(--duration-calm) var(--ease-spring);
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .animate-pulse-glow-xp,
+  .animate-pulse-glow-streak,
+  .animate-pulse-scale,
+  .shimmer {
+    animation: none !important;
+  }
+}
+
+/* ─── Component-Specific Tokens ──────────────────────────────────────────── */
+
+/* Streak card */
+.streak-card {
+  --card-bg: linear-gradient(135deg, var(--streak-color), var(--streak-color-dark));
+  --card-shadow: var(--shadow-floating);
+}
+
+.streak-card-at-risk {
+  --card-bg: linear-gradient(135deg, var(--danger-color), var(--danger-color-dark));
+  --card-shadow: var(--glow-medium) rgba(239, 68, 68, var(--glow-opacity-medium));
+}
+
+/* XP progress bar */
+.xp-bar-fill {
+  background: linear-gradient(90deg, var(--xp-color-dark), var(--xp-color));
+  transition: width var(--duration-slow) var(--ease-spring);
+}
+
+.xp-bar-fill-near-levelup {
+  background: linear-gradient(90deg, var(--level-color-dark), var(--level-color));
+  box-shadow: var(--glow-medium) rgba(var(--level-color-rgb), var(--glow-opacity-medium));
+}
+
+/* Daily challenge card */
+.challenge-card-active {
+  border-color: var(--xp-color);
+  box-shadow: var(--glow-subtle) rgba(245, 158, 11, var(--glow-opacity-subtle));
+}
+
+.challenge-card-urgent {
+  border-color: var(--danger-color);
+  box-shadow: var(--glow-medium) rgba(239, 68, 68, var(--glow-opacity-medium));
+  animation: pulse-glow-xp 2s ease-in-out infinite;
+}
+
+.challenge-card-completed {
+  border-color: var(--success-color);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.05), transparent);
+}
+
+/* Mission countdown colors */
+.countdown-safe {
+  color: var(--success-color);
+}
+
+.countdown-warning {
+  color: var(--xp-color);
+}
+
+.countdown-urgent {
+  color: var(--danger-color);
+  animation: pulse-scale 1s ease-in-out infinite;
+}

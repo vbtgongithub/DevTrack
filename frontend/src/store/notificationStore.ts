@@ -20,6 +20,7 @@ export type NotificationType =
   | 'sync_failed'
   | 'achievement_unlocked'
   | 'mission_completed'
+  | 'challenge_completed'
   | 'notification_created'
   | 'general';
 

@@ -24,6 +24,7 @@ export {
   buttonTap,
   shimmerPulse,
   progressPulse,
+  glowPulse,
 } from './variants';
 
 // Springs

@@ -57,3 +57,11 @@ export function getAccessToken(): string | null {
 export function getRefreshToken(): string | null {
   return localStorage.getItem('devtrack_refresh_token');
 }
+
+export async function getSSEHandshakeTicket(): Promise<string> {
+  const { data } = await axiosClient.post<ApiResponse<{ ticket: string }>>(
+    '/auth/sse-handshake',
+    {}
+  );
+  return data.data.ticket;
+}

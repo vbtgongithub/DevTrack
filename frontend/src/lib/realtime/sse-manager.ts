@@ -69,7 +69,7 @@ export const useSseStore = create<SseStore>((set, get) => ({
   eventHistory: [],
   listeners: new Map(),
 
-  connect: () => {
+  connect: async () => {
     if (eventSource) {
       eventSource.close();
     }
@@ -88,7 +88,20 @@ export const useSseStore = create<SseStore>((set, get) => ({
       connectionState: { ...state.connectionState, reconnecting: true },
     }));
 
-    const url = `${baseUrl}/api/events?token=${encodeURIComponent(token)}`;
+    // Acquire secure handshake ticket before connecting
+    let ticket: string | null = null;
+    try {
+      const { getSSEHandshakeTicket } = await import('../../services/authService');
+      ticket = await getSSEHandshakeTicket();
+    } catch (err) {
+      console.error('[SSE] Failed to acquire handshake ticket:', err);
+      set((state) => ({
+        connectionState: { ...state.connectionState, error: 'Failed to authenticate SSE', reconnecting: false },
+      }));
+      return;
+    }
+
+    const url = `${baseUrl}/api/events?ticket=${encodeURIComponent(ticket)}`;
     eventSource = new EventSource(url);
 
     eventSource.onopen = () => {
@@ -139,6 +152,7 @@ export const useSseStore = create<SseStore>((set, get) => ({
           },
         }));
         reconnectTimeout = setTimeout(() => {
+          // Acquire fresh ticket before reconnecting
           get().connect();
         }, RECONNECT_DELAY * reconnectAttempts);
       } else {

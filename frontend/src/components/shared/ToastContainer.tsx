@@ -10,6 +10,8 @@
 import React, { useEffect } from 'react';
 import { useUIStore } from '../../store/uiStore';
 import { Icon } from './Icon';
+import { motion, AnimatePresence } from 'framer-motion';
+import { prefersReducedMotion, springSnappy } from '../../lib/motion';
 
 const typeStyles = {
   success: {
@@ -152,7 +154,12 @@ const ToastItem: React.FC<{ toast: Toast }> = ({ toast }) => {
   const styles = typeStyles[toast.type];
 
   return (
-    <div
+    <motion.div
+      layout
+      initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 50, scale: 0.95 }}
+      animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+      exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: 20 }}
+      transition={springSnappy}
       className={[
         'relative flex items-start gap-3 p-4 rounded-2xl border shadow-lg',
         'overflow-hidden transition-all duration-400',
@@ -216,7 +223,7 @@ const ToastItem: React.FC<{ toast: Toast }> = ({ toast }) => {
       >
         <Icon name="x" size={14} className="text-dt-textMuted/50" />
       </button>
-    </div>
+    </motion.div>
   );
 };
 
@@ -236,9 +243,11 @@ export const ToastContainer: React.FC = () => {
       {/* Toast stack — bottom right, above everything */}
       {toasts.length > 0 && (
         <div className="fixed bottom-4 right-4 z-[200] flex flex-col gap-2 max-w-sm w-full">
-          {toasts.map((toast) => (
-            <ToastItem key={toast.id} toast={toast} />
-          ))}
+          <AnimatePresence mode="popLayout">
+            {toasts.map((toast) => (
+              <ToastItem key={toast.id} toast={toast} />
+            ))}
+          </AnimatePresence>
         </div>
       )}
 

@@ -12,9 +12,19 @@ import { RuntimeDebugPanel } from '../features/debug/RuntimeDebugPanel';
 import { LevelUpOverlay } from '../features/gamification/overlays/LevelUpOverlay';
 import { StreakMilestoneOverlay } from '../features/gamification/overlays/StreakMilestoneOverlay';
 import { AchievementUnlockOverlay } from '../features/gamification/overlays/AchievementUnlockOverlay';
+import { ChallengeCompletedOverlay } from '../features/gamification/overlays/ChallengeCompletedOverlay';
+import { useXpState } from '../features/gamification/hooks/useXpState';
 
 interface AppProvidersProps {
   children: React.ReactNode;
+}
+
+function getRarityTheme(level: number) {
+  if (level >= 13) return { color: '#EC4899', rgb: '236, 72, 153' }; // Legendary
+  if (level >= 10) return { color: '#F59E0B', rgb: '245, 158, 11' }; // Epic
+  if (level >= 7)  return { color: '#8B5CF6', rgb: '139, 92, 246' }; // Rare
+  if (level >= 4)  return { color: '#3B82F6', rgb: '59, 130, 246' }; // Uncommon
+  return { color: '#94A3B8', rgb: '148, 163, 184' }; // Common
 }
 
 /** Wires theme, SSE, and lightweight telemetry for authenticated sessions */
@@ -22,6 +32,7 @@ export function AppProviders({ children }: AppProvidersProps) {
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const setTheme = useUIStore((s) => s.setTheme);
   const queryClient = useQueryClient();
+  const { liveLevel } = useXpState();
 
   useSse({
     enabled: isAuthenticated,
@@ -46,6 +57,14 @@ export function AppProviders({ children }: AppProvidersProps) {
     };
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    const levelToUse = isAuthenticated ? liveLevel : 1;
+    const theme = getRarityTheme(levelToUse);
+    document.documentElement.style.setProperty('--level-color', theme.color);
+    document.documentElement.style.setProperty('--level-color-rgb', theme.rgb);
+  }, [liveLevel, isAuthenticated]);
+
+
   return (
     <>
       {children}
@@ -55,6 +74,7 @@ export function AppProviders({ children }: AppProvidersProps) {
       <LevelUpOverlay />
       <StreakMilestoneOverlay />
       <AchievementUnlockOverlay />
+      <ChallengeCompletedOverlay />
     </>
   );
 }

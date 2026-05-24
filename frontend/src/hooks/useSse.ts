@@ -260,18 +260,26 @@ async function connectGlobalSse(setSseStatus: (status: 'connected' | 'reconnecti
     emitChange();
     setSseStatus('connected');
 
-    // Stale state recovery: if disconnected for >30s, force-invalidate all queries
+    // Stale state recovery: if disconnected for >30s, force-refetch all queries
     if (globalDisconnectedAt !== null) {
       const disconnectDuration = now - globalDisconnectedAt;
       if (disconnectDuration > STALE_STATE_THRESHOLD_MS) {
-        console.info('[SSE] Reconnected after long disconnect, invalidating all queries', {
+        console.info('[SSE] Reconnected after long disconnect, refetching all queries', {
           disconnectDuration: Math.round(disconnectDuration / 1000) + 's',
         });
-        
-        // Force-invalidate all queries to ensure fresh state
+
+        // Set visual indicator for recovery
+        setSseStatus('reconnecting');
+
+        // Force-refetch all queries to ensure fresh state (not invalidate)
         for (const cb of activeCallbacks) {
-          cb.queryClient.invalidateQueries();
+          cb.queryClient.refetchQueries();
         }
+
+        // Clear visual indicator after refetch completes
+        setTimeout(() => {
+          setSseStatus('connected');
+        }, 1000);
       }
       globalDisconnectedAt = null;
     }

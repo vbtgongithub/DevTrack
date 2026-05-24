@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "./styles/gamification-tokens.css";
+
 
 @theme {
   /* ─── BASE COLORS ─── */

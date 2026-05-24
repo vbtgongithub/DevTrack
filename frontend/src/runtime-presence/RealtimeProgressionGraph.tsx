@@ -11,7 +11,7 @@ interface DataNode {
   y: number;
   active: boolean;
   intensity: number;
-  platform: 'leetcode' | 'codeforces' | 'github' | 'gfg';
+  platform: 'leetcode' | 'codeforces' | 'github' | 'codechef';
 }
 
 export const RealtimeProgressionGraph: React.FC = () => {
@@ -28,7 +28,7 @@ export const RealtimeProgressionGraph: React.FC = () => {
         y: Math.random() * 100,
         active: Math.random() > 0.8,
         intensity: Math.random(),
-        platform: ['leetcode', 'codeforces', 'github', 'gfg'][Math.floor(Math.random() * 4)] as any,
+        platform: ['leetcode', 'codeforces', 'github', 'codechef'][Math.floor(Math.random() * 4)] as any,
       });
     }
     setNodes(generated);

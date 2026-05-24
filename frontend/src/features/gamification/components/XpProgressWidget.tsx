@@ -13,23 +13,48 @@ import { useGamificationStore, getLevelInfo } from '../../../store/gamificationS
 import { Zap, TrendingUp, Star } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
-// XP Gain Float Animation
+// XP Gain Float Animation with Reason
 // ---------------------------------------------------------------------------
 
-const XpGainFloat: React.FC<{ gain: number }> = ({ gain }) => (
+interface XpGainFloatProps {
+  gain: number;
+  reason?: string;
+}
+
+const XpGainFloat: React.FC<XpGainFloatProps> = ({ gain, reason }) => (
   <motion.div
     initial={{ opacity: 0, y: 0, scale: 0.8 }}
     animate={{
       opacity: [0, 1, 1, 0],
       y: [0, -20, -40, -60],
-      scale: [0.8, 1.1, 1, 0.9],
+      scale: [0.8, 1.15, 1.05, 0.9],
     }}
-    transition={{ duration: 1.8, ease: 'easeOut' }}
-    className="absolute -top-2 right-4 pointer-events-none z-20"
+    transition={{ duration: 2.0, ease: 'easeOut' }}
+    className="absolute -top-2 right-4 pointer-events-none z-20 flex flex-col items-end"
   >
-    <span className="text-base font-black text-amber-500 drop-shadow-[0_2px_8px_rgba(245,158,11,0.5)] tabular-nums">
+    <motion.span 
+      className="text-xl font-black text-amber-500 drop-shadow-[0_2px_16px_rgba(245,158,11,0.7)] tabular-nums"
+      animate={{
+        textShadow: [
+          '0 2px 16px rgba(245,158,11,0.7)',
+          '0 4px 24px rgba(245,158,11,0.9)',
+          '0 2px 16px rgba(245,158,11,0.7)',
+        ],
+      }}
+      transition={{ duration: 0.6, repeat: 2 }}
+    >
       +{gain} XP
-    </span>
+    </motion.span>
+    {reason && (
+      <motion.span
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.4 }}
+        className="text-sm font-extrabold text-amber-600 mt-1 drop-shadow-md px-2 py-0.5 bg-amber-50/90 rounded-md border border-amber-200/50"
+      >
+        {reason}
+      </motion.span>
+    )}
   </motion.div>
 );
 
@@ -60,15 +85,41 @@ export const XpProgressWidget: React.FC = () => {
   const xpData = useXp();
   const liveXp = useGamificationStore((s) => s.liveXp);
   const pendingXpGain = useGamificationStore((s) => s.pendingXpGain);
+  const pendingXpReason = useGamificationStore((s) => s.pendingXpReason);
+  const [displayedXp, setDisplayedXp] = React.useState(xpData.totalXp);
 
   // Use live XP from SSE if available, otherwise fall back to server data
-  const displayXp = liveXp ?? xpData.totalXp;
+  const targetXp = liveXp ?? xpData.totalXp;
   const level = xpData.currentLevel;
   const levelInfo = getLevelInfo(level);
   const progressPercent = xpData.progressPercent;
   const xpInCurrent = xpData.xpInCurrentLevel;
   const xpToNext = xpData.xpToNextLevel;
   const isNearLevelUp = progressPercent > 80;
+
+  // Animated XP number interpolation
+  useEffect(() => {
+    if (targetXp === displayedXp) return;
+    
+    const diff = targetXp - displayedXp;
+    const duration = 1000; // 1 second
+    const steps = 30;
+    const increment = diff / steps;
+    const stepDuration = duration / steps;
+    
+    let currentStep = 0;
+    const interval = setInterval(() => {
+      currentStep++;
+      if (currentStep >= steps) {
+        setDisplayedXp(targetXp);
+        clearInterval(interval);
+      } else {
+        setDisplayedXp(prev => Math.round(prev + increment));
+      }
+    }, stepDuration);
+    
+    return () => clearInterval(interval);
+  }, [targetXp, displayedXp]);
 
   // Animated progress bar value using spring
   const springProgress = useSpring(0, {
@@ -81,6 +132,17 @@ export const XpProgressWidget: React.FC = () => {
   }, [progressPercent, springProgress]);
 
   const progressWidth = useTransform(springProgress, (v) => `${Math.min(100, v)}%`);
+
+  // Glow pulse state
+  const [isGlowing, setIsGlowing] = React.useState(false);
+
+  useEffect(() => {
+    if (pendingXpGain && pendingXpGain > 0) {
+      setIsGlowing(true);
+      const timeout = setTimeout(() => setIsGlowing(false), 2000);
+      return () => clearTimeout(timeout);
+    }
+  }, [pendingXpGain]);
 
   return (
     <div
@@ -98,7 +160,7 @@ export const XpProgressWidget: React.FC = () => {
       {/* Floating XP gain */}
       <AnimatePresence>
         {pendingXpGain !== null && pendingXpGain > 0 && (
-          <XpGainFloat key="xp-float" gain={pendingXpGain} />
+          <XpGainFloat key="xp-float" gain={pendingXpGain} reason={pendingXpReason ?? undefined} />
         )}
       </AnimatePresence>
 
@@ -124,7 +186,7 @@ export const XpProgressWidget: React.FC = () => {
           <div className="flex items-center gap-1.5">
             <Zap size={14} className="text-amber-500" />
             <span className="text-2xl font-black text-dt-text tabular-nums tracking-tighter leading-none">
-              {displayXp.toLocaleString()}
+              {displayedXp.toLocaleString()}
             </span>
             <span className="text-xs text-dt-textSecondary/50 font-bold ml-0.5">XP</span>
           </div>
@@ -134,7 +196,12 @@ export const XpProgressWidget: React.FC = () => {
         </div>
 
         {/* Progress track */}
-        <div className="h-2.5 w-full bg-dt-primary/5 rounded-full overflow-hidden relative">
+        <div
+          className="h-2.5 w-full bg-dt-primary/5 rounded-full overflow-hidden relative transition-all duration-300"
+          style={{
+            boxShadow: isGlowing ? `0 0 10px 2px ${levelInfo.color}40` : 'none',
+          }}
+        >
           {/* Shimmer overlay for "alive" feel */}
           <div
             className="absolute inset-0 opacity-30"
@@ -150,7 +217,7 @@ export const XpProgressWidget: React.FC = () => {
             style={{
               width: progressWidth,
               background: `linear-gradient(90deg, ${levelInfo.color}CC, ${levelInfo.color})`,
-              boxShadow: isNearLevelUp ? `0 0 12px ${levelInfo.color}60` : 'none',
+              boxShadow: isNearLevelUp || isGlowing ? `0 0 12px ${levelInfo.color}80` : 'none',
             }}
           >
             {/* Glow pulse at end when near level-up */}

@@ -46,6 +46,10 @@ const SectionHeaderSkeleton: React.FC = () => (
   </div>
 );
 
+const SyncButtonSkeleton: React.FC = () => (
+  <div className="w-[110px] h-9 rounded-xl bg-white/40 border border-dt-primary/10 dt-skeleton animate-pulse" />
+);
+
 export const DashboardSkeleton: React.FC = () => {
   return (
     <div className="flex flex-col gap-10 max-w-[1600px] mx-auto w-full pb-16">
@@ -56,8 +60,8 @@ export const DashboardSkeleton: React.FC = () => {
           <SkeletonLine className="w-48 h-4" />
         </div>
         <div className="flex items-center gap-2">
+          <SyncButtonSkeleton />
           <SkeletonBlock className="w-32 h-9 dt-radius-md" />
-          <SkeletonBlock className="w-28 h-9 dt-radius-md" />
         </div>
       </div>
 

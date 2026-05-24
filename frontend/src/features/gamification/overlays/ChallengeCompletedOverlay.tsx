@@ -1,28 +1,28 @@
 // ============================================================================
-// LevelUpOverlay.tsx — Full-screen Level-Up Celebration
+// ChallengeCompletedOverlay.tsx — Full-screen Challenge Completion Celebration
 // ============================================================================
-// Triggered by SSE level_up event. Features confetti particles, spring
-// animation card, counter animation, and auto-dismiss after 5s.
+// Triggered by SSE challenge_completed event. Features gold confetti particles,
+// bouncy animation card, xp reward text, and auto-dismiss after 5s.
 // Respects prefers-reduced-motion.
 // ============================================================================
 
 import React, { useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGamificationStore, getLevelInfo } from '../../../store/gamificationStore';
+import { useGamificationStore } from '../../../store/gamificationStore';
+import type { ChallengeCompletedPayload } from '../../../store/gamificationStore';
 import { overlayEnter, bouncy, durations, prefersReducedMotion } from '../../../design-system/motion';
 import { useIsMobile } from '../../../hooks/useMediaQuery';
-import { Star, Sparkles, ChevronRight } from 'lucide-react';
+import { Trophy, Sparkles, ChevronRight, Award } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
 // Confetti Particle
 // ---------------------------------------------------------------------------
 
-interface ConfettiParticleProps {
+interface GoldConfettiParticleProps {
   index: number;
-  levelColor: string;
 }
 
-const ConfettiParticle: React.FC<ConfettiParticleProps> = ({ index, levelColor }) => {
+const GoldConfettiParticle: React.FC<GoldConfettiParticleProps> = ({ index }) => {
   const angle = (index / 20) * 360;
   const distance = 120 + Math.random() * 180;
   const x = Math.cos((angle * Math.PI) / 180) * distance;
@@ -31,13 +31,13 @@ const ConfettiParticle: React.FC<ConfettiParticleProps> = ({ index, levelColor }
   const size = 6 + Math.random() * 6;
   const shape = index % 3; // 0 = circle, 1 = square, 2 = line
 
-  // Dynamic colors matching level color with white/gold highlights
+  // Sleek gold and sparkling highlights
   const color = [
-    levelColor,
-    `${levelColor}CC`,
-    `${levelColor}99`,
-    '#FFFFFF',
-    '#F59E0B', // Gold accent
+    '#F59E0B', // Amber 500
+    '#D97706', // Amber 600
+    '#FBBF24', // Amber 400
+    '#FFFFFF', // White shine
+    '#FEF3C7', // Amber 100
   ][index % 5];
 
   return (
@@ -63,7 +63,7 @@ const ConfettiParticle: React.FC<ConfettiParticleProps> = ({ index, levelColor }
           width: shape === 2 ? size * 2.5 : size,
           height: shape === 2 ? 3 : size,
           backgroundColor: color,
-          borderRadius: shape === 0 ? '50%' : shape === 2 ? '2px' : '2px',
+          borderRadius: shape === 0 ? '50%' : '2px',
         }}
       />
     </motion.div>
@@ -71,14 +71,14 @@ const ConfettiParticle: React.FC<ConfettiParticleProps> = ({ index, levelColor }
 };
 
 // ---------------------------------------------------------------------------
-// Level-Up Overlay
+// Challenge Completed Overlay Component
 // ---------------------------------------------------------------------------
 
-export const LevelUpOverlay: React.FC = () => {
+export const ChallengeCompletedOverlay: React.FC = () => {
   const activeOverlay = useGamificationStore((s) => s.activeOverlay);
   const dismissCurrentOverlay = useGamificationStore((s) => s.dismissCurrentOverlay);
-  const show = activeOverlay?.type === 'level_up';
-  const data = show ? (activeOverlay.data as { newLevel: number; totalXp: number }) : null;
+  const show = activeOverlay?.type === 'challenge_completed';
+  const data = show ? (activeOverlay.data as ChallengeCompletedPayload) : null;
   const dismiss = dismissCurrentOverlay;
   const overlayRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -90,7 +90,7 @@ export const LevelUpOverlay: React.FC = () => {
     }
   }, [show]);
 
-  // Robust 5s auto-dismiss useEffect with proper cleanup
+  // 5s auto-dismiss useEffect with proper cleanup
   useEffect(() => {
     if (!show) return;
     const timer = setTimeout(() => {
@@ -106,7 +106,7 @@ export const LevelUpOverlay: React.FC = () => {
 
   if (!data) return null;
 
-  const levelInfo = getLevelInfo(data.newLevel);
+  const goldColor = '#F59E0B';
 
   return (
     <AnimatePresence>
@@ -120,30 +120,30 @@ export const LevelUpOverlay: React.FC = () => {
           transition={{ duration: durations.overlay }}
           className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-md"
           style={{
-            background: `radial-gradient(circle, ${levelInfo.color}1E 0%, rgba(15, 23, 42, 0.75) 100%)`
+            background: `radial-gradient(circle, ${goldColor}1E 0%, rgba(15, 23, 42, 0.8) 100%)`
           }}
           onClick={dismiss}
           onKeyDown={handleKeyDown}
           role="dialog"
           aria-modal="true"
-          aria-labelledby="levelup-title"
+          aria-labelledby="challenge-completed-title"
           tabIndex={-1}
         >
           {/* Screen reader announcement */}
           <div role="alert" aria-live="assertive" className="sr-only">
-            You reached Level {data.newLevel}! {levelInfo.name}
+            Daily Challenge Completed! You solved {data.title} and earned {data.xpReward} XP!
           </div>
 
           {/* Confetti - reduced count on mobile */}
           {!prefersReducedMotion && (
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              {Array.from({ length: isMobile ? 12 : 20 }, (_, i) => (
-                <ConfettiParticle key={i} index={i} levelColor={levelInfo.color} />
+              {Array.from({ length: isMobile ? 12 : 24 }, (_, i) => (
+                <GoldConfettiParticle key={i} index={i} />
               ))}
             </div>
           )}
 
-          {/* Card - adaptive sizing and safe area */}
+          {/* Card - premium aesthetics with white/gold gradients */}
           <motion.div
             initial={prefersReducedMotion
               ? { opacity: 0 }
@@ -159,35 +159,36 @@ export const LevelUpOverlay: React.FC = () => {
             }
             transition={bouncy}
             className={[
-              'relative rounded-[32px] overflow-hidden',
+              'relative rounded-[32px] overflow-hidden border border-amber-500/20',
               isMobile ? 'w-[calc(100vw-32px)] max-w-[360px]' : 'w-[380px] max-w-[90vw]',
             ].join(' ')}
             style={{
-              background: `linear-gradient(160deg, ${levelInfo.color}18, white 40%, ${levelInfo.color}08)`,
-              boxShadow: `0 40px 120px ${levelInfo.color}30, 0 0 0 1px rgba(0,0,0,0.05)`,
+              background: `linear-gradient(160deg, rgba(245, 158, 11, 0.1) 0%, #ffffff 40%, rgba(245, 158, 11, 0.05) 100%)`,
+              boxShadow: `0 40px 120px rgba(245, 158, 11, 0.25), 0 0 0 1px rgba(245, 158, 11, 0.1)`,
               marginBottom: isMobile ? 'max(env(safe-area-inset-bottom), 16px)' : undefined,
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Decorative glow - reduced on mobile */}
+            {/* Decorative gold glow */}
             <div
               className={[
-                'absolute rounded-full blur-[80px] pointer-events-none',
-                isMobile ? '-top-16 -right-16 w-48 h-48 opacity-30' : '-top-20 -right-20 w-60 h-60 opacity-40',
+                'absolute rounded-full blur-[80px] pointer-events-none opacity-40',
+                isMobile ? '-top-16 -right-16 w-48 h-48' : '-top-20 -right-20 w-60 h-60',
               ].join(' ')}
-              style={{ backgroundColor: levelInfo.color }}
+              style={{ backgroundColor: goldColor }}
             />
 
             <div className={[
               'relative flex flex-col items-center text-center',
               isMobile ? 'p-6' : 'p-8',
             ].join(' ')}>
-              {/* Level up badge - adaptive size */}
+              
+              {/* Trophy Badge */}
               <motion.div
                 initial={prefersReducedMotion ? {} : { scale: 0 }}
                 animate={prefersReducedMotion ? {} : { scale: 1 }}
                 transition={{ ...bouncy, delay: 0.2 }}
-                className={isMobile ? 'mb-3' : 'mb-4'}
+                className={isMobile ? 'mb-4' : 'mb-5'}
               >
                 <div
                   className={[
@@ -195,73 +196,61 @@ export const LevelUpOverlay: React.FC = () => {
                     isMobile ? 'w-16 h-16' : 'w-20 h-20',
                   ].join(' ')}
                   style={{
-                    background: `linear-gradient(135deg, ${levelInfo.color}, ${levelInfo.color}CC)`,
-                    boxShadow: `0 16px 48px ${levelInfo.color}50`,
+                    background: `linear-gradient(135deg, ${goldColor}, #D97706)`,
+                    boxShadow: `0 16px 48px rgba(245, 158, 11, 0.4)`,
                   }}
                 >
-                  <div className="absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.3),transparent_50%)]" />
-                  <span className={[
-                    'font-black text-white relative z-10 tabular-nums',
-                    isMobile ? 'text-2xl' : 'text-3xl',
-                  ].join(' ')}>
-                    {data.newLevel}
-                  </span>
+                  <div className="absolute inset-0 rounded-3xl bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.4),transparent_50%)]" />
+                  <Trophy className="text-white relative z-10" size={isMobile ? 32 : 38} />
                 </div>
               </motion.div>
 
-              {/* Title - adaptive typography */}
+              {/* Title & Sparkles */}
               <motion.div
                 initial={prefersReducedMotion ? {} : { opacity: 0, y: 12 }}
                 animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: durations.calm }}
               >
                 <div className={['flex items-center gap-2 justify-center', isMobile ? 'mb-1.5' : 'mb-2'].join(' ')}>
-                  <Sparkles size={isMobile ? 14 : 16} style={{ color: levelInfo.color }} />
+                  <Sparkles size={isMobile ? 14 : 16} style={{ color: goldColor }} />
                   <span
-                    id="levelup-title"
+                    id="challenge-completed-title"
                     className={[
-                      'font-black uppercase',
-                      isMobile ? 'text-xs tracking-[0.15em]' : 'text-sm tracking-[0.2em]',
+                      'font-black uppercase tracking-[0.2em]',
+                      isMobile ? 'text-xs' : 'text-sm',
                     ].join(' ')}
-                    style={{ color: levelInfo.color }}
+                    style={{ color: goldColor }}
                   >
-                    Level Up
+                    DAILY CHALLENGE
                   </span>
-                  <Sparkles size={isMobile ? 14 : 16} style={{ color: levelInfo.color }} />
+                  <Sparkles size={isMobile ? 14 : 16} style={{ color: goldColor }} />
                 </div>
 
                 <h2 className={[
-                  'font-black text-[#0F172A] tracking-tighter mb-1',
+                  'font-black text-[#0F172A] tracking-tighter mb-2',
                   isMobile ? 'text-2xl' : 'text-3xl',
                 ].join(' ')}>
-                  Level {data.newLevel} Reached!
+                  Completed!
                 </h2>
                 
-                <p className={[
-                  'text-[#0F172A] font-bold mt-1.5 mb-1.5',
-                  isMobile ? 'text-sm' : 'text-base',
-                ].join(' ')}>
-                  You are now a <span style={{ color: levelInfo.color }}>{levelInfo.name}</span>
-                </p>
-
-                <p className={[
-                  'text-[#64748B] font-medium leading-relaxed',
-                  isMobile ? 'text-xs' : 'text-sm',
-                ].join(' ')}>
-                  {levelInfo.title}
-                </p>
+                <div className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl mb-4 inline-block max-w-full">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Problem Solved</p>
+                  <p className="text-slate-800 font-extrabold text-sm truncate max-w-[240px]">
+                    {data.title}
+                  </p>
+                </div>
               </motion.div>
 
-              {/* XP Total */}
+              {/* XP Reward Card */}
               <motion.div
                 initial={prefersReducedMotion ? {} : { opacity: 0, scale: 0.9 }}
                 animate={prefersReducedMotion ? {} : { opacity: 1, scale: 1 }}
                 transition={{ delay: 0.5, duration: durations.base }}
-                className="mt-5 flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 border border-amber-200/50"
+                className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-50 border border-amber-200 shadow-sm"
               >
-                <Star size={14} className="text-amber-500" />
-                <span className="text-sm font-black text-amber-700 tabular-nums">
-                  {data.totalXp.toLocaleString()} XP Total
+                <Award size={18} className="text-amber-500 animate-pulse" />
+                <span className="text-base font-black text-amber-700 tabular-nums">
+                  +{data.xpReward} XP Reward
                 </span>
               </motion.div>
 
@@ -271,13 +260,13 @@ export const LevelUpOverlay: React.FC = () => {
                 animate={prefersReducedMotion ? {} : { opacity: 1, y: 0 }}
                 transition={{ delay: 0.6, duration: durations.base }}
                 onClick={dismiss}
-                className="mt-6 flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                className="mt-6 flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
                 style={{
-                  background: `linear-gradient(135deg, ${levelInfo.color}, ${levelInfo.color}CC)`,
-                  boxShadow: `0 4px 20px ${levelInfo.color}40`,
+                  background: `linear-gradient(135deg, ${goldColor}, #D97706)`,
+                  boxShadow: `0 4px 20px rgba(245, 158, 11, 0.3)`,
                 }}
               >
-                Continue
+                Awesome!
                 <ChevronRight size={16} />
               </motion.button>
             </div>
@@ -288,4 +277,4 @@ export const LevelUpOverlay: React.FC = () => {
   );
 };
 
-export default LevelUpOverlay;
+export default ChallengeCompletedOverlay;

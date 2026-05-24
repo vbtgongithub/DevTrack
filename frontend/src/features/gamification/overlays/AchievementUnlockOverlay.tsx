@@ -18,9 +18,11 @@ const RARITY_STYLES = {
 };
 
 export const AchievementUnlockOverlay: React.FC = () => {
-  const show = useGamificationStore((s) => s.showAchievementOverlay);
-  const data = useGamificationStore((s) => s.achievementData);
-  const dismiss = useGamificationStore((s) => s.dismissAchievement);
+  const activeOverlay = useGamificationStore((s) => s.activeOverlay);
+  const dismissCurrentOverlay = useGamificationStore((s) => s.dismissCurrentOverlay);
+  const show = activeOverlay?.type === 'achievement_unlocked';
+  const data = show ? (activeOverlay.data as { id: string; name: string; description: string; icon: string; rarity: 'common' | 'rare' | 'epic' | 'legendary' }) : null;
+  const dismiss = dismissCurrentOverlay;
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

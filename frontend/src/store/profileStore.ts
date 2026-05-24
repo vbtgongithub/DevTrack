@@ -46,6 +46,9 @@ interface ProfileStore {
   syncState: SyncState;
   syncMessage: string | null;
   lastSyncedAt: string | null;
+  syncingPlatform: string | null;
+  syncProgressPercent: number;
+  syncTimeRemaining: number | null;
 
   // Dirty tracking
   isDirty: boolean;
@@ -60,7 +63,7 @@ interface ProfileStore {
   removeTechStack: (tag: string) => void;
 
   // Actions: Sync (triggers backend sync, then invalidates dashboard)
-  fetchAllPlatforms: () => Promise<void>;
+  fetchAllPlatforms: () => Promise<{ success: boolean; results?: any[] | null; message: string }>;
   clearSyncMessage: () => void;
 
   // Actions: Populate stats from dashboard data (called by ProfilePage)
@@ -125,6 +128,9 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   syncState: 'idle',
   syncMessage: null,
   lastSyncedAt: null,
+  syncingPlatform: null,
+  syncProgressPercent: 0,
+  syncTimeRemaining: null,
 
   isDirty: false,
   isSaving: false,
@@ -239,14 +245,13 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
   fetchAllPlatforms: async () => {
     const { profile } = get();
 
-    set({
-      syncState: 'syncing',
-      syncMessage: null,
-      leetcode: { ...get().leetcode, loading: true, error: null },
-      codeforces: { ...get().codeforces, loading: true, error: null },
-      codechef: { ...get().codechef, loading: true, error: null },
-      github: { ...get().github, loading: true, error: null },
-    });
+    // Reset gamification session XP totals before starting sync
+    try {
+      const { useGamificationStore } = await import('./gamificationStore');
+      useGamificationStore.getState().resetSessionXpTotal();
+    } catch (e) {
+      console.error('Failed to reset gamification session total:', e);
+    }
 
     const getGithubUsername = (url: string) => {
       if (!url) return '';
@@ -262,6 +267,51 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       ['codechef', profile.codechefUsername],
       ['github', getGithubUsername(profile.githubUrl)],
     ];
+
+    const activePlatforms = platformMap
+      .filter(([, username]) => username && username.trim().length > 0)
+      .map(([name]) => name);
+
+    let progressPercent = 5;
+    let timeRemaining = Math.max(4, activePlatforms.length * 2);
+
+    set({
+      syncState: 'syncing',
+      syncMessage: null,
+      syncingPlatform: activePlatforms[0] || null,
+      syncProgressPercent: progressPercent,
+      syncTimeRemaining: timeRemaining,
+      leetcode: { ...get().leetcode, loading: true, error: null },
+      codeforces: { ...get().codeforces, loading: true, error: null },
+      codechef: { ...get().codechef, loading: true, error: null },
+      github: { ...get().github, loading: true, error: null },
+    });
+
+    // Start progress simulator
+    const progressInterval = setInterval(() => {
+      const currentStoreState = get();
+      if (currentStoreState.syncState !== 'syncing') {
+        clearInterval(progressInterval);
+        return;
+      }
+
+      // Step up the progress percent and estimated time remaining
+      progressPercent = Math.min(95, progressPercent + Math.floor(Math.random() * 8) + 4);
+      if (timeRemaining > 1) {
+        timeRemaining -= 1;
+      }
+
+      // Map progress to active platforms
+      const platformStep = 95 / Math.max(1, activePlatforms.length);
+      const index = Math.min(activePlatforms.length - 1, Math.floor(progressPercent / platformStep));
+      const currentPlatform = activePlatforms[index] || null;
+
+      set({
+        syncProgressPercent: progressPercent,
+        syncTimeRemaining: timeRemaining,
+        syncingPlatform: currentPlatform,
+      });
+    }, 1000);
 
     const connectPromises = platformMap
       .filter(([, username]) => username.trim().length > 0)
@@ -284,6 +334,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
 
     let syncSucceeded = false;
     let syncMessage = '';
+    let apiResults: any[] | null = null;
 
     if (failedConnections.length > 0) {
       syncMessage = `Connection failed for: ${failedConnections.join(', ')}. `;
@@ -293,6 +344,7 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       const response = await syncAllPlatformsApi();
       const data = response?.data?.data;
       if (data?.results) {
+        apiResults = data.results;
         const results = data.results as Array<{ platform: string; success: boolean; error?: string | null }>;
         const succeeded = results.filter((r) => r.success).length;
         const failed = results.filter((r) => !r.success);
@@ -314,9 +366,14 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
       syncMessage += err instanceof Error ? err.message : 'Platform sync failed';
     }
 
+    clearInterval(progressInterval);
+
     set({
       syncState: syncSucceeded ? 'success' : 'error',
       syncMessage,
+      syncingPlatform: null,
+      syncProgressPercent: 100,
+      syncTimeRemaining: 0,
       lastSyncedAt: syncSucceeded ? new Date().toISOString() : get().lastSyncedAt,
     });
 
@@ -332,6 +389,12 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
         }
       }, 5000);
     }
+
+    return {
+      success: syncSucceeded,
+      results: apiResults,
+      message: syncMessage,
+    };
   },
 }));
 

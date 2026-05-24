@@ -204,3 +204,21 @@ export const progressPulse = {
     ? { scale: 1 }
     : { scale: [1, 1.02, 1] },
 };
+
+export const glowPulse: Variants = {
+  animate: prefersReducedMotion
+    ? {}
+    : {
+        boxShadow: [
+          '0 2px 10px rgba(var(--glow-color-rgb-fallback), 0.15)',
+          '0 8px 30px rgba(var(--glow-color-rgb-fallback), 0.4)',
+          '0 2px 10px rgba(var(--glow-color-rgb-fallback), 0.15)',
+        ],
+        transition: {
+          duration: 3,
+          ease: 'easeInOut',
+          repeat: Infinity,
+        },
+      },
+};
+
