@@ -52,6 +52,7 @@ cursor/
 !DEPLOYMENT.md
 !SECURITY.md
 !PHASE2_EXECUTION_PLAN.md
+!RELEASE_MANIFEST.md
 
 # Local documentation (not needed for production)
 docs/
@@ -76,3 +77,10 @@ DevTrack-Architecture.docx
 
 # Prompt files (temp)
 prompt.md
+
+# Local Scratch & Dev Telemetry
+backend/src/scratch-query.ts
+backend/src/scratch-query-v2.ts
+backend/src/test-fallback.ts
+backend/src/test-pdf.ts
+backend/uploads/
