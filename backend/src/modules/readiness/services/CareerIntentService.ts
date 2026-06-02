@@ -1,0 +1,169 @@
+import { CareerIntent, ICareerIntent } from '../../../db/models/careerIntent.model.js';
+import { logger } from '../../../shared/logger.js';
+
+export interface CareerIntentInput {
+  userId: string;
+  dreamRole: string;
+  targetPackage?: string;
+  targetCompanyTier?: string;
+  preferredDomain?: string;
+  currentStrongestSkills?: string[];
+  desiredSkills?: string[];
+  specializationGoals?: string[];
+  timelineGoals?: string;
+}
+
+export const CareerIntentService = {
+  /**
+   * Create or update career intent with history tracking
+   */
+  async upsertCareerIntent(input: CareerIntentInput): Promise<ICareerIntent> {
+    try {
+      const existing = await CareerIntent.findOne({ userId: input.userId });
+      
+      if (existing) {
+        // Track history if role or package changed
+        const roleChanged = existing.dreamRole !== input.dreamRole;
+        const packageChanged = existing.targetPackage !== input.targetPackage;
+        
+        if (roleChanged || packageChanged) {
+          existing.history.push({
+            role: existing.dreamRole,
+            package: existing.targetPackage,
+            recordedAt: new Date(),
+          });
+        }
+        
+        // Update current intent
+        existing.dreamRole = input.dreamRole;
+        existing.targetPackage = input.targetPackage || existing.targetPackage;
+        existing.targetCompanyTier = input.targetCompanyTier || existing.targetCompanyTier;
+        existing.preferredDomain = input.preferredDomain || existing.preferredDomain;
+        existing.currentStrongestSkills = input.currentStrongestSkills || existing.currentStrongestSkills;
+        existing.desiredSkills = input.desiredSkills || existing.desiredSkills;
+        existing.specializationGoals = input.specializationGoals || existing.specializationGoals;
+        existing.timelineGoals = input.timelineGoals || existing.timelineGoals;
+        
+        // Recalculate confidence state
+        existing.confidenceState = this.calculateConfidenceState(existing);
+        
+        await existing.save();
+        logger.info('[CareerIntentService] Updated career intent', { userId: input.userId });
+        return existing;
+      } else {
+        // Create new intent
+        const newIntent = await CareerIntent.create({
+          userId: input.userId,
+          dreamRole: input.dreamRole,
+          targetPackage: input.targetPackage || '',
+          targetCompanyTier: input.targetCompanyTier || '',
+          preferredDomain: input.preferredDomain || '',
+          currentStrongestSkills: input.currentStrongestSkills || [],
+          desiredSkills: input.desiredSkills || [],
+          specializationGoals: input.specializationGoals || [],
+          timelineGoals: input.timelineGoals || '',
+          confidenceState: this.calculateConfidenceState(input),
+          history: [],
+        });
+        
+        logger.info('[CareerIntentService] Created career intent', { userId: input.userId });
+        return newIntent;
+      }
+    } catch (error) {
+      logger.error('[CareerIntentService] Failed to upsert career intent', { userId: input.userId, error });
+      throw error;
+    }
+  },
+
+  /**
+   * Calculate confidence state based on intent completeness
+   */
+  calculateConfidenceState(intent: CareerIntentInput | ICareerIntent): 'high' | 'medium' | 'low' {
+    let score = 0;
+    
+    // Dream role is essential
+    if (intent.dreamRole && intent.dreamRole.length > 0) score += 30;
+    
+    // Target package adds clarity
+    if (intent.targetPackage && intent.targetPackage.length > 0) score += 20;
+    
+    // Skills alignment
+    const hasStrongSkills = intent.currentStrongestSkills && intent.currentStrongestSkills.length > 0;
+    const hasDesiredSkills = intent.desiredSkills && intent.desiredSkills.length > 0;
+    if (hasStrongSkills) score += 20;
+    if (hasDesiredSkills) score += 15;
+    
+    // Timeline goals
+    if (intent.timelineGoals && intent.timelineGoals.length > 0) score += 15;
+    
+    if (score >= 80) return 'high';
+    if (score >= 50) return 'medium';
+    return 'low';
+  },
+
+  /**
+   * Get career intent for a user
+   */
+  async getCareerIntent(userId: string): Promise<ICareerIntent | null> {
+    try {
+      return await CareerIntent.findOne({ userId });
+    } catch (error) {
+      logger.error('[CareerIntentService] Failed to get career intent', { userId, error });
+      throw error;
+    }
+  },
+
+  /**
+   * Get intent evolution history
+   */
+  async getIntentEvolution(userId: string): Promise<Array<{ role: string; package: string; recordedAt: Date }>> {
+    try {
+      const intent = await CareerIntent.findOne({ userId });
+      return intent?.history || [];
+    } catch (error) {
+      logger.error('[CareerIntentService] Failed to get intent evolution', { userId, error });
+      throw error;
+    }
+  },
+
+  /**
+   * Analyze role alignment based on current skills vs target role requirements
+   */
+  async analyzeRoleAlignment(userId: string): Promise<{
+    alignmentScore: number;
+    gaps: string[];
+    strengths: string[];
+  }> {
+    try {
+      const intent = await CareerIntent.findOne({ userId });
+      if (!intent) {
+        return { alignmentScore: 0, gaps: [], strengths: [] };
+      }
+
+      // Simplified role alignment analysis
+      // In production, this would use a role-skill mapping database
+      const roleSkillRequirements: Record<string, string[]> = {
+        'Backend Engineer': ['databases', 'api-design', 'system-design', 'caching', 'queues'],
+        'Frontend Engineer': ['react', 'typescript', 'css', 'state-management', 'performance'],
+        'Full Stack Engineer': ['databases', 'api-design', 'react', 'typescript', 'deployment'],
+        'ML Engineer': ['python', 'machine-learning', 'data-processing', 'statistics', 'deployment'],
+        'DevOps Engineer': ['docker', 'kubernetes', 'ci-cd', 'cloud', 'monitoring'],
+      };
+
+      const requiredSkills = roleSkillRequirements[intent.dreamRole] || [];
+      const userSkills = intent.currentStrongestSkills || [];
+      
+      const strengths = userSkills.filter(skill => requiredSkills.includes(skill));
+      const gaps = requiredSkills.filter(skill => !userSkills.includes(skill));
+      
+      const alignmentScore = requiredSkills.length > 0 
+        ? Math.round((strengths.length / requiredSkills.length) * 100)
+        : 0;
+
+      return { alignmentScore, gaps, strengths };
+    } catch (error) {
+      logger.error('[CareerIntentService] Failed to analyze role alignment', { userId, error });
+      throw error;
+    }
+  },
+};
