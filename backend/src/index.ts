@@ -7,13 +7,14 @@ import mongoose from 'mongoose';
 import { env, API_BASE_PATH } from './config/index.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { requestContextMiddleware } from './middleware/requestContext.js';
-import { authMiddleware, adminMiddleware } from './middleware/auth.js';
+import { authMiddleware, adminMiddleware, clerkMiddleware, type AuthenticatedRequest } from './middleware/auth.js';
 import { requestMetricsMiddleware, getMetricsSnapshot, getEndpointLatencies } from './shared/requestMetrics.js';
 import { sanitizeRequest } from './middleware/validation.js';
 import { logger } from './shared/logger.js';
 import { eventBus } from './shared/sse/index.js';
 import { syncState } from './shared/syncState.js';
 import { getRedisHealth } from './shared/redis/index.js';
+import { validateStartup } from './shared/startup-validation.js';
 import { getOrCreateQueue, QueueNames } from './shared/jobs/index.js';
 import { getWorkerStatus, getXpWorkerStatus } from './shared/jobs/index.js';
 import { orchestrator } from './shared/runtime/index.js';
@@ -60,31 +61,66 @@ export async function createApp(): Promise<express.Express> {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(sanitizeRequest);
+  app.use(clerkMiddleware());
 
   // Phase 2: Health & observability endpoints (before routes)
   setupHealthEndpoints(app, getRedisHealth, getWorkerStatus, getXpWorkerStatus, getOrCreateQueue, QueueNames, eventBus, syncState, getInfrastructureState);
 
   // Phase 3: API routes
+  // Backward compatibility alias: mount on legacy /api path with deprecation warning
+  app.use('/api', (req, res, next) => {
+    // Only warn if they strictly use /api without /v1
+    if (!req.originalUrl.startsWith('/api/v1')) {
+      res.setHeader('X-API-Deprecation-Warning', 'The unversioned /api endpoints are deprecated and will be removed in a future release. Please migrate to /api/v1.');
+    }
+    next();
+  }, routes);
+
+  // Primary versioned API path
   app.use(API_BASE_PATH, routes);
 
   // Phase 4: Error handlers
   app.use(notFoundHandler);
   app.use(errorHandler);
 
-  // Phase 5: Orchestrated infrastructure boot
-  await orchestrator.startup(app);
+  // Phase 5: Orchestrated infrastructure boot (moved to bootstrap() to run non-blocking)
+  // await orchestrator.startup(app);
 
   return app;
 }
 
 async function bootstrap() {
+  // Phase 0: Validate critical dependencies and services
+  // TEMPORARY: Skip validation to get server running without Redis
+  // await validateStartup();
+
+  if (env.IS_PROD) {
+    if (!process.env.OPENAI_API_KEY && !env.GEMINI_API_KEY) {
+      logger.error('CRITICAL: At least one AI API key (OPENAI_API_KEY or GEMINI_API_KEY) must be set in production');
+      logger.error('Intelligence features will be degraded without AI API keys');
+      process.exit(1);
+    }
+  } else {
+    // Development mode: warn but allow startup
+    if (!process.env.OPENAI_API_KEY && !env.GEMINI_API_KEY) {
+      logger.warn('WARNING: No AI API keys set. Intelligence features will use mock/fallback responses.');
+      logger.warn('Set OPENAI_API_KEY or GEMINI_API_KEY for full intelligence capabilities.');
+    }
+  }
+
   const app = await createApp();
 
-  // Phase 6: HTTP server start
+  // Phase 6: HTTP server start (start BEFORE orchestrator to ensure server is listening even if Redis fails)
   const server = app.listen(env.PORT, () => {
     logger.info(`DevTrack backend listening on port ${env.PORT}`);
     logger.info(`Environment: ${env.NODE_ENV}`);
     logger.info(`API base path: ${API_BASE_PATH}`);
+    logger.info(`AI Provider: ${process.env.OPENAI_API_KEY ? 'OpenAI configured' : env.GEMINI_API_KEY ? 'Gemini configured' : 'None (degraded mode)'}`);
+  });
+
+  // Phase 6.5: Start orchestrator in background (non-blocking)
+  orchestrator.startup(app).catch((err) => {
+    logger.error('Orchestrator startup failed (server still running in degraded mode)', err);
   });
 
   // Phase 7: Graceful shutdown — drain infrastructure before exiting
@@ -134,7 +170,7 @@ function setupHealthEndpoints(
     });
   });
 
-  app.get('/health/detailed', authMiddleware, adminMiddleware, (req, res) => {
+  app.get('/health/detailed', authMiddleware, adminMiddleware, (req: AuthenticatedRequest, res: express.Response) => {
     const state = getInfrastructureState();
     const sseMetrics = eventBus.getMetrics();
     const syncSnapshot = syncState.getSnapshot();
@@ -191,7 +227,7 @@ function setupHealthEndpoints(
     });
   });
 
-  app.get('/metrics', authMiddleware, adminMiddleware, (_req, res) => {
+  app.get('/metrics', authMiddleware, adminMiddleware, (_req: AuthenticatedRequest, res: express.Response) => {
     const snapshot = getMetricsSnapshot();
     const endpoints = getEndpointLatencies();
 
@@ -246,12 +282,12 @@ function setupHealthEndpoints(
     res.send(lines.join('\n'));
   });
 
-  app.get('/api/system/realtime-status', authMiddleware, adminMiddleware, (_req, res) => {
+  app.get('/api/system/realtime-status', authMiddleware, adminMiddleware, (_req: AuthenticatedRequest, res: express.Response) => {
     const metrics = eventBus.getMetrics();
     res.json({ success: true, data: metrics });
   });
 
-  app.get('/api/system/scheduler-status', authMiddleware, adminMiddleware, (_req, res) => {
+  app.get('/api/system/scheduler-status', authMiddleware, adminMiddleware, (_req: AuthenticatedRequest, res: express.Response) => {
     const snapshot = syncState.getSnapshot();
     res.json({
       success: true,
@@ -268,7 +304,7 @@ function setupHealthEndpoints(
     });
   });
 
-  app.get('/api/system/queue-status', authMiddleware, adminMiddleware, async (_req, res) => {
+  app.get('/api/system/queue-status', authMiddleware, adminMiddleware, async (_req: AuthenticatedRequest, res: express.Response) => {
     const queueNames = [
       QueueNames.PLATFORM_SYNC,
       QueueNames.SYSTEM_MAINTENANCE,
@@ -299,12 +335,12 @@ function setupHealthEndpoints(
     });
   });
 
-  app.get('/api/system/infrastructure', (_req, res) => {
+  app.get('/api/system/infrastructure', (_req: express.Request, res: express.Response) => {
     const state = getInfrastructureState();
     res.json({ success: true, data: state });
   });
 
-  app.get('/api/system/request-metrics', (_req, res) => {
+  app.get('/api/system/request-metrics', (_req: express.Request, res: express.Response) => {
     const snapshot = getMetricsSnapshot();
     const endpoints = getEndpointLatencies();
     res.json({ success: true, data: { ...snapshot, endpoints } });

@@ -67,16 +67,7 @@ export function errorHandler(
     return;
   }
 
-  // Handle JWT errors
-  if (err.name === 'JsonWebTokenError') {
-    commonErrors.unauthorized(res);
-    return;
-  }
 
-  if (err.name === 'TokenExpiredError') {
-    errorResponse(res, 'Token expired', 'TOKEN_EXPIRED', 401);
-    return;
-  }
 
   // Handle custom AppErrors
   if (err.statusCode) {

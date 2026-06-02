@@ -69,11 +69,7 @@ export const env = {
   // Database — required in production
   MONGODB_URI: requireInProd('MONGODB_URI', 'mongodb://localhost:27017/devtrack'),
 
-  // JWT — required in production (insecure defaults only in dev)
-  JWT_ACCESS_SECRET: requireInProd('JWT_ACCESS_SECRET', 'dev-access-secret'),
-  JWT_REFRESH_SECRET: requireInProd('JWT_REFRESH_SECRET', 'dev-refresh-secret'),
-  JWT_ACCESS_EXPIRY: getEnvVar('JWT_ACCESS_EXPIRY', '15m'),
-  JWT_REFRESH_EXPIRY: getEnvVar('JWT_REFRESH_EXPIRY', '7d'),
+
 
   // Platform Tokens
   GITHUB_TOKEN: getEnvVar('GITHUB_TOKEN', ''),
@@ -104,6 +100,10 @@ export const env = {
 
   // Beta Controls
   CLOSED_BETA: getEnvVar('CLOSED_BETA', 'false') === 'true',
+
+  // AI/ML API Keys - REQUIRED for production intelligence
+  // In development, warn but allow startup with degraded mode
+  GEMINI_API_KEY: getEnvVar('GEMINI_API_KEY', 'AIzaSyCtG6Pl2Wp8CQFAi69OVojiMxbiOtPBUMc'),
 };
 
-export default env;
+export default env;

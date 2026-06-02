@@ -17,6 +17,22 @@ export interface RedisHealth {
 }
 
 export function getRedisClient(): Redis {
+  // If REDIS_URL is not set, return a mock client that doesn't connect
+  if (!env.REDIS_URL) {
+    logger.warn('[redis] REDIS_URL not set - returning null client (Redis features disabled)');
+    // Return a mock Redis instance that won't try to connect
+    const mockClient = new Redis({
+      host: 'localhost',
+      port: 6379,
+      lazyConnect: true,
+      maxRetriesPerRequest: 0,
+      retryStrategy: () => null, // Disable retries
+    });
+    // Prevent it from ever connecting
+    mockClient.connect = () => Promise.reject(new Error('Redis disabled - REDIS_URL not set'));
+    return mockClient;
+  }
+
   if (_client && (_client.status === 'ready' || _client.status === 'connecting' || _client.status === 'wait')) {
     return _client;
   }

@@ -1,0 +1,66 @@
+{
+  "registryVersion": "1.0",
+  "lastUpdated": "2026-05-28T03:55:32.664Z",
+  "datasets": {
+    "Resume": {
+      "id": "Resume",
+      "name": "Resume.csv",
+      "path": "backend/src/datasets/raw/Resume.csv",
+      "type": "csv",
+      "size": 56336766,
+      "version": "1.0.0",
+      "checksum": "6ff8e30d7a54c36d12d9a2e75d87e9af38f0e41c8f6b0a3df9d497c88682172a",
+      "lastModified": "2026-05-27T04:47:12.476Z",
+      "status": "validated",
+      "domain": "general",
+      "task": "unassigned",
+      "mlReady": false,
+      "lastScanned": "2026-05-28T03:55:32.644Z"
+    },
+    "resume_dataset_1200": {
+      "id": "resume_dataset_1200",
+      "name": "resume_dataset_1200.csv",
+      "path": "backend/src/datasets/raw/resume_dataset_1200.csv",
+      "type": "csv",
+      "size": 508770,
+      "version": "1.0.0",
+      "checksum": "00e0ec113c6ed3554cc028a4224429df81efa0cc7957a673d81980b4e4a85e40",
+      "lastModified": "2026-05-27T04:47:12.479Z",
+      "status": "validated",
+      "domain": "general",
+      "task": "unassigned",
+      "mlReady": false,
+      "lastScanned": "2026-05-28T03:55:32.645Z"
+    },
+    "resume_dataset_200k_enhanced": {
+      "id": "resume_dataset_200k_enhanced",
+      "name": "resume_dataset_200k_enhanced.csv",
+      "path": "backend/src/datasets/raw/resume_dataset_200k_enhanced.csv",
+      "type": "csv",
+      "size": 14140801,
+      "version": "1.0.0",
+      "checksum": "512ef3c6ef37c7a9da7b07d3c83bb202a98565ce11c10194adae3a5bafd76636",
+      "lastModified": "2026-05-27T04:47:12.570Z",
+      "status": "validated",
+      "domain": "general",
+      "task": "unassigned",
+      "mlReady": false,
+      "lastScanned": "2026-05-28T03:55:32.663Z"
+    },
+    "train-00000-of-00001": {
+      "id": "train-00000-of-00001",
+      "name": "train-00000-of-00001.parquet",
+      "path": "backend/src/datasets/raw/train-00000-of-00001.parquet",
+      "type": "parquet",
+      "size": 0,
+      "version": "v1",
+      "checksum": "UNKNOWN",
+      "lastModified": "2026-05-28T03:55:32.564Z",
+      "status": "missing",
+      "domain": "resume_ner",
+      "task": "entity extraction",
+      "mlReady": true,
+      "lastScanned": "2026-05-28T03:55:32.664Z"
+    }
+  }
+}

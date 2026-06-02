@@ -2,7 +2,7 @@
 
 export const APP_NAME = 'DevTrack';
 export const API_VERSION = 'v1';
-export const API_BASE_PATH = '/api';
+export const API_BASE_PATH = '/api/v1';
 
 // Cache TTLs (in seconds)
 export const CACHE_TTL = {

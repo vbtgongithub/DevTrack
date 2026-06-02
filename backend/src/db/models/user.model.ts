@@ -1,11 +1,10 @@
 // src/db/models/user.model.ts
 import { Schema, model, type Document } from 'mongoose';
-import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
+  clerkId: string;
   email: string;
   username: string;
-  passwordHash: string;
   displayName: string;
   avatarUrl: string | null;
   bio: string | null;
@@ -14,11 +13,16 @@ export interface IUser extends Document {
   lastActiveAt: Date;
   isEmailVerified: boolean;
   role: 'user' | 'admin';
-  comparePassword(password: string): Promise<boolean>;
 }
 
 const userSchema = new Schema<IUser>(
   {
+    clerkId: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
     email: {
       type: String,
       required: [true, 'Email is required'],
@@ -34,12 +38,6 @@ const userSchema = new Schema<IUser>(
       trim: true,
       minlength: [3, 'Username must be at least 3 characters'],
       maxlength: [30, 'Username must be at most 30 characters'],
-      index: true,
-    },
-    passwordHash: {
-      type: String,
-      required: [true, 'Password is required'],
-      select: false,
     },
     displayName: {
       type: String,
@@ -85,7 +83,6 @@ const userSchema = new Schema<IUser>(
         ret.id = ret._id.toString();
         delete (ret as { _id?: unknown })._id;
         delete (ret as { __v?: unknown }).__v;
-        delete (ret as { passwordHash?: unknown }).passwordHash;
         return ret;
       },
     },
@@ -93,15 +90,5 @@ const userSchema = new Schema<IUser>(
 );
 
 // Indexes - unique indexes already defined via index:true in field definitions
-
-// Methods
-userSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
-  return bcrypt.compare(password, this.passwordHash);
-};
-
-// Static method to hash password
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12);
-}
 
 export const User = model<IUser>('User', userSchema);

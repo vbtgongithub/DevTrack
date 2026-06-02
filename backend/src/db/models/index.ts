@@ -1,6 +1,19 @@
 // src/db/models/index.ts - Models barrel export
-export { User, hashPassword, type IUser } from './user.model.js';
-export { RefreshToken, type IRefreshToken } from './refreshToken.model.js';
+export { User, type IUser } from './user.model.js';
+export * from './betaUser.model.js';
+export * from './betaCohort.model.js';
+
+// Readiness & Intelligence Models
+export * from './careerIntent.model.js';
+export * from './readinessCore.model.js';
+export * from './readinessDsa.model.js';
+export * from './readinessSkills.model.js';
+export * from './readinessProjects.model.js';
+export * from './readinessRoadmap.model.js';
+export * from './readinessBenchmarks.model.js';
+export { IntelligenceRecommendation, type IIntelligenceRecommendation, type RecommendationCategory, type RecommendationState } from './intelligenceRecommendation.model.js';
+export * from './datasetIngestion.model.js';
+
 export { UserProfile, type IUserProfile } from './userProfile.model.js';
 export { UserSettings, type IUserSettings } from './userSettings.model.js';
 export { ConnectedPlatform, type IConnectedPlatform } from './connectedPlatform.model.js';
@@ -34,3 +47,10 @@ export { UserDailyChallenge, type IUserDailyChallenge } from './userDailyChallen
 
 export { UnifiedRuntimeState, type IUnifiedRuntimeState, type MomentumState, type FatigueState, type EmotionalState, type RecoveryState, type OnboardingStage, type EngagementPressure, type ActiveGoalRef, type ActiveChallengeRef, type ActiveAchievementRef, type NearMilestoneRef, type ProgressionPacing } from './unifiedRuntimeState.model.js';
 export { FocusSession, type IFocusSession } from './focusSession.model.js';
+
+// Verified Proof-of-Work Models
+export { PublicProfile, type IPublicProfile } from './publicProfile.model.js';
+export { VerifiedProject, type IVerifiedProject } from './verifiedProject.model.js';
+export { ProfileAuditLog, type IProfileAuditLog } from './profileAuditLog.model.js';
+export { ProfileView, type IProfileView } from './profileView.model.js';
+export { ProfileTimelineEvent, type IProfileTimelineEvent } from './profileTimelineEvent.model.js';

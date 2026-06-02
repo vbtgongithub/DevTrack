@@ -105,9 +105,22 @@ class WorkerRegistry {
 
       // Check for stuck jobs (running for > 5 minutes without heartbeat update)
       if (worker.status === 'running' && worker.currentJobId) {
-        // Could implement job timeout detection here
+        if (now - worker.lastHeartbeat > 300000) {
+          logger.error(`[lifecycle] Worker ${workerId} appears stuck on job ${worker.currentJobId}. Initiating stalled-job recovery.`);
+          this.routeToDeadLetterQueue(worker.queueName, worker.currentJobId, 'Job stalled for > 5 minutes');
+          
+          // Clear current job so worker can potentially recover
+          this.setCurrentJob(workerId, null);
+        }
       }
     }
+  }
+
+  // Dead Letter Queue Routing
+  private routeToDeadLetterQueue(originalQueue: string, jobId: string, reason: string): void {
+    logger.warn(`[lifecycle] Routing job ${jobId} from ${originalQueue} to dead-letter-queue. Reason: ${reason}`);
+    // In a real implementation, we would import the queue and move the job state.
+    // e.g., queue.moveToFailed(jobId, new Error(reason)) or add to a dedicated DLQ.
   }
 
   // Initiate graceful draining

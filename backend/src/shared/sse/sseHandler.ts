@@ -3,7 +3,7 @@
 // Supports Last-Event-ID reconnection with Redis stream backfill.
 
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+
 import { eventBus, SseClient } from './eventBus.js';
 import { logger } from '../logger.js';
 import { env } from '../../config/env.js';
@@ -165,6 +165,7 @@ export async function handleSseRequest(req: Request, res: Response): Promise<voi
 
   let userId: string;
   const ticket = req.query.ticket as string | undefined;
+  const token = req.query.token as string | undefined;
 
   if (ticket) {
     try {
@@ -186,13 +187,46 @@ export async function handleSseRequest(req: Request, res: Response): Promise<voi
       res.status(500).json({ error: 'Internal Server Error' });
       return;
     }
+  } else if (token) {
+    try {
+      const { verifyToken } = await import('@clerk/express');
+      const verifiedToken = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY });
+      const clerkUserId = verifiedToken.sub;
+      
+      if (!clerkUserId) {
+        logger.warn('[sse] Token verification failed — no sub in payload', { token, requestId });
+        trackSseConnectionFailure('unknown', 'invalid_token');
+        res.status(401).json({ error: 'Invalid token payload' });
+        return;
+      }
+      
+      const { User } = await import('../../db/models/index.js');
+      const { syncClerkUser } = await import('../../services/auth/ClerkUserSyncService.js');
+      
+      let dbUser = await User.findOne({ clerkId: clerkUserId });
+      if (!dbUser) {
+        logger.info('[sse] User not found locally for verified token, syncing...', { clerkUserId, requestId });
+        const synced = await syncClerkUser(clerkUserId);
+        userId = synced.id;
+      } else {
+        userId = dbUser._id.toString();
+      }
+
+      logger.info('[sse] Handshake authenticated successfully via fallback token', { userId, clerkUserId, requestId });
+      trackSseConnectionSuccess(userId);
+    } catch (err) {
+      logger.error('[sse] Token verification fallback error', err as Error, { token, requestId });
+      trackSseConnectionFailure('unknown', 'token_verification_failed');
+      res.status(401).json({ error: 'Token verification failed' });
+      return;
+    }
   } else {
-    logger.warn('[sse] Auth required — Handshake ticket missing', {
+    logger.warn('[sse] Auth required — Handshake ticket and token missing', {
       event: 'sse_auth_required',
       requestId,
       ip: req.ip,
     });
-    res.status(401).json({ error: 'Authentication required. SSE ticket must be provided.' });
+    res.status(401).json({ error: 'Authentication required. SSE ticket or token must be provided.' });
     return;
   }
 

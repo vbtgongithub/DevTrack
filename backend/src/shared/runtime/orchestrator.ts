@@ -4,6 +4,7 @@
 import type { Express } from 'express';
 import mongoose from 'mongoose';
 import { connectDatabase } from '../../db/connection.js';
+import { setupProductionIndexes } from '../../db/migrations/index-setup.js';
 import { env } from '../../config/env.js';
 import { logger } from '../logger.js';
 import { eventBus } from '../sse/index.js';
@@ -13,7 +14,7 @@ import {
   startPlatformSyncWorker,
   stopPlatformSyncWorker,
   getWorkerStatus,
-} from '../jobs/workers.js';
+} from '../jobs/platformSyncWorker.js';
 import { startXpWorker, stopXpWorker, getXpWorkerStatus } from '../jobs/xpWorker.js';
 import { startStreakRecalcWorker, stopStreakRecalcWorker } from '../jobs/streakRecalcWorker.js';
 import { startNotificationWorker, stopNotificationWorker } from '../jobs/notificationWorker.js';
@@ -59,6 +60,7 @@ async function bootMongo(): Promise<boolean> {
   setMongoStatus('initializing');
   try {
     await connectDatabase();
+    await setupProductionIndexes();
     setMongoStatus('healthy');
     logger.info('[startup] MongoDB connected', { event: 'mongodb_connected' });
     return true;

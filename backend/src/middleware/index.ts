@@ -7,10 +7,11 @@ export {
 } from './error.js';
 
 export {
+  clerkMiddleware,
   authMiddleware,
   optionalAuthMiddleware,
   adminMiddleware,
-  type AuthUser,
+  opsAuditorMiddleware,
   type AuthenticatedRequest,
 } from './auth.js';
 

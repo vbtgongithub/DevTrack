@@ -294,6 +294,23 @@ export const dlqService = {
     logger.info('[dlq] Cleanup completed', { queue: queueName, cleaned });
     return cleaned;
   },
+
+  /**
+   * Acquire a lightweight Redis-based distributed lock
+   */
+  async acquireLock(lockKey: string, ttlMs = 10000): Promise<boolean> {
+    const redis = getRedisClient();
+    const result = await redis.set(`lock:${lockKey}`, '1', 'PX', ttlMs, 'NX');
+    return result === 'OK';
+  },
+
+  /**
+   * Release a lightweight Redis-based distributed lock
+   */
+  async releaseLock(lockKey: string): Promise<void> {
+    const redis = getRedisClient();
+    await redis.del(`lock:${lockKey}`);
+  },
 };
 
 export default dlqService;

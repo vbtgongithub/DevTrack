@@ -50,11 +50,40 @@ const ENDPOINT_CONFIGS: Record<string, RateLimitConfig> = {
     blockDurationMs: 30_000,
     enableBurstHandling: true,
   },
+  // AI/ML endpoints - stricter rate limiting to protect API costs
+  ai: {
+    windowMs: 60_000, // 1 minute
+    maxRequests: 10, // 10 AI requests per minute per user
+    keyPrefix: 'rl:ai',
+    blockDurationMs: 300_000, // 5 minute block on abuse
+    enableBurstHandling: false,
+  },
+  embedding: {
+    windowMs: 60_000,
+    maxRequests: 20, // 20 embedding requests per minute
+    keyPrefix: 'rl:embedding',
+    blockDurationMs: 180_000, // 3 minute block
+    enableBurstHandling: false,
+  },
+  resume: {
+    windowMs: 300_000, // 5 minutes
+    maxRequests: 5, // 5 resume generations per 5 minutes
+    keyPrefix: 'rl:resume',
+    blockDurationMs: 600_000, // 10 minute block
+    enableBurstHandling: false,
+  },
   default: {
     windowMs: 60_000,
     maxRequests: 100,
     keyPrefix: 'rl:default',
     blockDurationMs: 30_000,
+    enableBurstHandling: true,
+  },
+  analytics: {
+    windowMs: 60_000, // 1 minute
+    maxRequests: 30, // 30 analytics events per user/ip per min
+    keyPrefix: 'rl:analytics',
+    blockDurationMs: 60_000,
     enableBurstHandling: true,
   },
 };
@@ -177,6 +206,10 @@ export const rateLimiters = {
   streak: createRateLimiter('streak'),
   sync: createRateLimiter('sync'),
   xp: createRateLimiter('xp'),
+  ai: createRateLimiter('ai'),
+  embedding: createRateLimiter('embedding'),
+  resume: createRateLimiter('resume'),
+  analytics: createRateLimiter('analytics'),
   default: createRateLimiter('default'),
 };
 

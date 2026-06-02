@@ -1,53 +1,21 @@
-// src/shared/jobs/queueFactory.ts — Centralized BullMQ queue factory
-// Creates and manages named queues with consistent configuration.
-// No duplicate Redis connections — single shared client.
-
 import { Queue } from 'bullmq';
-import { getRedisClient } from '../redis/index.js';
-import { logger } from '../logger.js';
 import { QueueNames } from './types.js';
-
-interface QueueEntry {
-  queue: Queue;
-  name: string;
-}
-
-const registry = new Map<string, QueueEntry>();
-
-function createQueueConfig(defaultJobOptions?: Record<string, unknown>) {
-  return {
-    connection: getRedisClient(),
-    defaultJobOptions: {
-      removeOnComplete: { count: 100 },
-      removeOnFail: { count: 500 },
-      ...defaultJobOptions,
-    },
-  };
-}
+import { QueueRegistry } from '../../infrastructure/queues/QueueRegistry.js';
 
 export function getOrCreateQueue(name: string): Queue {
-  const existing = registry.get(name);
-  if (existing) return existing.queue;
-
-  logger.info('[queue] Creating queue', { event: 'queue_created', name });
-
-  const queue = new Queue(name, createQueueConfig());
-  registry.set(name, { queue, name });
-  return queue;
+  return QueueRegistry.getOrCreateQueue(name);
 }
 
 export function getQueue(name: string): Queue | undefined {
-  return registry.get(name)?.queue;
+  return QueueRegistry.getQueue(name);
 }
 
 export function getAllQueues(): Queue[] {
-  return Array.from(registry.values()).map((e) => e.queue);
+  return QueueRegistry.getAllQueues();
 }
 
 export async function closeAllQueues(): Promise<void> {
-  await Promise.all(getAllQueues().map((q) => q.close()));
-  registry.clear();
-  logger.info('[queue] All queues closed', { event: 'queues_closed' });
+  return QueueRegistry.closeAllQueues();
 }
 
 // Pre-registered queue getters
@@ -69,4 +37,54 @@ export function getXpProcessingQueue(): Queue {
 
 export function getNotificationQueue(): Queue {
   return getOrCreateQueue(QueueNames.NOTIFICATIONS);
+}
+
+// Readiness Queue Getters
+export function getReadinessDsaQueue(): Queue {
+  return getOrCreateQueue(QueueNames.READINESS_DSA);
+}
+
+export function getReadinessProjectsQueue(): Queue {
+  return getOrCreateQueue(QueueNames.READINESS_PROJECTS);
+}
+
+export function getReadinessSkillsQueue(): Queue {
+  return getOrCreateQueue(QueueNames.READINESS_SKILLS);
+}
+
+export function getReadinessBenchmarksQueue(): Queue {
+  return getOrCreateQueue(QueueNames.READINESS_BENCHMARKS);
+}
+
+export function getReadinessRoadmapQueue(): Queue {
+  return getOrCreateQueue(QueueNames.READINESS_ROADMAP);
+}
+
+export function getReadinessAggregationQueue(): Queue {
+  return getOrCreateQueue(QueueNames.READINESS_AGGREGATION);
+}
+
+// Resume Intelligence Queue Getters
+export function getResumeUploadQueue(): Queue {
+  return getOrCreateQueue(QueueNames.RESUME_UPLOAD);
+}
+
+export function getResumeATSQueue(): Queue {
+  return getOrCreateQueue(QueueNames.RESUME_ATS);
+}
+
+export function getResumeEmbeddingQueue(): Queue {
+  return getOrCreateQueue(QueueNames.RESUME_EMBEDDING);
+}
+
+export function getResumeSemanticQueue(): Queue {
+  return getOrCreateQueue(QueueNames.RESUME_SEMANTIC);
+}
+
+export function getResumeRecommendationQueue(): Queue {
+  return getOrCreateQueue(QueueNames.RESUME_RECOMMENDATION);
+}
+
+export function getResumeReplayQueue(): Queue {
+  return getOrCreateQueue(QueueNames.RESUME_REPLAY);
 }
