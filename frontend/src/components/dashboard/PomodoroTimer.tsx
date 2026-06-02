@@ -6,6 +6,7 @@ import { ConfirmationModal } from '../ui/ConfirmationModal';
 import { useRuntimeState } from '../../hooks/useRuntimeState';
 import { activityService } from '../../services/activityService';
 import { useQueryClient } from '@tanstack/react-query';
+import { useMissionStore } from '../../store/missionStore';
 
 // Web Audio API Synthesizer for high-fidelity notification sound
 const playFocusChime = () => {
@@ -58,6 +59,8 @@ const SESSION_MODES = [
 export const PomodoroTimer = () => {
   const { data: runtimeState } = useRuntimeState();
   const queryClient = useQueryClient();
+  const getActiveMission = useMissionStore(state => state.getActiveMission);
+  const activeMission = getActiveMission();
 
   const [activeMode, setActiveMode] = useState(SESSION_MODES[0]);
   const [selectedDuration, setSelectedDuration] = useState<number>(SESSION_MODES[0].dur);
@@ -120,6 +123,16 @@ export const PomodoroTimer = () => {
   const handleFinished = () => {
     setStatus('finished');
     playFocusChime();
+    
+    // Log session to the active mission
+    const currentMission = useMissionStore.getState().getActiveMission();
+    if (currentMission) {
+      // Pass duration in minutes and the mode ID
+      useMissionStore.getState().logFocusSession(currentMission.id, selectedDuration, activeMode.id);
+    }
+
+
+    
     handleStopFocus();
   };
 
@@ -215,15 +228,18 @@ export const PomodoroTimer = () => {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 bg-white/50 backdrop-blur-xl border border-white/60 rounded-[20px] px-5 py-3 shadow-[0_2px_10px_rgba(15,23,42,0.02)] transition-all hover:bg-white/70">
+            <button 
+              onClick={() => document.getElementById('mission-control-rail')?.scrollIntoView({ behavior: 'smooth' })}
+              className="flex items-center gap-3 bg-white/50 backdrop-blur-xl border border-white/60 rounded-[20px] px-5 py-3 shadow-[0_2px_10px_rgba(15,23,42,0.02)] transition-all hover:bg-white/70 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            >
               <div className="w-8 h-8 rounded-full bg-violet-100/50 flex items-center justify-center border border-violet-200/50 shrink-0">
                 <Target size={14} className="text-violet-600" />
               </div>
-              <div className="flex flex-col pr-2">
+              <div className="flex flex-col pr-2 text-left">
                 <span className="text-[9px] font-black text-violet-600 uppercase tracking-[0.2em]">Active Mission</span>
-                <span className="text-[12px] font-bold text-slate-800 leading-tight">Refactoring orchestration pipeline</span>
+                <span className="text-[12px] font-bold text-slate-800 leading-tight truncate max-w-[200px]">{activeMission?.title ?? 'No Active Mission'}</span>
               </div>
-            </div>
+            </button>
           </div>
         </div>
 

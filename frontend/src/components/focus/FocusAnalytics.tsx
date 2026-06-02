@@ -1,8 +1,17 @@
 import React from 'react';
 import { motion as framerMotion } from 'framer-motion';
-import { BarChart2, CheckCircle2, ShieldAlert, Target } from 'lucide-react';
+import { BarChart2, Target, Zap, Activity } from 'lucide-react';
+import { useMissionStore } from '../../store/missionStore';
 
 export function FocusAnalytics() {
+  const getActiveMission = useMissionStore(state => state.getActiveMission);
+  const activeMission = getActiveMission();
+
+  const focusQuality = activeMission ? `${activeMission.executionConfidence ?? 0}%` : '94%';
+  const sessions = activeMission ? `${activeMission.focusSessions ?? 0}` : '12';
+  const velocity = activeMission ? `${activeMission.velocity ?? 0}` : '85';
+  const deepWork = activeMission ? `${activeMission.deepWorkHours ?? 0}h` : '4.2h';
+
   return (
     <div className="w-full flex flex-col gap-6">
       <div className="flex items-center gap-3 mb-2">
@@ -11,15 +20,15 @@ export function FocusAnalytics() {
         </div>
         <div>
           <h3 className="text-xl font-black text-slate-900 tracking-tighter">Session Telemetry</h3>
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Performance Metrics</p>
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Performance Metrics {activeMission ? `• ${activeMission.title}` : ''}</p>
         </div>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard title="Focus Quality" value="94%" trend="+2%" icon={<Target size={16} className="text-violet-500" />} />
-        <MetricCard title="Distractions" value="1.2/hr" trend="-0.4" icon={<ShieldAlert size={16} className="text-amber-500" />} />
-        <MetricCard title="Consistency" value="High" trend="Stable" icon={<CheckCircle2 size={16} className="text-emerald-500" />} />
-        <MetricCard title="Deep Work" value="4h 12m" trend="+45m" icon={<BarChart2 size={16} className="text-blue-500" />} />
+      <div className="grid grid-cols-2 gap-4">
+        <MetricCard title="Focus Quality" value={focusQuality} trend="Live" icon={<Target size={16} className="text-violet-500" />} />
+        <MetricCard title="Sessions" value={sessions} trend="Total" icon={<Zap size={16} className="text-amber-500" />} />
+        <MetricCard title="Velocity" value={velocity} trend="Sprint" icon={<Activity size={16} className="text-emerald-500" />} />
+        <MetricCard title="Deep Work" value={deepWork} trend="Logged" icon={<BarChart2 size={16} className="text-blue-500" />} />
       </div>
 
       <div className="w-full p-6 rounded-[32px] mt-2 flex flex-col md:flex-row items-center justify-between gap-6 bg-white/60 backdrop-blur-3xl border border-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-500 shadow-inner group">
