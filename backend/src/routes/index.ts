@@ -21,6 +21,12 @@ import notificationRoutes from '../modules/notifications/notification.routes.js'
 import onboardingRoutes from '../modules/onboarding/onboarding.routes.js';
 import { dailyChallengeRoutes } from '../modules/daily-challenge/index.js';
 import { coachingRoutes } from '../modules/coaching/index.js';
+import { readinessRoutes } from '../modules/readiness/index.js';
+import uploadRoutes from '../modules/resume/upload/upload.routes.js';
+import recommendationRoutes from '../modules/recommendations/recommendation.routes.js';
+import { resumeIntelligenceRoutes } from '../modules/resume/index.js';
+import analyticsRoutes from '../modules/analytics/analytics.routes.js';
+import { rateLimiters } from '../middleware/rateLimitAdvanced.js';
 
 const router = Router();
 
@@ -47,9 +53,9 @@ router.use('/activity', activityRoutes);
 router.use('/projects', projectsRoutes);
 router.use('/profile', profileRoutes);
 router.use('/settings', settingsRoutes);
-router.use('/platforms', syncRoutes);
-router.use('/xp', xpRoutes);
-router.use('/streak', streakRoutes);
+router.use('/platforms', rateLimiters.sync, syncRoutes);
+router.use('/xp', rateLimiters.xp, xpRoutes);
+router.use('/streak', rateLimiters.streak, streakRoutes);
 router.use('/ops', opsRoutes);
 router.use('/runtime-state', runtimeStateRoutes);
 router.use('/observation', observationRoutes);
@@ -57,6 +63,11 @@ router.use('/missions', missionsRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/onboarding', onboardingRoutes);
 router.use('/daily-challenge', dailyChallengeRoutes);
-router.use('/coaching', coachingRoutes);
+router.use('/coaching', rateLimiters.ai, coachingRoutes);
+router.use('/readiness', readinessRoutes);
+router.use('/resume', rateLimiters.resume, uploadRoutes);
+router.use('/resume-intelligence', rateLimiters.resume, resumeIntelligenceRoutes);
+router.use('/recommendations', rateLimiters.ai, recommendationRoutes);
+router.use('/analytics', analyticsRoutes);
 
 export default router;

@@ -429,3 +429,50 @@ export async function getStreakStatus(userId: string, streakType?: StreakType): 
   }
   return getUnifiedStreak(userId);
 }
+
+// ─── Streak history getter ──────────────────────────────────────────────────
+
+export async function getStreakHistory(userId: string): Promise<any[]> {
+  const userObjId = new Types.ObjectId(userId);
+  const timezone = await getUserTimezone(userId);
+  
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const normalizedThirtyDaysAgo = normalizeToUserDate(thirtyDaysAgo, timezone);
+
+  // Group by date across all streak types for simplicity, or just return unified
+  const logs = await UserStreakLog.find({ 
+    userId: userObjId,
+    date: { $gte: normalizedThirtyDaysAgo }
+  }).sort({ date: 1 });
+
+  // Map to the history format
+  const historyMap = new Map<string, { count: number; active: boolean }>();
+  
+  for (const log of logs) {
+    const dateStr = log.date.toISOString().split('T')[0];
+    const current = historyMap.get(dateStr) || { count: 0, active: false };
+    historyMap.set(dateStr, {
+      count: current.count + log.activityCount,
+      active: true
+    });
+  }
+
+  // Fill in empty days
+  const history = [];
+  const currentDate = new Date(normalizedThirtyDaysAgo);
+  const today = normalizeToUserDate(new Date(), timezone);
+  
+  while (currentDate <= today) {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    const data = historyMap.get(dateStr) || { count: 0, active: false };
+    history.push({
+      date: dateStr,
+      count: data.count,
+      active: data.active
+    });
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return history;
+}

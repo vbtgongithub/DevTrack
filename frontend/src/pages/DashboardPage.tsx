@@ -36,7 +36,7 @@ const DashboardPage: React.FC = () => {
   const { data, loading, error } = useDashboardData();
   const { challenge } = useDailyChallenge();
   const navigate = useNavigate();
-  const logout = useUserStore((s) => s.logout);
+  const logoutCleanup = useUserStore((s) => s.logoutCleanup);
   const [contests, setContests] = React.useState<{ name: string; platform: string; time: string }[]>([]);
 
   const lastSevenDays = React.useMemo(() => {
@@ -62,7 +62,7 @@ const DashboardPage: React.FC = () => {
   }, [data?.streakData]);
 
   const handleLogout = async () => {
-    await logout();
+    await logoutCleanup();
     navigate('/login');
   };
 
@@ -130,12 +130,8 @@ const DashboardPage: React.FC = () => {
   return (
     <ErrorBoundary>
       <div className="flex flex-col gap-10 max-w-[1600px] mx-auto w-full dt-stagger pb-16 px-4 lg:px-8 relative">
-        {/* Elite Cinematic Atmospheric Layer */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-gradient-to-br from-[#FAFBFD] via-[#F8F9FC] to-[#F6F8FB]">
-          <div className="absolute top-[-15%] right-[-8%] w-[900px] h-[900px] bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-dt-primary/8 via-dt-secondary/3 to-transparent blur-[120px] rounded-full mix-blend-multiply opacity-60 animate-[pulse_8s_ease-in-out_infinite]" />
-          <div className="absolute top-[35%] left-[-12%] w-[700px] h-[700px] bg-[radial-gradient(circle_at_center_left,_var(--tw-gradient-stops))] from-blue-200/15 via-violet-100/8 to-transparent blur-[120px] rounded-full mix-blend-multiply opacity-40 animate-[pulse_10s_ease-in-out_infinite_2s]" />
-          <div className="absolute bottom-[-10%] right-[20%] w-[600px] h-[600px] bg-[radial-gradient(circle_at_bottom,_var(--tw-gradient-stops))] from-rose-200/10 via-purple-100/5 to-transparent blur-[100px] rounded-full mix-blend-multiply opacity-30 animate-[pulse_12s_ease-in-out_infinite_4s]" />
-        </div>
+        {/* Calm Operational Background */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-[#FAFAFC]" />
 
         {/* ==========================================
             SECTION 1 — HERO HEADER
@@ -171,63 +167,52 @@ const DashboardPage: React.FC = () => {
             
             {/* TOP ROW: Streak + Daily Challenge */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-              {/* Daily Streak Card - Large Purple Card */}
+              {/* Consistency & Trajectory Card */}
               <div className="h-full">
-                <div
-                  className="bg-gradient-to-br from-[#6D4FF2] via-[#7C5CFC] to-[#A78BFA] rounded-[24px] p-4 shadow-dt-floating hover:shadow-[0_20px_60px_rgba(124,92,252,0.18)] hover:-translate-y-1 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative overflow-hidden group h-full flex flex-col justify-between"
-                  style={{ animation: 'dtFadeIn 800ms cubic-bezier(0.16,1,0.3,1) both' }}
-                >
-                  {/* Cinematic Overlays */}
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_40%)]" />
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(0,0,0,0.05),transparent_30%)]" />
-
-                  <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-white/20 border border-white/30 backdrop-blur-md shadow-sm">
-                    <span className="text-[9px] font-black text-white uppercase tracking-widest leading-none">
-                      BEST: {data?.streakData?.longestStreak || 0}
+                <div className="bg-white border border-slate-200/60 rounded-[20px] p-5 shadow-sm relative overflow-hidden group h-full flex flex-col justify-between">
+                  <div className="absolute top-4 right-4 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      PEAK: {data?.streakData?.longestStreak || 0}
                     </span>
                   </div>
 
-                  <div className="relative flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-[14px] bg-white/10 backdrop-blur-2xl border border-white/20 flex items-center justify-center shadow-xl relative shrink-0">
-                      <div className="absolute inset-0 rounded-[14px] bg-white/5 animate-pulse" />
-                      <Flame className="w-6 h-6 text-white fill-white relative z-10" />
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                      <Flame className="w-5 h-5 text-indigo-500" />
                     </div>
                     <div>
-                      <div className="text-4xl font-black text-white tabular-nums leading-none tracking-tighter drop-shadow-lg">
+                      <div className="text-3xl font-black text-slate-800 tabular-nums leading-none tracking-tight">
                         {data?.streakData?.currentStreak || 0}
                       </div>
-                      <div className="text-[10px] text-white/80 mt-0.5 font-bold tracking-[0.1em] uppercase opacity-90">
-                        day streak
+                      <div className="text-[11px] text-slate-500 mt-1 font-semibold uppercase tracking-wider">
+                        Consistency Score
                       </div>
                     </div>
                   </div>
 
                   {/* Week Activity */}
-                  <div className="flex items-center gap-3 relative z-10 mb-2">
+                  <div className="flex items-center gap-2 mb-3">
                     {lastSevenDays.map((day, i) => (
-                      <div key={i} className="flex-1 aspect-square max-w-[40px] rounded-full flex items-center justify-center transition-all duration-500 relative">
+                      <div key={i} className="flex-1 aspect-square max-w-[36px] rounded-full flex items-center justify-center relative">
                         <div
                           className={[
-                            'absolute inset-0 rounded-full flex items-center justify-center text-[11px] font-black transition-all duration-500',
+                            'absolute inset-0 rounded-full flex items-center justify-center text-[11px] font-bold transition-all duration-300',
                             day.isActive
-                              ? 'bg-white/90 text-[#7C5CFC] shadow-[0_4px_15px_rgba(255,255,255,0.4)] scale-105 z-10 backdrop-blur-md border border-white'
-                              : 'bg-white/5 text-white/40 border border-white/20 backdrop-blur-sm',
+                              ? 'bg-indigo-500 text-white shadow-sm'
+                              : 'bg-slate-100 text-slate-400',
                           ].join(' ')}
                         >
-                          <span className="tracking-tighter">{day.label}</span>
+                          {day.label}
                         </div>
                       </div>
                     ))}
                   </div>
 
                   {data?.streakData?.isActiveToday && (
-                    <div className="mt-3 pt-3 border-t border-white/10 flex items-center gap-2 relative z-10">
-                      <div className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white shadow-[0_0_12px_white]"></span>
-                      </div>
-                      <span className="text-[13px] text-white font-bold tracking-tight opacity-95">
-                        Activity Logged — Consistency is your superpower
+                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                      <span className="text-[12px] text-slate-600 font-medium">
+                        Active today. Momentum preserved.
                       </span>
                     </div>
                   )}

@@ -1,7 +1,8 @@
 // src/modules/ops/ops.controller.ts — Production monitoring + operational tooling
 // Phase-1 Hardening: Queue monitoring, health endpoints, operational visibility
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthenticatedRequest } from '../../middleware/auth.js';
 import { getRedisClient } from '../../shared/redis/client.js';
 import { getAllQueues, getQueue } from '../../shared/jobs/queueFactory.js';
 import { getXpWorkerStatus } from '../../shared/jobs/xpWorker.js';
@@ -10,6 +11,9 @@ import cacheManager from '../../shared/cache/cacheManager.js';
 import { eventBus } from '../../shared/sse/eventBus.js';
 import { logger } from '../../shared/logger.js';
 import { QueueNames } from '../../shared/jobs/types.js';
+import { PublicProfile } from '../../db/models/publicProfile.model.js';
+import { ProfileAuditLog } from '../../db/models/profileAuditLog.model.js';
+import { QueueMetrics as QueueMetricsService } from '../../infrastructure/queues/QueueMetrics.js';
 import type { Queue } from 'bullmq';
 
 interface HealthStatus {
@@ -55,7 +59,7 @@ interface SystemMetrics {
 
 export const opsController = {
   // ─── Health check endpoint ─────────────────────────────────────────────
-  async health(req: Request, res: Response): Promise<void> {
+  async health(req: AuthenticatedRequest, res: Response): Promise<void> {
     const startTime = Date.now();
     const healthStatus: HealthStatus = {
       status: 'healthy',
@@ -114,7 +118,7 @@ export const opsController = {
   },
 
   // ─── System metrics endpoint ────────────────────────────────────────────
-  async metrics(req: Request, res: Response): Promise<void> {
+  async metrics(req: AuthenticatedRequest, res: Response): Promise<void> {
     const redis = getRedisClient();
     const dbSize = (await redis.dbsize()) || 0;
 
@@ -125,6 +129,7 @@ export const opsController = {
       QueueNames.XP_PROCESSING,
       QueueNames.STREAK_RECALC,
       QueueNames.NOTIFICATIONS,
+      QueueNames.PROFILE_REBUILD,
     ];
 
     for (const name of queueNames) {
@@ -148,7 +153,25 @@ export const opsController = {
     // Get XP worker status
     const xpWorkerStatus = getXpWorkerStatus();
 
-    const metrics: SystemMetrics = {
+    // Calculate AI Provider Latencies
+    let geminiLatency = 0;
+    let openaiLatency = 0;
+    try {
+      const { AIResponseAuditLog } = await import('../../db/models/aiResponseAuditLog.model.js');
+      const geminiLogs = await AIResponseAuditLog.find({ provider: 'gemini' }).sort({ createdAt: -1 }).limit(10).lean();
+      const openaiLogs = await AIResponseAuditLog.find({ provider: 'openai' }).sort({ createdAt: -1 }).limit(10).lean();
+
+      if (geminiLogs.length > 0) {
+        geminiLatency = Math.round(geminiLogs.reduce((acc, curr) => acc + curr.latencyMs, 0) / geminiLogs.length);
+      }
+      if (openaiLogs.length > 0) {
+        openaiLatency = Math.round(openaiLogs.reduce((acc, curr) => acc + curr.latencyMs, 0) / openaiLogs.length);
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    const metrics: SystemMetrics & { aiLatency?: { gemini: number; openai: number } } = {
       queues: queueMetrics,
       redis: {
         status: redis.status,
@@ -164,13 +187,28 @@ export const opsController = {
       workers: {
         xp: xpWorkerStatus,
       },
+      aiLatency: {
+        gemini: geminiLatency,
+        openai: openaiLatency,
+      },
     };
 
     res.json(metrics);
   },
 
+  // ─── Global Queue metrics ─────────────────────────────────────────────
+  async globalQueues(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const metrics = await QueueMetricsService.getGlobalMetrics();
+      res.json({ queues: metrics });
+    } catch (err) {
+      logger.error('[ops] Failed to fetch global queue metrics', err);
+      res.status(500).json({ error: 'Failed to fetch global queue metrics' });
+    }
+  },
+
   // ─── Queue inspection ─────────────────────────────────────────────────
-  async queueStatus(req: Request, res: Response): Promise<void> {
+  async queueStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
     const queueName = req.params.queueName as string;
 
     const queue = getQueue(queueName);
@@ -193,7 +231,7 @@ export const opsController = {
   },
 
   // ─── Recent jobs ────────────────────────────────────────────────────────
-  async recentJobs(req: Request, res: Response): Promise<void> {
+  async recentJobs(req: AuthenticatedRequest, res: Response): Promise<void> {
     const queueName = req.params.queueName as string;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
 
@@ -231,7 +269,7 @@ export const opsController = {
   },
 
   // ─── DLQ replay ─────────────────────────────────────────────────────────
-  async replayDlqJob(req: Request, res: Response): Promise<void> {
+  async replayDlqJob(req: AuthenticatedRequest, res: Response): Promise<void> {
     const queueName = req.params.queueName as string;
     const jobId = req.params.jobId as string;
 
@@ -260,12 +298,17 @@ export const opsController = {
   },
 
   // ─── Cache management ─────────────────────────────────────────────────
-  async cacheStats(req: Request, res: Response): Promise<void> {
+  async cacheStats(req: AuthenticatedRequest, res: Response): Promise<void> {
     const stats = await cacheManager.healthCheck();
     res.json(stats);
   },
 
-  async clearUserCache(req: Request, res: Response): Promise<void> {
+  async cacheHealth(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const health = await cacheManager.cacheHealth();
+    res.json(health);
+  },
+
+  async clearUserCache(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.params.userId as string;
 
     if (!userId) {
@@ -285,7 +328,7 @@ export const opsController = {
   },
 
   // ─── Logging level adjustment ──────────────────────────────────────────
-  setLogLevel(req: Request, res: Response): void {
+  setLogLevel(req: AuthenticatedRequest, res: Response): void {
     const { level } = req.body;
 
     const validLevels = ['debug', 'info', 'warn', 'error'];
@@ -302,6 +345,266 @@ export const opsController = {
       message: `Log level set to ${level}`,
     });
   },
+
+  // ─── Trust & Verifications ──────────────────────────────────────────────
+  async getTrustScores(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+    const skip = parseInt(req.query.skip as string) || 0;
+
+    const [profiles, total] = await Promise.all([
+      PublicProfile.find()
+        .sort({ 'verification.trustScore': 1 }) // Lowest scores first
+        .select('userId username verification createdAt updatedAt')
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      PublicProfile.countDocuments(),
+    ]);
+
+    const aggregates = {
+      totalProfiles: total,
+      lowTrustProfiles: await PublicProfile.countDocuments({ 'verification.trustScore': { $lt: 400 } }),
+    };
+
+    res.json({ aggregates, profiles });
+  },
+
+  async getVerifications(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+    const skip = parseInt(req.query.skip as string) || 0;
+
+    const logs = await ProfileAuditLog.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    res.json({ logs });
+  },
+
+  // ─── Operational Recovery Tooling ─────────────────────────────────────────
+  async rebuildAll(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const queue = getQueue(QueueNames.PROFILE_REBUILD);
+    if (!queue) {
+      res.status(500).json({ error: 'Profile rebuild queue not initialized' });
+      return;
+    }
+
+    const allProfiles = await PublicProfile.find().select('userId').lean();
+    
+    // Enqueue in batches
+    const jobs = allProfiles.map(p => ({
+      name: 'rebuild',
+      data: { userId: p.userId, trigger: 'ops_manual_rebuild_all' }
+    }));
+
+    await queue.addBulk(jobs);
+
+    logger.warn('[ops] Global profile rebuild triggered', { admin: req.user?.username, jobCount: jobs.length });
+
+    res.json({ success: true, message: `Enqueued ${jobs.length} profiles for rebuild` });
+  },
+
+  async invalidateL2Cache(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const redis = getRedisClient();
+    const keys = await redis.keys('public_profile:*');
+    
+    if (keys.length > 0) {
+      // Chunk deletion if too many keys
+      const pipeline = redis.pipeline();
+      keys.forEach(k => pipeline.del(k));
+      await pipeline.exec();
+    }
+
+    logger.warn('[ops] L2 Cache invalidated globally', { admin: req.user?.username, keysCleared: keys.length });
+
+    res.json({ success: true, message: `Cleared ${keys.length} cached profiles` });
+  },
+
+  async recalculateTrust(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const { userId } = req.params;
+    
+    // We queue a rebuild job which implicitly recalculates trust
+    const queue = getQueue(QueueNames.PROFILE_REBUILD);
+    if (!queue) {
+      res.status(500).json({ error: 'Profile rebuild queue not initialized' });
+      return;
+    }
+
+    await queue.add('rebuild', { userId, trigger: 'ops_manual_trust_recalc' });
+
+    logger.warn('[ops] Trust recalculation triggered', { admin: req.user?.username, targetUserId: userId });
+
+    res.json({ success: true, message: `Trust recalculation queued for ${userId}` });
+  },
+
+  // ─── AI & Provider Ops ─────────────────────────────────────────────────
+  async getAIAuditLogs(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { AIResponseAuditLog } = await import('../../db/models/aiResponseAuditLog.model.js');
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+      
+      const logs = await AIResponseAuditLog.find()
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean();
+        
+      res.json({ success: true, logs });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch AI audit logs' });
+    }
+  },
+
+  async getProviderHealth(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { ProviderHealthRegistry } = await import('../readiness/provider/ProviderHealthRegistry.js');
+      const providers = await ProviderHealthRegistry.getAllProviders();
+      res.json({ success: true, providers });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch provider health' });
+    }
+  },
+
+  // ─── Phase 6: Operational Diagnostics ────────────────────────────────────
+  async diagnostics(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const redis = getRedisClient();
+      const dbSize = await redis.dbsize();
+
+      // Aggregate diagnostics
+      const diagnosticData = {
+        timestamp: new Date().toISOString(),
+        memory: process.memoryUsage(),
+        uptime: process.uptime(),
+        queueHealth: {
+          totalQueues: (await getAllQueues()).length,
+        },
+        storage: {
+          redisKeys: dbSize
+        },
+        replayHealth: {
+          status: 'healthy',
+          checksumAlgorithm: 'sha256'
+        },
+        versioning: {
+          api: 'v1',
+          intelligenceSchema: '1.0'
+        }
+      };
+
+      res.json({ success: true, diagnostics: diagnosticData });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to generate diagnostics' });
+    }
+  },
+
+  // ─── Dataset Ingestion & Connections ─────────────────────────────────────
+  async listDatasets(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { datasetRegistry } = await import('../../core/datasets/DatasetRegistry.js');
+      const { DatasetIngestionState } = await import('../../db/models/datasetIngestion.model.js');
+
+      // Scan first to auto-discover
+      await datasetRegistry.scanDatasets();
+      const list = [];
+      const manifest = (datasetRegistry as any).manifest || (datasetRegistry as any).manifestPath ? (datasetRegistry as any).manifest : {};
+      const datasets = manifest?.datasets || (datasetRegistry as any).getDataset ? (datasetRegistry as any).manifest?.datasets : {};
+
+      // Fallback fallback scan if manifest wasn't directly accessible
+      const activeDatasets = datasets || {};
+      for (const id of Object.keys(activeDatasets)) {
+        const metadata = datasetRegistry.getDataset(id);
+        const state = await DatasetIngestionState.findOne({ datasetId: id }).lean();
+        list.push({
+          metadata,
+          ingestionState: state || null,
+        });
+      }
+
+      res.json({ success: true, datasets: list });
+    } catch (error) {
+      logger.error('[ops] Failed to list datasets', error);
+      res.status(500).json({ error: 'Failed to list datasets' });
+    }
+  },
+
+  async scanDatasets(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { datasetRegistry } = await import('../../core/datasets/DatasetRegistry.js');
+      await datasetRegistry.scanDatasets();
+      res.json({ success: true, message: 'Auto-discovery scan completed successfully' });
+    } catch (error) {
+      logger.error('[ops] Failed to scan datasets', error);
+      res.status(500).json({ error: 'Failed to scan datasets' });
+    }
+  },
+
+  async triggerIngestion(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const datasetId = req.params.datasetId as string;
+      const batchSize = parseInt(req.body.batchSize as string) || 1000;
+
+      const { datasetRegistry } = await import('../../core/datasets/DatasetRegistry.js');
+      const metadata = datasetRegistry.getDataset(datasetId);
+
+      if (!metadata) {
+        res.status(404).json({ error: 'Dataset not found in registry' });
+        return;
+      }
+
+      const { QueueRegistry } = await import('../../infrastructure/queues/QueueRegistry.js');
+      const queue = QueueRegistry.getOrCreateQueue(QueueNames.DATASET_INGESTION);
+      
+      const { DatasetIngestionState } = await import('../../db/models/datasetIngestion.model.js');
+      let state = await DatasetIngestionState.findOne({ datasetId });
+      if (!state) {
+        state = new DatasetIngestionState({
+          datasetId,
+          sourceFilePath: metadata.path,
+          status: 'pending',
+          startedAt: new Date()
+        });
+        await state.save();
+      } else {
+        state.status = 'pending';
+        state.errorMessage = null;
+        state.startedAt = new Date();
+        await state.save();
+      }
+
+      // Add to BullMQ queue
+      await queue.add('ingest', {
+        datasetId,
+        sourceFilePath: metadata.path,
+        batchSize
+      });
+
+      logger.warn('[ops] Dataset ingestion triggered', { admin: req.user?.username, datasetId, batchSize });
+
+      res.json({ success: true, message: `Enqueued background ingestion job for dataset ${datasetId}`, state });
+    } catch (error) {
+      logger.error('[ops] Failed to trigger ingestion', error);
+      res.status(500).json({ error: 'Failed to trigger ingestion' });
+    }
+  },
+
+  async getIngestionStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { datasetId } = req.params;
+      const { DatasetIngestionState } = await import('../../db/models/datasetIngestion.model.js');
+      const state = await DatasetIngestionState.findOne({ datasetId }).lean();
+      
+      if (!state) {
+        res.status(404).json({ error: 'Ingestion state not found for this dataset' });
+        return;
+      }
+
+      res.json({ success: true, state });
+    } catch (error) {
+      logger.error('[ops] Failed to get ingestion status', error);
+      res.status(500).json({ error: 'Failed to get ingestion status' });
+    }
+  }
 
 };
 

@@ -1,46 +1,30 @@
 // src/modules/auth/auth.controller.ts
 import type { Request, Response } from 'express';
-import * as authService from './auth.service.js';
 import { successResponse } from '../../shared/response.js';
-import type { AuthenticatedRequest } from '../../middleware/auth.js';
 import { logger } from '../../shared/logger.js';
-
-export async function register(req: Request, res: Response): Promise<void> {
-  const result = await authService.register(req.body);
-  successResponse(res, result, 'User registered successfully', 201);
-}
-
-export async function login(req: Request, res: Response): Promise<void> {
-  const { emailOrUsername } = req.body;
-  logger.info(`[AUTH] Login attempt received for: ${emailOrUsername}`);
-  const result = await authService.login(req.body);
-  logger.info(`[AUTH] Login successful for: ${emailOrUsername}`);
-  successResponse(res, result, 'Login successful');
-}
-
-export async function refresh(req: Request, res: Response): Promise<void> {
-  const { refreshToken } = req.body;
-  const result = await authService.refreshTokens(refreshToken);
-  successResponse(res, result, 'Token refreshed successfully');
-}
-
-export async function logout(req: Request, res: Response): Promise<void> {
-  const { refreshToken } = req.body;
-  await authService.logout(refreshToken);
-  successResponse(res, null, 'Logout successful');
-}
+import { syncClerkUser } from '../../services/auth/ClerkUserSyncService.js';
+import type { AuthenticatedRequest } from '../../middleware/auth.js';
 
 export async function getMe(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const user = await authService.getMe(req.user!.id);
+  if (!req.user) {
+    res.status(401).json({ success: false, message: 'Unauthorized' });
+    return;
+  }
+  
+  // We can just return the local user profile
+  const user = await syncClerkUser(req.user.clerkId);
   successResponse(res, user, 'User retrieved successfully');
 }
 
 export async function sseHandshake(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const userId = req.user!.id;
+  if (!req.user) {
+    res.status(401).json({ success: false, message: 'Unauthorized' });
+    return;
+  }
+  
   const { createHandshakeTicket } = await import('../../shared/sse/ticketStore.js');
-  
-  const ticket = await createHandshakeTicket(userId);
-  
-  logger.info('[sse] Generated secure short-lived handshake ticket', { userId, ticket });
+  const ticket = await createHandshakeTicket(req.user.id);
+
+  logger.info('[sse] Generated secure short-lived handshake ticket', { userId: req.user.id, ticket });
   successResponse(res, { ticket }, 'SSE Handshake ticket generated');
 }

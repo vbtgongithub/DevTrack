@@ -3,10 +3,11 @@ import { CoachingService } from './coaching.service.js';
 import { ReflectionService } from './reflection.service.js';
 import { momentumEngine } from '../observation/momentumEngine.service.js';
 import { FocusIntelligenceService } from '../observation/focusIntelligence.service.js';
+import type { AuthenticatedRequest } from '../../middleware/auth.js';
 
 export class CoachingController {
-  static async getInsights(req: Request, res: Response) {
-    const userId = req.context?.userId;
+  static async getInsights(req: AuthenticatedRequest, res: Response) {
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -23,8 +24,8 @@ export class CoachingController {
     });
   }
 
-  static async getReflections(req: Request, res: Response) {
-    const userId = req.context?.userId;
+  static async getReflections(req: AuthenticatedRequest, res: Response) {
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -37,8 +38,8 @@ export class CoachingController {
     });
   }
 
-  static async getMomentum(req: Request, res: Response) {
-    const userId = req.context?.userId;
+  static async getMomentum(req: AuthenticatedRequest, res: Response) {
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
@@ -51,8 +52,8 @@ export class CoachingController {
     });
   }
 
-  static async getFocusAnalytics(req: Request, res: Response) {
-    const userId = req.context?.userId;
+  static async getFocusAnalytics(req: AuthenticatedRequest, res: Response) {
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }

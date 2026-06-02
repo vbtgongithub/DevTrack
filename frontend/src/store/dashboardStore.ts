@@ -58,7 +58,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
 
   // Setting lastFetchedAt to null signals useDashboardData to re-fetch
   invalidate: () =>
-    set({ lastFetchedAt: null }),
+    set({ lastFetchedAt: null, status: 'idle' }),
 
   reset: () => set(initialState),
 }));
