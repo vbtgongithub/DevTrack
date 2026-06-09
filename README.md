@@ -1,4 +1,4 @@
-# 🚀 DevTrack
+#  DevTrack
 
 <div align="center">
 
@@ -19,7 +19,7 @@ Transform your resume, learning progress, coding activity, and career goals into
 
 ---
 
-## 🌟 Overview
+##  Overview
 
 DevTrack is a comprehensive developer intelligence platform designed to help software engineers understand their current skill level, identify career gaps, create structured learning roadmaps, and track professional growth over time.
 
@@ -29,7 +29,7 @@ The platform continuously analyzes developer progress and transforms daily engin
 
 ---
 
-## ❓ Why DevTrack?
+## Why DevTrack?
 
 Most developers face three major challenges:
 
@@ -49,7 +49,7 @@ DevTrack solves these challenges through a closed-loop intelligence system that 
 
 ---
 
-## 🔄 The DevTrack Growth Loop
+##  The DevTrack Growth Loop
 
 ```text
 Resume Upload
@@ -71,9 +71,9 @@ Every completed task, skill milestone, and learning achievement feeds back into 
 
 ---
 
-## 🏗️ Core Platform Modules
+##  Core Platform Modules
 
-### 📄 Resume Intelligence
+###  Resume Intelligence
 
 Transform resumes into structured developer profiles.
 
@@ -105,7 +105,7 @@ Intelligence Report
 
 ---
 
-### 🎯 Career Discovery
+###  Career Discovery
 
 Define professional objectives and align learning efforts with target outcomes.
 
@@ -130,7 +130,7 @@ Define professional objectives and align learning efforts with target outcomes.
 
 ---
 
-### 🗺️ Roadmap Intelligence
+###  Roadmap Intelligence
 
 Generate personalized learning roadmaps based on career goals and current capabilities.
 
@@ -152,7 +152,7 @@ Generate personalized learning roadmaps based on career goals and current capabi
 
 ---
 
-### ⏱️ Focus Mode
+###  Focus Mode
 
 Convert long-term goals into daily execution.
 
@@ -171,7 +171,7 @@ Focus Mode acts as the operational layer where roadmap recommendations become ac
 
 ---
 
-### 🧬 Evolution Intelligence
+###  Evolution Intelligence
 
 Track professional growth through measurable milestones.
 
@@ -196,7 +196,7 @@ Advanced
 
 ---
 
-### 📊 Analytics & Telemetry
+###  Analytics & Telemetry
 
 Measure platform engagement and learning effectiveness.
 
@@ -211,7 +211,7 @@ Measure platform engagement and learning effectiveness.
 
 ---
 
-## 🖼️ Screenshots
+##  Screenshots
 
 ### Resume Intelligence
 
@@ -243,7 +243,7 @@ docs/images/evolution-intelligence.png
 
 ---
 
-## 🏛️ System Architecture
+##  System Architecture
 
 ```text
 ┌──────────────────────────┐
@@ -292,7 +292,7 @@ Responsible for:
 
 ---
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 | Category         | Technologies               |
 | ---------------- | -------------------------- |
@@ -308,7 +308,7 @@ Responsible for:
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 ```text
 DevTrack/
@@ -336,7 +336,7 @@ DevTrack/
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -409,7 +409,7 @@ npm run dev
 
 ---
 
-## 🔌 API Overview
+##  API Overview
 
 ### Authentication
 
@@ -445,7 +445,7 @@ GET /api/v1/coaching/insights
 
 ---
 
-## 📈 Product Roadmap
+##  Product Roadmap
 
 ### ✅ Completed
 
@@ -458,13 +458,13 @@ GET /api/v1/coaching/insights
 * Evolution Tracking
 * Analytics Dashboard
 
-### 🚧 In Progress
+###  In Progress
 
 * Resume Evidence Scoring
 * Advanced AI Recommendations
 * Readiness Optimization Engine
 
-### 🔮 Planned
+###  Planned
 
 * GitHub Activity Integration
 * LeetCode Integration
@@ -475,7 +475,7 @@ GET /api/v1/coaching/insights
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### Unit Tests
 
@@ -491,7 +491,7 @@ npm run test:e2e --prefix frontend
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome contributions from developers of all experience levels.
 
@@ -520,7 +520,7 @@ git push origin feature/amazing-feature
 
 ---
 
-## 🛡️ Security
+##  Security
 
 DevTrack includes:
 
@@ -541,7 +541,7 @@ See `LICENSE` for more information.
 
 ---
 
-## ⭐ Support
+##  Support
 
 If you find this project useful:
 
