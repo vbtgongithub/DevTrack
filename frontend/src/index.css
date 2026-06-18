@@ -258,6 +258,14 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.02);
   }
 
+  .dt-dark-glass {
+    background-color: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  }
+
   /* ─── LEVEL 4: UNIFIED CARD SYSTEM ─── */
   /* Consistent card padding tokens */
   .dt-card-pad-sm {

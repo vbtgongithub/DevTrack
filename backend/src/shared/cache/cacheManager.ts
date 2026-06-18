@@ -25,6 +25,10 @@ export const cacheManager = {
 
   async invalidateUserAnalytics(userId: string): Promise<void> {
     const redis = getRedisClient();
+    if (redis.status !== 'ready') {
+      logger.warn('[cache] Redis not ready, skip invalidation', { userId });
+      return;
+    }
     const key = CACHE_KEYS.userAnalytics(userId);
 
     await redis.del(key);
@@ -33,6 +37,10 @@ export const cacheManager = {
 
   async invalidateUserStreak(userId: string): Promise<void> {
     const redis = getRedisClient();
+    if (redis.status !== 'ready') {
+      logger.warn('[cache] Redis not ready, skip invalidation', { userId });
+      return;
+    }
     const key = CACHE_KEYS.userStreak(userId);
 
     await redis.del(key);
@@ -41,6 +49,10 @@ export const cacheManager = {
 
   async invalidateUserXp(userId: string): Promise<void> {
     const redis = getRedisClient();
+    if (redis.status !== 'ready') {
+      logger.warn('[cache] Redis not ready, skip invalidation', { userId });
+      return;
+    }
     const key = CACHE_KEYS.userXp(userId);
 
     await redis.del(key);
@@ -49,6 +61,10 @@ export const cacheManager = {
 
   async invalidateDashboard(userId: string): Promise<void> {
     const redis = getRedisClient();
+    if (redis.status !== 'ready') {
+      logger.warn('[cache] Redis not ready, skip invalidation', { userId });
+      return;
+    }
     const key = CACHE_KEYS.dashboard(userId);
 
     await redis.del(key);
@@ -57,6 +73,10 @@ export const cacheManager = {
 
   async invalidateAllUserCache(userId: string): Promise<void> {
     const redis = getRedisClient();
+    if (redis.status !== 'ready') {
+      logger.warn('[cache] Redis not ready, skip invalidation', { userId });
+      return;
+    }
     const patterns = [
       CACHE_KEYS.userAnalytics(userId),
       CACHE_KEYS.userStreak(userId),
@@ -77,6 +97,10 @@ export const cacheManager = {
     ttl = DEFAULT_TTL
   ): Promise<T> {
     const redis = getRedisClient();
+    if (redis.status !== 'ready') {
+      logger.warn('[cache] Redis not ready, fetching directly from DB', { key });
+      return await fetcher();
+    }
 
     // Check if there's already an in-flight request for this key
     const inFlight = IN_FLIGHT_KEYS.get(key);
@@ -120,6 +144,11 @@ export const cacheManager = {
     staleTtl = STALE_TTL
   ): Promise<{ data: T | null; isStale: boolean }> {
     const redis = getRedisClient();
+    if (redis.status !== 'ready') {
+      logger.warn('[cache] Redis not ready, fetching fresh stale data', { key });
+      const data = await fetcher();
+      return { data, isStale: false };
+    }
 
     const cached = await redis.get(key);
     if (cached) {
@@ -151,6 +180,10 @@ export const cacheManager = {
 
   async warmUserCache(userId: string, data: Record<string, unknown>): Promise<void> {
     const redis = getRedisClient();
+    if (redis.status !== 'ready') {
+      logger.warn('[cache] Redis not ready, skip cache warm', { userId });
+      return;
+    }
 
     const pipeline = redis.pipeline();
     pipeline.set(CACHE_KEYS.userAnalytics(userId), JSON.stringify(data.analytics), 'EX', DEFAULT_TTL);
@@ -165,6 +198,9 @@ export const cacheManager = {
 
   async getCacheStats(pattern: string): Promise<{ keys: number; memory: string }> {
     const redis = getRedisClient();
+    if (redis.status !== 'ready') {
+      return { keys: 0, memory: 'N/A' };
+    }
     const keys = await redis.keys(pattern);
 
     return {
@@ -177,6 +213,9 @@ export const cacheManager = {
 
   async healthCheck(): Promise<{ status: string; keys: number }> {
     const redis = getRedisClient();
+    if (redis.status !== 'ready') {
+      return { status: 'unhealthy', keys: 0 };
+    }
 
     try {
       await redis.ping();
@@ -186,6 +225,45 @@ export const cacheManager = {
       return { status: 'unhealthy', keys: 0 };
     }
   },
+
+  async cacheHealth(): Promise<any> {
+    const redis = getRedisClient();
+    if (redis.status !== 'ready') {
+      return { status: 'unhealthy', error: 'Redis connection is not ready' };
+    }
+    try {
+      const info = await redis.info();
+      const dbSize = await redis.dbsize();
+      
+      const parseInfo = (str: string) => {
+        const lines = str.split('\r\n');
+        const parsed: Record<string, string> = {};
+        for (const line of lines) {
+          if (line.includes(':')) {
+            const [key, value] = line.split(':');
+            parsed[key] = value;
+          }
+        }
+        return parsed;
+      };
+
+      const parsedInfo = parseInfo(info);
+      const publicKeysCount = (await redis.keys('public_profile:*')).length;
+
+      return {
+        status: 'healthy',
+        keys: dbSize,
+        publicProfileKeys: publicKeysCount,
+        memoryUsed: parsedInfo.used_memory_human,
+        memoryFragmentationRatio: parsedInfo.mem_fragmentation_ratio,
+        hitRate: 'N/A (Requires Redis monitoring)',
+        uptime: parsedInfo.uptime_in_seconds,
+        connectedClients: parsedInfo.connected_clients
+      };
+    } catch (e) {
+      return { status: 'unhealthy', error: String(e) };
+    }
+  }
 };
 
 export default cacheManager;

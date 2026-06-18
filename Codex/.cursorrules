@@ -1,0 +1,16 @@
+# Cursor AI Coding Assistant Conventions
+
+You are working on the **DevTrack** codebase. Apply these instructions to all coding, auditing, and refactoring requests.
+
+## 📚 Context Reading Order
+Always read the repository reference files before proposing changes:
+1. `Codex/README.md`
+2. `AGENTS.md`
+3. `Codex/docs/architecture.md`
+4. `Codex/docs/conventions.md`
+
+## 🛡️ Coding Standards
+- **TypeScript**: Strict compile check enabled. Always export type definitions and avoid any untyped returns.
+- **Read-Only MongoDB Queries**: You MUST append `.lean()` to all read-only Mongoose `.find()` or `.findOne()` queries to optimize memory utilization and skip Mongoose state tracking.
+- **Advanced Rate Limiting**: Ensure all new API routers mount rate-limiting middleware configured in `backend/src/middleware/ratelimitadvanced.ts` to protect key budgets.
+- **Glassmorphism Styling**: Always use primary glassmorphism system tokens (e.g. `dt-card`, `dt-glass`, `dt-dark-glass`, and `bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950`) when styling frontend components.

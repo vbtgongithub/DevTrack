@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { UserButton } from '@clerk/clerk-react';
 import {
   LayoutDashboard,
   Code2,
@@ -23,6 +24,8 @@ import {
   Wifi,
   RefreshCw,
   Target,
+  TrendingUp,
+  FileText,
 } from 'lucide-react';
 import { cn } from '../../lib/design-system/tokens.css';
 import { useSse } from '../../hooks/useSse';
@@ -33,6 +36,7 @@ import { isFeatureEnabled } from '../../lib/feature-flags';
 import { useRuntimeState } from '../../hooks/useRuntimeState';
 import { useUserStore } from '../../store/userStore';
 import { OnboardingModal } from '../../features/onboarding';
+import { useSyncIntelligence } from '../../runtime-intelligence/useSyncIntelligence';
 
 interface NavItem {
   id: string;
@@ -46,6 +50,8 @@ const coreNav: NavItem[] = [
   { id: 'focus', label: 'Focus', icon: <Target size={20} />, path: '/focus' },
   { id: 'dsa', label: 'DSA', icon: <Code2 size={20} />, path: '/dsa' },
   { id: 'projects', label: 'Projects', icon: <FolderKanban size={20} />, path: '/projects' },
+  { id: 'resume', label: 'Resume', icon: <FileText size={20} />, path: '/resume' },
+  { id: 'readiness', label: 'Readiness', icon: <TrendingUp size={20} />, path: '/readiness' },
   { id: 'profile', label: 'Profile', icon: <UserRound size={20} />, path: '/profile' },
   { id: 'settings', label: 'Settings', icon: <Settings size={20} />, path: '/settings' },
 ];
@@ -59,6 +65,9 @@ export const AppShell = () => {
   const navigate = useNavigate();
   const { connectionStatus: connectionState, diagnostics } = useSse();
   const [pingMs, setPingMs] = useState<number | null>(null);
+
+  // Mount the Runtime Intelligence Engine synchronizer
+  useSyncIntelligence();
 
   useEffect(() => {
     if (connectionState !== 'connected') {
@@ -305,19 +314,17 @@ export const AppShell = () => {
                 <NotificationBell onClick={() => setNotificationsOpen(true)} />
               </div>
 
-              {/* Profile Mini Cluster */}
-              <button
-                type="button"
-                onClick={() => navigate('/profile')}
-                className="hidden md:flex items-center gap-2.5 pl-2.5 pr-3.5 py-1 bg-white/85 border border-slate-200 rounded-full hover:bg-slate-50 transition-all duration-300 shadow-sm shrink-0 hover:border-[#8B5CF6]/30"
-              >
-                <div className="w-6.5 h-6.5 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#A78BFA] flex items-center justify-center shadow-sm shrink-0">
-                  <span className="text-[10px] font-extrabold text-white">{displayName.charAt(0).toUpperCase()}</span>
-                </div>
-                <div className="text-left min-w-0">
-                  <p className="text-[11px] font-bold text-slate-800 leading-none truncate">{displayName}</p>
-                </div>
-              </button>
+              {/* Profile Mini Cluster (Clerk UserButton) */}
+              <div className="hidden md:flex items-center ml-2">
+                <UserButton 
+                  afterSignOutUrl="/login"
+                  appearance={{
+                    elements: {
+                      userButtonAvatarBox: "w-8 h-8 rounded-full border border-slate-200 shadow-sm",
+                    }
+                  }}
+                />
+              </div>
             </div>
           </div>
         </header>

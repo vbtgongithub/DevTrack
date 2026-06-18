@@ -1,6 +1,6 @@
 // src/modules/streak/streak.controller.ts — Streak API controller
 import { Response } from 'express';
-import { getStreakStatus, recordActivity, activateStreakFreeze } from './streak.service.js';
+import { getStreakStatus, recordActivity, activateStreakFreeze, getStreakHistory } from './streak.service.js';
 import type { StreakType } from '../../db/models/index.js';
 import { ApiResponse } from '../../shared/response.js';
 import { logger } from '../../shared/logger.js';
@@ -102,6 +102,22 @@ export const streakController = {
     } catch (err) {
       logger.error('[streak] Failed to activate freeze', err as Error, { userId });
       ApiResponse.error(res, 'Failed to activate streak freeze');
+    }
+  },
+
+  async getHistory(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const userId = req.user?.id;
+    if (!userId) {
+      ApiResponse.unauthorized(res, 'Authentication required');
+      return;
+    }
+
+    try {
+      const history = await getStreakHistory(userId);
+      ApiResponse.success(res, history);
+    } catch (err) {
+      logger.error('[streak] Failed to get streak history', err as Error, { userId });
+      ApiResponse.error(res, 'Failed to get streak history');
     }
   },
 };

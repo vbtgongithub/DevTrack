@@ -4,24 +4,33 @@
   "private": true,
   "description": "DevTrack: All-in-one developer productivity + tracking platform",
   "scripts": {
+    "dev:all": "tsx dev-orchestrator/src/index.ts",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:workers": "npm run worker --prefix backend",
+    "dev:infra": "docker-compose up -d mongo redis",
+    "health:check": "tsx dev-orchestrator/src/health-check.ts",
+    "clean:runtime": "tsx dev-orchestrator/src/clean-runtime.ts",
     "dev": "concurrently -k -n FRONTEND,BACKEND -c blue,green \"npm run dev --prefix frontend\" \"npm run dev --prefix backend\"",
     "build": "echo 'Use frontend/ or backend/ directories'",
     "build:frontend": "echo 'Use --prefix frontend'",
     "build:backend": "echo 'Use --prefix backend'",
     "lint": "npm run lint --prefix frontend",
     "test": "npm test --prefix backend",
-    "install-all": "npm install && npm run install:frontend && npm run install:backend",
+    "install-all": "npm install && npm run install:orchestrator && npm run install:frontend && npm run install:backend",
+    "install:orchestrator": "npm install --prefix dev-orchestrator",
     "install:frontend": "npm install --prefix frontend",
     "install:backend": "npm install --prefix backend",
     "frontend": "npm run dev --prefix frontend",
     "backend": "npm run dev --prefix backend",
     "start": "npm run build && npm run backend",
-    "clean": "node -e \"require('fs').rmSync('node_modules',{recursive:true,force:true});require('fs').rmSync('frontend/node_modules',{recursive:true,force:true});require('fs').rmSync('backend/node_modules',{recursive:true,force:true});\"",
+    "clean": "node -e \"require('fs').rmSync('node_modules',{recursive:true,force:true});require('fs').rmSync('frontend/node_modules',{recursive:true,force:true});require('fs').rmSync('backend/node_modules',{recursive:true,force:true});require('fs').rmSync('dev-orchestrator/node_modules',{recursive:true,force:true});\"",
     "docker:up": "docker-compose up --build",
     "docker:down": "docker-compose down"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "tsx": "^4.20.5"
   },
   "engines": {
     "node": ">=18.0.0",

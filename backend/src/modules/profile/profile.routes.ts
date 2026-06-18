@@ -39,5 +39,6 @@ router.get('/platforms/stats', authMiddleware, asyncHandler(controller.getPlatfo
 router.get('/achievements', authMiddleware, asyncHandler(controller.getAchievements));
 router.post('/tech-stack', authMiddleware, validateBody(techStackSchema), asyncHandler(controller.addTechStack));
 router.delete('/tech-stack/:tag', authMiddleware, asyncHandler(controller.removeTechStack));
+router.get('/public/:username', asyncHandler(controller.getPublicProfile as any));
 
 export default router;

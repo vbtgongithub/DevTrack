@@ -1,16 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { motion as framerMotion, AnimatePresence } from 'framer-motion';
 import { useCoachingStore } from '../../store/coachingStore';
+import { useMissionStore } from '../../store/missionStore';
+import { useUserStore } from '../../store/userStore';
 import { trackInsightView } from '../../lib/telemetry/analytics';
 import { EmptyState } from '../../components/shared/EmptyState';
 
 export const CoachingWidget: React.FC = () => {
   const { insights, reflection, fetchAll, isLoading } = useCoachingStore();
+  const getActiveMission = useMissionStore(state => state.getActiveMission);
+  const isAuthenticated = useUserStore((s) => s.isAuthenticated);
+  const activeMission = getActiveMission();
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const missionSignal = activeMission ? `Mission Operation [${activeMission.title}]: ${activeMission.aiInsight}` : null;
+  const combinedInsights = [
+    ...(missionSignal ? [missionSignal] : []),
+    ...(insights?.insights || [])
+  ];
+
   useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
+    if (isAuthenticated) {
+      fetchAll();
+    }
+  }, [fetchAll, isAuthenticated]);
 
   useEffect(() => {
     if (!isLoading && insights?.insights && insights.insights.length > 0) {
@@ -41,7 +54,7 @@ export const CoachingWidget: React.FC = () => {
     );
   }
 
-  const hasData = (insights?.insights && insights.insights.length > 0) || (reflection?.summaries && reflection.summaries.length > 0);
+  const hasData = combinedInsights.length > 0 || (reflection?.summaries && reflection.summaries.length > 0);
 
   return (
     <div 
@@ -75,18 +88,18 @@ export const CoachingWidget: React.FC = () => {
           </div>
         ) : (
           <div className="flex flex-col gap-6">
-            {insights?.insights && insights.insights.length > 0 && (
+            {combinedInsights.length > 0 && (
               <div className="flex flex-col gap-4">
                 <div className="text-[14px] text-slate-700 font-medium bg-white/50 backdrop-blur-md p-5 rounded-[24px] border border-white/60 leading-relaxed shadow-sm hover:shadow-md transition-shadow">
-                  {insights.insights[0]}
+                  {combinedInsights[0]}
                 </div>
                 
-                {insights.insights.length > 1 && (
+                {combinedInsights.length > 1 && (
                   <button
                     onClick={() => setIsExpanded(!isExpanded)}
                     className="text-xs font-bold text-violet-600 self-start hover:text-violet-700 transition-colors flex items-center gap-1 bg-white/40 px-3 py-1.5 rounded-full border border-white/60 hover:bg-white/60 shadow-sm"
                   >
-                    {isExpanded ? 'Hide detailed analysis' : `View ${insights.insights.length - 1} more insights`}
+                    {isExpanded ? 'Hide detailed analysis' : `View ${combinedInsights.length - 1} more insights`}
                   </button>
                 )}
 
@@ -98,7 +111,7 @@ export const CoachingWidget: React.FC = () => {
                       exit={{ height: 0, opacity: 0 }}
                       className="flex flex-col gap-3 overflow-hidden"
                     >
-                      {insights.insights.slice(1).map((insight, idx) => (
+                      {combinedInsights.slice(1).map((insight, idx) => (
                         <div key={idx} className="text-[14px] text-slate-700 font-medium bg-white/50 backdrop-blur-md p-5 rounded-[24px] border border-white/60 leading-relaxed shadow-sm">
                           {insight}
                         </div>

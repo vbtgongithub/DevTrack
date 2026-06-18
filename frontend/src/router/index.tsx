@@ -6,12 +6,22 @@ import { DashboardSkeleton } from '../components/skeletons/DashboardSkeleton';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
 
 const DashboardPage = lazy(() => import('../pages/DashboardPage'));
-const FocusPage = lazy(() => import('../pages/FocusPage'));
 const DsaPage = lazy(() => import('../pages/DsaPage'));
 const ProjectsPage = lazy(() => import('../pages/ProjectsPage'));
 const SettingsPage = lazy(() => import('../pages/SettingsPage'));
 const ProfilePage = lazy(() => import('../pages/ProfilePage'));
 const AdminPage = lazy(() => import('../pages/AdminPage'));
+const ReadinessPage = lazy(() => import('../pages/ReadinessPage'));
+
+// Resume Tracker Workspace
+const ResumeEntryWorkspace = lazy(() => import('../features/resume-tracker/pages/ResumeEntryWorkspace').then(module => ({ default: module.ResumeEntryWorkspace })));
+const ResumeAnalysisWorkspace = lazy(() => import('../features/resume-tracker/pages/ResumeAnalysisWorkspace').then(module => ({ default: module.ResumeAnalysisWorkspace })));
+
+// Readiness Domain Workspaces
+const DSAIntelligencePage = lazy(() => import('../pages/readiness/DSAIntelligencePage'));
+const RoadmapIntelligencePage = lazy(() => import('../pages/readiness/RoadmapIntelligencePage'));
+const EvolutionIntelligencePage = lazy(() => import('../pages/readiness/EvolutionIntelligencePage'));
+const AIGuidancePage = lazy(() => import('../pages/readiness/AIGuidancePage'));
 
 const skeletonVariants = {
   initial: { opacity: 0 },
@@ -53,16 +63,7 @@ export const AppRouter: React.FC = () => {
           </ErrorBoundary>
         }
       />
-      <Route
-        path="/focus"
-        element={
-          <ErrorBoundary pageName="Focus">
-            <Suspense fallback={<PageFallback />}>
-              <FocusPage />
-            </Suspense>
-          </ErrorBoundary>
-        }
-      />
+
       <Route
         path="/dsa"
         element={
@@ -79,6 +80,16 @@ export const AppRouter: React.FC = () => {
           <ErrorBoundary pageName="Progress">
             <Suspense fallback={<PageFallback />}>
               <ProfilePage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+      <Route
+        path="/u/:username"
+        element={
+          <ErrorBoundary pageName="Public Profile">
+            <Suspense fallback={<PageFallback />}>
+              <ProfilePage isPublicView={true} />
             </Suspense>
           </ErrorBoundary>
         }
@@ -113,6 +124,79 @@ export const AppRouter: React.FC = () => {
           </ErrorBoundary>
         }
       />
+      <Route
+        path="/resume"
+        element={
+          <ErrorBoundary pageName="Resume Entry">
+            <Suspense fallback={<PageFallback />}>
+              <ResumeEntryWorkspace />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+      <Route
+        path="/resume/analysis/:sessionId"
+        element={
+          <ErrorBoundary pageName="Resume Analysis">
+            <Suspense fallback={<PageFallback />}>
+              <ResumeAnalysisWorkspace />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+
+      {/* ─── Readiness Intelligence OS ─── */}
+      <Route
+        path="/readiness"
+        element={
+          <ErrorBoundary pageName="Mission Control">
+            <Suspense fallback={<PageFallback />}>
+              <ReadinessPage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+      <Route
+        path="/readiness/dsa"
+        element={
+          <ErrorBoundary pageName="DSA Intelligence">
+            <Suspense fallback={<PageFallback />}>
+              <DSAIntelligencePage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+      <Route
+        path="/readiness/roadmap"
+        element={
+          <ErrorBoundary pageName="Roadmap Intelligence">
+            <Suspense fallback={<PageFallback />}>
+              <RoadmapIntelligencePage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+      <Route
+        path="/readiness/evolution"
+        element={
+          <ErrorBoundary pageName="Evolution Intelligence">
+            <Suspense fallback={<PageFallback />}>
+              <EvolutionIntelligencePage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+      <Route
+        path="/readiness/copilot"
+        element={
+          <ErrorBoundary pageName="AI Guidance">
+            <Suspense fallback={<PageFallback />}>
+              <AIGuidancePage />
+            </Suspense>
+          </ErrorBoundary>
+        }
+      />
+
       <Route path="/goals" element={<Navigate to="/dashboard" replace />} />
       <Route path="/challenges" element={<Navigate to="/dashboard" replace />} />
       <Route path="/achievements" element={<Navigate to="/profile" replace />} />

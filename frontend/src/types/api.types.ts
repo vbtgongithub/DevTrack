@@ -651,3 +651,4 @@ export interface ApiAchievementsResponse {
   totalAchievements: number;
   totalXp: number;
 }
+

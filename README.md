@@ -1,561 +1,296 @@
-#  DevTrack
+# DevTrack: Developer Productivity & Career Readiness OS
 
-<div align="center">
+> **Beta Candidate** — Core platform features are structurally complete, build-green, and undergoing active validation.
 
-### Developer Productivity & Career Readiness Operating System
+[![TypeScript](https://img.shields.io/badge/typescript-v5.9-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/react-v19.2-61dafb?style=flat-square&logo=react)](https://react.dev/)
+[![Express](https://img.shields.io/badge/express-v5.1-000000?style=flat-square&logo=express)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/mongodb-v7-47a248?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
+[![Redis](https://img.shields.io/badge/redis-v7-dc382d?style=flat-square&logo=redis)](https://redis.io/)
 
-Transform your resume, learning progress, coding activity, and career goals into a measurable developer growth journey.
-
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![React](https://img.shields.io/badge/React-19-blue)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
-![Express](https://img.shields.io/badge/Express-5.x-green)
-![MongoDB](https://img.shields.io/badge/MongoDB-Database-green)
-![Redis](https://img.shields.io/badge/Redis-Cache-red)
-
-[Live Demo](#) • [Documentation](#) • [Report Bug](#) • [Request Feature](#)
-
-</div>
+DevTrack is a monorepo platform that unifies DSA progress tracking, project management, resume intelligence, career readiness scoring, and gamification into one developer-centric workspace. It ingests activity from LeetCode, Codeforces, CodeChef, and GitHub, then turns that signal into actionable missions, readiness scores, and real-time dashboard updates.
 
 ---
 
-##  Overview
+## What DevTrack Does
 
-DevTrack is a comprehensive developer intelligence platform designed to help software engineers understand their current skill level, identify career gaps, create structured learning roadmaps, and track professional growth over time.
-
-Instead of treating resumes, learning plans, productivity tools, and career goals as separate systems, DevTrack unifies them into a single career readiness operating system.
-
-The platform continuously analyzes developer progress and transforms daily engineering work into measurable career advancement.
-
----
-
-## Why DevTrack?
-
-Most developers face three major challenges:
-
-### 1. No Clear Career Direction
-
-Many developers don't know which skills are required for their dream role or how far they are from achieving it.
-
-### 2. Learning Without Structure
-
-Developers often jump between tutorials, courses, and technologies without a clear roadmap.
-
-### 3. Resumes Lack Evidence
-
-Resumes frequently list technologies without demonstrating actual proof of experience.
-
-DevTrack solves these challenges through a closed-loop intelligence system that continuously analyzes, guides, tracks, and recalculates professional growth.
+| Area | Capabilities |
+|------|-------------|
+| **DSA Workspace** | Problem tracking, favorites, heatmaps, submissions, contests, topic analytics |
+| **Platform Sync** | Scheduled ingestion from LeetCode, Codeforces, CodeChef, GitHub |
+| **Projects** | CRUD projects and tasks, velocity stats, GitHub sync |
+| **Focus Mode** | Daily missions, Pomodoro/stopwatch timers, persistent task lists |
+| **Resume Intelligence** | PDF/DOCX upload, ATS scoring, evidence claims, credibility, variants, export |
+| **Readiness OS** | Skill gaps, career intent, roadmap, DSA intelligence, evolution timeline, AI copilot |
+| **Gamification** | XP, levels, streaks (with freeze), missions, daily challenges |
+| **Real-time** | SSE event stream for live dashboard and notification updates |
+| **Admin / Ops** | Beta metrics, queue management, DLQ replay, trust scores, AI audits |
 
 ---
 
-##  The DevTrack Growth Loop
+## Learning Workflow
 
-```text
-Resume Upload
-      ↓
-Career Discovery
-      ↓
-Roadmap Intelligence
-      ↓
-Focus Mode
-      ↓
-Evolution Tracking
-      ↓
-Roadmap Recalculation
-      ↓
-Continuous Growth
+DevTrack operates as a feedback-driven career readiness engine:
+
+```mermaid
+graph TD
+    A["Resume Upload"] -->|Parser & claim validation| B["Career Discovery"]
+    B -->|Dream role & target alignment| C["Roadmap Intelligence"]
+    C -->|Gap analysis & learning paths| D["Focus (Daily Mission Control)"]
+    D -->|Task completions & focus sessions| E["Evolution Intelligence"]
+    E -->|Growth timeline & blockers| F["Roadmap Recalculation"]
+    F -->|Recalculate priorities| C
 ```
 
-Every completed task, skill milestone, and learning achievement feeds back into the system to generate updated recommendations.
+The closed loop is **Roadmap → Focus → Evolution → Roadmap**. Gaps drive missions; completed work earns XP and updates readiness scores; the roadmap adapts in response.
 
 ---
 
-##  Core Platform Modules
+## Tech Stack
 
-###  Resume Intelligence
+| Layer | Technologies |
+|-------|-------------|
+| **Frontend** | React 19, Vite 8, TypeScript, Tailwind CSS 4, Framer Motion, Zustand, TanStack Query, Axios, Clerk |
+| **Backend** | Express 5, TypeScript, Mongoose, Zod, BullMQ, Clerk Express |
+| **Data** | MongoDB 7, Redis 7 |
+| **AI** | OpenAI, Google Gemini (embeddings, coaching, resume intelligence) |
+| **Testing** | Vitest (unit + integration), Playwright (E2E) |
+| **Infra** | Docker Compose, GitHub Actions CI, Railway + Vercel (production) |
 
-Transform resumes into structured developer profiles.
+---
 
-#### Capabilities
+## Project Structure
 
-* Resume Upload (PDF, DOCX, TXT)
-* ATS Compatibility Analysis
-* Technical Skill Extraction
-* Project Intelligence Analysis
-* Resume Evidence Validation
-* AI-Powered Recommendations
-* Career Readiness Scoring
-
-#### Workflow
-
-```text
-Resume Upload
-      ↓
-Content Extraction
-      ↓
-Skill Detection
-      ↓
-ATS Analysis
-      ↓
-Evidence Validation
-      ↓
-Intelligence Report
 ```
-
----
-
-###  Career Discovery
-
-Define professional objectives and align learning efforts with target outcomes.
-
-#### Features
-
-* Career Goal Configuration
-* Dream Role Selection
-* Target Company Alignment
-* Compensation Goal Tracking
-* Timeline Planning
-* Readiness Evaluation
-
-#### Supported Career Paths
-
-* Backend Engineer
-* Frontend Engineer
-* Full Stack Engineer
-* DevOps Engineer
-* AI/ML Engineer
-* Data Engineer
-* Software Engineer
-
----
-
-###  Roadmap Intelligence
-
-Generate personalized learning roadmaps based on career goals and current capabilities.
-
-#### Features
-
-* Skill Gap Analysis
-* Learning Prioritization
-* Readiness Benchmarking
-* Dependency Mapping
-* Resource Recommendations
-* Progress Monitoring
-
-#### Output
-
-* Missing Skills
-* Recommended Learning Paths
-* Career Readiness Score
-* Priority Roadmap Milestones
-
----
-
-###  Focus Mode
-
-Convert long-term goals into daily execution.
-
-#### Features
-
-* Daily Missions
-* Task Management
-* Pomodoro Timer
-* Productivity Tracking
-* Mission Categories
-* Progress Persistence
-
-#### Purpose
-
-Focus Mode acts as the operational layer where roadmap recommendations become actionable tasks.
-
----
-
-###  Evolution Intelligence
-
-Track professional growth through measurable milestones.
-
-#### Features
-
-* Growth Timeline
-* XP System
-* Progression Levels
-* Achievement Tracking
-* Milestone Analytics
-* Blocker Detection
-
-#### Growth Stages
-
-```text
-Foundation
-     ↓
-Intermediate
-     ↓
-Advanced
-```
-
----
-
-###  Analytics & Telemetry
-
-Measure platform engagement and learning effectiveness.
-
-#### Features
-
-* Activity Tracking
-* Productivity Metrics
-* Mission Completion Analytics
-* User Feedback Collection
-* Adoption Metrics
-* Operational Dashboards
-
----
-
-##  Screenshots
-
-### Resume Intelligence
-
-```md
-Add screenshot here:
-docs/images/resume-intelligence.png
-```
-
-### Roadmap Intelligence
-
-```md
-Add screenshot here:
-docs/images/roadmap-intelligence.png
-```
-
-### Focus Mode
-
-```md
-Add screenshot here:
-docs/images/focus-mode.png
-```
-
-### Evolution Intelligence
-
-```md
-Add screenshot here:
-docs/images/evolution-intelligence.png
-```
-
----
-
-##  System Architecture
-
-```text
-┌──────────────────────────┐
-│      React Frontend      │
-└────────────┬─────────────┘
-             │
-             ▼
-┌──────────────────────────┐
-│      Express API         │
-└────────────┬─────────────┘
-             │
- ┌───────────┴───────────┐
- ▼                       ▼
-MongoDB             Redis/BullMQ
-(Database)          (Queue Layer)
-```
-
-### Frontend Layer
-
-Responsible for:
-
-* User Interface
-* State Management
-* Dashboard Visualization
-* Productivity Tracking
-* Roadmap Visualization
-
-### Backend Layer
-
-Responsible for:
-
-* Authentication
-* Resume Processing
-* Readiness Computation
-* Analytics
-* API Services
-
-### Queue Processing Layer
-
-Responsible for:
-
-* Resume Parsing Jobs
-* Intelligence Generation
-* Background Tasks
-* Scheduled Operations
-
----
-
-##  Technology Stack
-
-| Category         | Technologies               |
-| ---------------- | -------------------------- |
-| Frontend         | React 19, TypeScript, Vite |
-| State Management | Zustand, TanStack Query    |
-| UI & Animation   | Framer Motion              |
-| Backend          | Node.js, Express 5         |
-| Database         | MongoDB, Mongoose          |
-| Cache & Queues   | Redis, BullMQ              |
-| Authentication   | Clerk                      |
-| Testing          | Vitest, Playwright         |
-| Deployment       | Docker                     |
-
----
-
-##  Project Structure
-
-```text
-DevTrack/
-│
-├── frontend/
+DevTrack/                         # Monorepo Workspace Root
+├── .Codex/                       # Orchestration rules & AI maps
+├── Codex/                        # AI-ready project reference files
+├── docs/                         # Architecture & operational manuals
+├── dev-orchestrator/             # Multi-process development orchestrator
 │   ├── src/
-│   ├── components/
-│   ├── pages/
-│   ├── services/
-│   └── store/
-│
-├── backend/
+│   │   ├── console/              # UnifiedRuntimeConsole terminal formatting
+│   │   ├── monitor/              # DevelopmentHealthMonitor checking Redis/Mongo ports
+│   │   ├── orchestrator/         # Multi-process orchestrator spawning API & client tasks
+│   │   ├── utils/                # RuntimeCleaner wiping out locked caches
+│   │   └── validators/           # EnvironmentReadinessValidator validating .env variables
+│   └── package.json
+├── backend/                      # Express 5 + Mongoose + BullMQ workspace
 │   ├── src/
-│   ├── modules/
-│   ├── middleware/
-│   ├── db/
-│   └── shared/
-│
-├── dev-orchestrator/
-│
-├── docs/
-│
-└── infrastructure/
+│   │   ├── config/               # Environment config & constants
+│   │   ├── db/                   # Database models & connections
+│   │   │   └── models/           # Mongoose schemas (Readiness, Resume, Analytics)
+│   │   ├── middleware/           # JWT Auth, rate-limiters, error interceptors
+│   │   ├── modules/              # Modular business domains
+│   │   │   ├── auth/             # Sign-in & Clerk synchronizers
+│   │   │   ├── analytics/        # User feedback & conversion funnel logging
+│   │   │   ├── readiness/        # Skill Gaps, diagnostic Benchmarks & Evolution timelines
+│   │   │   ├── resume/           # PDF parsing, ATS scoring & Github claim validators
+│   │   │   └── operations/       # Snapshot versioners, diagnostics, health metrics
+│   │   └── shared/               # Shared utilities
+│   │       ├── redis/            # Redis singleton connection pools
+│   │       ├── jobs/             # BullMQ factories & platform crawler workers
+│   │       └── sse/              # Server-Sent Events multi-tab singleton WebChannels
+│   └── package.json
+├── frontend/                     # React 19 Client
+│   ├── src/
+│   │   ├── components/           # UI controls, layouts, Pomodoro timers
+│   │   ├── features/             # Feature-specific pages, hooks & context
+│   │   │   ├── admin/            # AI Provider telemetry dashboards
+│   │   │   ├── ai/               # Copilot chat panels & guidance feeds
+│   │   │   ├── readiness/        # Roadmap diagrams, blocker panels, charts
+│   │   │   └── resume-tracker/   # Resume upload dropzones & credibility checkers
+│   │   ├── pages/                # Workspace page layouts matching route targets
+│   │   │   ├── admin/            # PMF funnel analytics & dashboard portal
+│   │   │   ├── readiness/        # Roadmap, DSA, and Evolution timelines
+│   │   │   └── FocusPage.tsx     # Persistent Daily Mission stopwatch timers
+│   │   ├── store/                # Persistent Zustand state stores
+│   │   │   └── progressionStore.ts # Persistent active gamification store
+│   │   ├── services/             # Axios API client services (Readiness, Analytics)
+│   │   └── router/               # Navigation target routing paths
+│   └── package.json
+├── docker-compose.yml             # Dev full-stack (mongo, redis, api, frontend)
+├── docker-compose.prod.yml        # Production split (api + workers)
+├── start-dev.ps1                  # Windows dev environment starter
+└── package.json                   # Monorepo scripts
 ```
 
 ---
 
-##  Getting Started
+## Quick Start
 
 ### Prerequisites
 
-* Node.js 18+
-* npm 9+
-* Docker Desktop
-* MongoDB
-* Redis
+- Node.js `>= 18`, npm `>= 9`
+- Docker Desktop (for MongoDB + Redis)
 
-### Clone Repository
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/VarshithReddy2006/DevTrack.git
-
 cd DevTrack
-```
-
-### Install Dependencies
-
-```bash
 npm run install-all
 ```
 
-### Configure Environment Variables
-
-Create:
+### 2. Environment files
 
 ```bash
-.env
-backend/.env
-frontend/.env
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
 Required variables:
 
-```env
-NODE_ENV=development
+| File | Variable | Purpose |
+|------|----------|---------|
+| `backend/.env` | `CLERK_SECRET_KEY` | Clerk backend auth |
+| `frontend/.env` | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk frontend auth |
+| `frontend/.env` | `VITE_API_BASE_URL` | API base (default `http://localhost:3001/api`) |
 
-MONGODB_URI=
+Optional: `GITHUB_TOKEN`, `OPENAI_API_KEY`, `GEMINI_API_KEY` for sync and AI features.
 
-REDIS_HOST=
-REDIS_PORT=
-
-CLERK_SECRET_KEY=
-CLERK_PUBLISHABLE_KEY=
-
-GITHUB_TOKEN=
-
-GEMINI_API_KEY=
-```
-
-### Start Infrastructure
+### 3. Start infrastructure
 
 ```bash
 npm run dev:infra
 ```
 
-### Start Development Environment
+Starts MongoDB on `localhost:27017` and Redis on `localhost:6379`.
+
+### 4. Run the app
+
+**Option A — API + frontend only (no workers):**
 
 ```bash
 npm run dev
 ```
 
-### Access Services
+**Option B — Full stack with workers (recommended):**
 
-| Service     | URL                   |
-| ----------- | --------------------- |
-| Frontend    | http://localhost:5173 |
+```bash
+npm run dev:all
+```
+
+**Option C — Windows PowerShell helper:**
+
+```powershell
+.\start-dev.ps1
+```
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5173 |
 | Backend API | http://localhost:3001 |
+| Health check | http://localhost:3001/health |
 
----
-
-##  API Overview
-
-### Authentication
-
-```http
-GET /api/v1/auth/me
-POST /api/v1/auth/sse-handshake
-```
-
-### Resume Intelligence
-
-```http
-POST /api/v1/resume/upload
-POST /api/v1/resume-intelligence/report
-```
-
-### Readiness
-
-```http
-GET /api/v1/readiness/snapshot
-```
-
-### Dashboard
-
-```http
-GET /api/v1/dashboard/stats
-```
-
-### Coaching
-
-```http
-GET /api/v1/coaching/insights
-```
-
----
-
-##  Product Roadmap
-
-### ✅ Completed
-
-* Resume Upload System
-* ATS Analysis
-* Career Discovery
-* Skill Gap Analysis
-* Roadmap Intelligence
-* Focus Mode
-* Evolution Tracking
-* Analytics Dashboard
-
-###  In Progress
-
-* Resume Evidence Scoring
-* Advanced AI Recommendations
-* Readiness Optimization Engine
-
-###  Planned
-
-* GitHub Activity Integration
-* LeetCode Integration
-* AI Career Coach
-* Interview Preparation Engine
-* Team Collaboration Workspaces
-* Organization Analytics
-
----
-
-##  Testing
-
-### Unit Tests
+### 5. Full Docker stack
 
 ```bash
-npm run test
+docker compose up --build
 ```
 
-### End-to-End Tests
+---
+
+## API Overview
+
+Canonical base path: **`/api/v1`**. Legacy `/api/*` routes still work with a deprecation header.
+
+| Module | Path prefix | Auth |
+|--------|-------------|------|
+| Auth | `/auth` | Clerk JWT |
+| Real-time | `/events` | SSE token handshake |
+| Dashboard | `/dashboard` | Yes |
+| DSA | `/dsa` | Yes |
+| Activity | `/activity` | Yes |
+| Projects | `/projects` | Yes |
+| Profile | `/profile` | Yes (public `/profile/public/:username`) |
+| Platform Sync | `/platforms` | Yes |
+| Readiness | `/readiness` | Yes |
+| Resume | `/resume`, `/resume-intelligence` | Yes |
+| XP / Streak / Missions | `/xp`, `/streak`, `/missions` | Yes |
+| Ops (admin) | `/ops` | Admin / ops auditor |
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full endpoint list and system topology.
+
+---
+
+## Frontend Routes
+
+| Path | Page |
+|------|------|
+| `/dashboard` | Engineering OS dashboard |
+| `/focus` | Mission control + timers |
+| `/dsa` | DSA workspace |
+| `/projects` | Project tracker |
+| `/resume` | Resume upload workspace |
+| `/resume/analysis/:sessionId` | Resume analysis |
+| `/readiness` | Readiness hub |
+| `/readiness/dsa`, `/roadmap`, `/evolution`, `/copilot` | Intelligence workspaces |
+| `/profile`, `/u/:username` | User profile |
+| `/settings` | Settings |
+| `/admin`, `/beta/dashboard` | Admin consoles |
+
+---
+
+## Development Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Frontend + backend concurrently |
+| `npm run dev:all` | Full orchestrator (infra + API + workers + frontend) |
+| `npm run dev:infra` | Docker mongo + redis only |
+| `npm run dev:workers` | BullMQ workers only |
+| `npm run health:check` | Environment and connectivity checks |
+| `npm run clean:runtime` | Kill stale processes and clear ports |
+| `npm run test` | Backend Vitest suite |
+| `cd frontend && npm run test:e2e` | Playwright E2E tests |
+| `docker compose up --build` | Full containerized stack |
+
+---
+
+## Testing
 
 ```bash
-npm run test:e2e --prefix frontend
+# Backend unit tests
+cd backend && npm run test:unit
+
+# Backend integration tests (requires Mongo + Redis)
+cd backend && npm run test:integration
+
+# Frontend unit tests
+cd frontend && npm run test:unit
+
+# Frontend E2E (requires running stack + AI keys)
+cd frontend && npm run test:e2e
 ```
 
----
-
-##  Contributing
-
-We welcome contributions from developers of all experience levels.
-
-### Contribution Process
-
-1. Fork the repository
-2. Create a feature branch
-
-```bash
-git checkout -b feature/amazing-feature
-```
-
-3. Commit changes
-
-```bash
-git commit -m "feat: add amazing feature"
-```
-
-4. Push branch
-
-```bash
-git push origin feature/amazing-feature
-```
-
-5. Open a Pull Request
+CI runs typecheck, lint, unit tests, integration tests, and Docker build verification on every PR (`.github/workflows/pr-checks.yml`).
 
 ---
 
-##  Security
+## Documentation Index
 
-DevTrack includes:
-
-* Rate Limiting
-* Input Validation
-* Secure Authentication
-* CORS Protection
-* Helmet Security Headers
-* Environment Validation
-
----
-
-## 📄 License
-
-Distributed under the MIT License.
-
-See `LICENSE` for more information.
+| Document | Contents |
+|----------|----------|
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | System topology, SSE, queues, modules |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Production deployment and env vars |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Code conventions and PR requirements |
+| [PROJECT_STATUS.md](./PROJECT_STATUS.md) | Current build status and known gaps |
+| [CLAUDE.md](./CLAUDE.md) | AI assistant project context |
+| [dev-orchestrator/README.md](./dev-orchestrator/README.md) | Local orchestrator details |
+| [frontend/e2e/README.md](./frontend/e2e/README.md) | E2E test philosophy and setup |
 
 ---
 
-##  Support
+## Known Limitations
 
-If you find this project useful:
-
-* Star the repository
-* Share feedback
-* Submit feature requests
-* Contribute improvements
+- **LeetCode sync** is partial due to public API constraints.
+- **CodeChef** provides stats only (no full submission history).
+- **ATS integrations** use simulators; no live Workday/Greenhouse OAuth.
+- **Resume uploads** are capped at 5 MB.
+- **AI features** degrade gracefully when `OPENAI_API_KEY` / `GEMINI_API_KEY` are unset.
 
 ---
 
-<div align="center">
+## License
 
-### Built for Developers. Focused on Growth.
-
-**DevTrack — Turn Learning Into Measurable Career Progress.**
-
-</div>
+Private beta — see repository owner for licensing terms.

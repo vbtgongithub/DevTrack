@@ -5,16 +5,14 @@ import { streakController } from './index.js';
 
 const router = Router();
 
-// Authentication middleware wrapper
-const requireAuth = (req: AuthenticatedRequest, res: import('express').Response, next: import('express').NextFunction) => {
-  authMiddleware(req, res, next);
-};
-
 // All streak routes require authentication
-router.use(requireAuth);
+router.use(authMiddleware);
 
 // GET /streak - Get unified streak status
 router.get('/', streakController.getStreak);
+
+// GET /streak/history - Get streak history
+router.get('/history', streakController.getHistory);
 
 // GET /streak/:type - Get specific streak type (dsa, github, unified)
 router.get('/:type', streakController.getStreakByType);

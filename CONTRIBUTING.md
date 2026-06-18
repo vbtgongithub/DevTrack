@@ -1,77 +1,172 @@
-# Contributing Guidelines (CONTRIBUTING.md)
+# Contributing to DevTrack
 
-Welcome! Thank you for contributing to DevTrack. To maintain high code quality, operational resilience, and architectural cohesion, please follow the guidelines and patterns outlined below.
-
----
-
-## 🏗️ Architecture Conventions
-
-DevTrack is a monorepo consisting of:
-1. `/backend` — Express 5 + MongoDB + Redis + BullMQ (domain-driven modules)
-2. `/frontend` — React 19 + Vite + Zustand + Tailwind CSS
+Thank you for contributing. Follow these conventions to keep the codebase consistent and maintainable.
 
 ---
 
-## 💻 Backend Coding Patterns
+## Repository Layout
 
-All backend features must reside inside domain-specific subdirectories under `backend/src/modules/`.
-Each module should use the standard barrel pattern:
+| Directory | Stack | Role |
+|-----------|-------|------|
+| `backend/` | Express 5, Mongoose, BullMQ, Clerk | API server and workers |
+| `frontend/` | React 19, Vite, Zustand, Tailwind 4 | SPA client |
+| `dev-orchestrator/` | TypeScript | Local multi-process dev boot |
+
+---
+
+## Getting Started
+
+```bash
+npm run install-all
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+# Fill in CLERK_SECRET_KEY and VITE_CLERK_PUBLISHABLE_KEY
+npm run dev:infra
+npm run dev:all
+```
+
+On Windows, `.\start-dev.ps1` automates the same flow.
+
+---
+
+## Backend Conventions
+
+### Module structure
+
+Every feature lives under `backend/src/modules/<module-name>/`:
 
 ```
 backend/src/modules/<module-name>/
-├── index.ts              # Exports routes and public services
-├── <module-name>.routes.ts  # Express routes configuration
-├── <module-name>.controller.ts # Validates request payloads and maps responses
-├── <module-name>.service.ts    # Contains business and persistence logic
-└── <module-name>.validation.ts # Zod schemas for input validation
+├── index.ts                  # Public exports
+├── <module-name>.routes.ts   # Express route definitions
+├── <module-name>.controller.ts
+├── <module-name>.service.ts
+└── <module-name>.validation.ts  # Zod schemas
 ```
 
-### Key Practices:
-- **No Console Logging**: Always use the unified winston logger (`import logger from '../../shared/logger'`).
-- **No Silent Failures**: Propagate errors cleanly to the Express error boundary using custom HTTP Exceptions (e.g., `BadRequestException`, `UnauthorizedException`).
-- **Strict Zod Validation**: Never trust client inputs. Always validate the request body, queries, and params before processing.
+Register new routes in `backend/src/routes/index.ts`.
+
+### Practices
+
+- **Logging:** Use `import { logger } from '../../shared/logger'` — never `console.log`.
+- **Errors:** Propagate to the Express error boundary via `asyncHandler` and HTTP exceptions (`BadRequestException`, `UnauthorizedException`, etc.).
+- **Validation:** Validate request body, query, and params with Zod before processing.
+- **Database:** Prefer `.lean()` on read paths; use atomic updates (`$inc`, `$set`) for counters.
+- **Auth:** Routes requiring authentication use `authMiddleware` from `middleware/auth.ts` (Clerk-based).
+
+### API paths
+
+Mount routes under `/api/v1`. The versioned base path is defined in `config/constants.ts`.
 
 ---
 
-## 🎨 Frontend Styling & Component Architecture
+## Frontend Conventions
 
-### Component Organization
-- **`/src/components/ui/`**: Low-level, generic, stateless UI elements (buttons, inputs, tooltips, loaders).
-- **`/src/components/layout/`**: Global layout shells (AppShell, PageShell).
-- **`/src/features/<feature-name>/`**: High-level, state-connected sub-features (e.g., Onboarding, Notification drawer, board views).
+### Directory layout
 
-### Styling Guidelines
-- Use native **Vanilla Tailwind CSS v4** patterns. Avoid inline Tailwind directives or raw ad-hoc classes.
-- Ensure proper accessibility tags (`aria-label`, `role="dialog"`, etc.) are attached to interactive interfaces.
-- Optimize rendering performance by avoiding excessive inline arrow functions or expensive non-memoized state derivations in React render loops.
+| Path | Purpose |
+|------|---------|
+| `src/components/ui/` | Generic stateless UI primitives |
+| `src/components/layout/` | AppShell, page shells, navigation |
+| `src/features/<name>/` | Domain-connected feature modules |
+| `src/pages/` | Route-level page components |
+| `src/services/` | Axios API client wrappers |
+| `src/store/` | Zustand stores |
+| `src/hooks/` | Shared React hooks |
+
+### Styling
+
+- Use **Tailwind CSS v4** utility classes and design tokens (`dt-*` variables).
+- Motion animations go through `src/design-system/motion/` — no inline transition values.
+- Include accessibility attributes (`aria-label`, `role`, keyboard handlers) on interactive elements.
+
+### State
+
+- **Server data:** TanStack Query (cache, refetch, mutations).
+- **Client UI state:** Zustand with selective persistence.
+- **Real-time:** SSE via `useSse` hook — do not open per-component EventSource connections.
 
 ---
 
-## 🧪 Testing Requirements
+## Testing Requirements
 
-We enforce strict test coverage requirements:
-- **Unit & Integration Tests**: Written with **Vitest**.
-- **Running Tests**:
-  - Backend: Run `npm run test` in `/backend` to check the suite.
-  - Make sure all mock assertions clean up after themselves cleanly using `afterEach` and `afterAll` connection terminations.
+### Backend
+
+```bash
+cd backend
+npm run test:unit          # Unit tests (excludes integration)
+npm run test:integration   # Requires Mongo + Redis
+npm test                   # All tests
+```
+
+- Write tests in `backend/src/__tests__/` or co-located `*.test.ts` files.
+- Integration tests use `vitest.integration.config.ts`.
+- Clean up connections in `afterEach` / `afterAll`.
+
+### Frontend
+
+```bash
+cd frontend
+npm run test:unit          # Vitest
+npm run test:e2e           # Playwright (requires running stack)
+```
+
+E2E tests verify operational intelligence (real ATS scores, embeddings, persistence) — not UI snapshots. See [frontend/e2e/README.md](./frontend/e2e/README.md).
 
 ---
 
-## 🌿 Branch & Git Flow
+## Branch & PR Workflow
 
-To keep the history pristine and professional:
-- **Branch Naming**:
-  - Features: `feat/short-description`
-  - Bug fixes: `fix/short-description`
-  - Optimization/Hardening: `harden/short-description`
-  - Documentation: `docs/short-description`
-- **Prerequisites for PR Creation**:
-  1. Ensure both `/frontend` and `/backend` build cleanly without TypeScript errors:
-     ```bash
-     npm run build
-     ```
-  2. Run the test suite and verify 100% pass rates:
-     ```bash
-     npm run test
-     ```
-  3. Ensure no trailing debug comments (`console.log`, `TODO`) are committed.
+### Branch naming
+
+| Type | Pattern | Example |
+|------|---------|---------|
+| Feature | `feat/<description>` | `feat/dsa-heatmap-filter` |
+| Bug fix | `fix/<description>` | `fix/sse-reconnect` |
+| Docs | `docs/<description>` | `docs/deployment-guide` |
+| Hardening | `harden/<description>` | `harden/rate-limit-sync` |
+
+### PR checklist
+
+1. Both packages build without TypeScript errors:
+   ```bash
+   cd backend && npm run build
+   cd frontend && npm run build
+   ```
+2. Tests pass:
+   ```bash
+   cd backend && npm run test:unit
+   cd frontend && npm run test:unit
+   ```
+3. No debug artifacts (`console.log`, stray `TODO`, commented-out code blocks).
+4. New API routes are registered in `routes/index.ts` and documented if public-facing.
+5. Environment variable changes update `backend/.env.example` and/or `frontend/.env.example`.
+
+### Commit messages
+
+Follow conventional commits:
+
+```
+feat(readiness): add roadmap gap analyzer
+fix(auth): correct Clerk token validation on SSE
+chore(repo): update deployment docs
+test(ops): add DLQ resilience cases
+```
+
+---
+
+## Code Review Focus
+
+- Does the change match existing module patterns?
+- Are Zod schemas applied to all external inputs?
+- Are database queries using indexes and `.lean()` where appropriate?
+- Does the frontend use existing service modules instead of raw `fetch`?
+- Are animations using the motion system tokens?
+
+---
+
+## Related Docs
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — System design
+- [PROJECT_STATUS.md](./PROJECT_STATUS.md) — Known gaps
+- [CLAUDE.md](./CLAUDE.md) — AI assistant context

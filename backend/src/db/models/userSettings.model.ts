@@ -33,11 +33,13 @@ export interface IUserSettings extends Document {
     language: string;
   };
   privacy: {
-    profileVisibility: 'public' | 'private' | 'friends_only';
+    profileVisibility: 'public' | 'private' | 'recruiter_only';
     showActivity: boolean;
     showStreak: boolean;
     showProjects: boolean;
     showDsaProgress: boolean;
+    showGithub: boolean;
+    showTimeline: boolean;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -82,11 +84,13 @@ const userSettingsSchema = new Schema<IUserSettings>(
       language: { type: String, default: 'en' },
     },
     privacy: {
-      profileVisibility: { type: String, enum: ['public', 'private', 'friends_only'], default: 'public' },
+      profileVisibility: { type: String, enum: ['public', 'private', 'recruiter_only'], default: 'public' },
       showActivity: { type: Boolean, default: true },
       showStreak: { type: Boolean, default: true },
       showProjects: { type: Boolean, default: true },
       showDsaProgress: { type: Boolean, default: true },
+      showGithub: { type: Boolean, default: true },
+      showTimeline: { type: Boolean, default: true },
     },
   },
   {

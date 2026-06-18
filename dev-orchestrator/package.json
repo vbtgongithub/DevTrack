@@ -1,0 +1,24 @@
+{
+  "name": "devtrack-dev-orchestrator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Unified development runtime orchestrator for DevTrack platform",
+  "scripts": {
+    "dev:all": "tsx src/index.ts",
+    "health:check": "tsx src/health-check.ts",
+    "clean:runtime": "tsx src/clean-runtime.ts"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "ioredis": "^5.10.1",
+    "mongoose": "^8.14.0",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.3"
+  }
+}

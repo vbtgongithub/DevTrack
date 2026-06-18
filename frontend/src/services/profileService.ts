@@ -42,3 +42,12 @@ export async function getProfile(): Promise<AxiosResponse> {
 export async function updateProfile(payload: Record<string, unknown>): Promise<AxiosResponse> {
   return axiosClient.patch(PROFILE_BASE, payload);
 }
+
+/**
+ * Get public profile by username
+ * GET /profile/public/:username
+ */
+export async function getPublicProfile(username: string): Promise<AxiosResponse> {
+  return axiosClient.get(`${PROFILE_BASE}/public/${username}`);
+}
+

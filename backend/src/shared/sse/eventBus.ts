@@ -4,7 +4,7 @@
 import { EventEmitter } from 'events';
 import { z } from 'zod';
 import { logger } from '../logger.js';
-import { getRedisClient } from '../redis/client.js';
+import { getRedisClient, getRedisHealth } from '../redis/client.js';
 
 // ─── Zod validation schemas for SSE event payloads ─────────────────────────
 const syncStartedPayload = z.object({
@@ -98,6 +98,17 @@ const challengeCompletedPayload = z.object({
 const runtimeStatePatchPayload = z.record(z.unknown());
 const runtimeStateFullPayload = z.object({ state: z.record(z.unknown()) });
 
+const resumeProgressionPayload = z.object({
+  sessionId: z.string(),
+  stage: z.string(),
+  progress: z.number(),
+  message: z.string(),
+  status: z.enum(['pending', 'running', 'completed', 'failed', 'degraded']),
+  errors: z.array(z.string()).optional(),
+  warnings: z.array(z.string()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
 function validateEventPayload(type: string, payload: unknown): Record<string, unknown> {
   let schema: z.ZodSchema<any>;
   switch (type) {
@@ -139,6 +150,9 @@ function validateEventPayload(type: string, payload: unknown): Record<string, un
       break;
     case 'runtime_state_full':
       schema = runtimeStateFullPayload;
+      break;
+    case 'resume_progression':
+      schema = resumeProgressionPayload;
       break;
     default:
       return payload as Record<string, unknown>;
@@ -200,6 +214,8 @@ export type SseEventType =
   // Legacy (for backwards compatibility)
   | 'xp_updated'
   | 'badge_earned'
+  // Resume progression
+  | 'resume_progression'
   // System
   | 'heartbeat';
 
@@ -330,6 +346,9 @@ class EventBus extends EventEmitter {
   }
 
   private async publishToRedis(event: SseEvent): Promise<void> {
+    if (getRedisHealth().status !== 'connected') {
+      return;
+    }
     try {
       if (this.redisPublisher && (this.redisPublisher as any).status === 'ready') {
         await (this.redisPublisher as any).publish(SSE_CHANNEL, JSON.stringify(event));
@@ -822,6 +841,32 @@ class EventBus extends EventEmitter {
     schemaVersion?: number
   ): Promise<void> {
     const validatedPayload = validateEventPayload(type, payload);
+    
+    // Fallback directly to in-memory publishing when Redis is disconnected
+    if (getRedisHealth().status !== 'connected') {
+      const fallbackSeq = Math.floor(Date.now() / 1000);
+      const eventId = `${userId}-fallback-${fallbackSeq}-${Date.now()}`;
+      
+      logger.debug('[sse] Redis disconnected — executing fallback direct in-memory publish', {
+        type,
+        userId,
+        eventId,
+      });
+
+      this.publish(
+        {
+          id: eventId,
+          type,
+          timestamp: new Date().toISOString(),
+          userId,
+          stats: validatedPayload as SseEvent['stats'],
+          payload: validatedPayload,
+        },
+        userId
+      );
+      return;
+    }
+    
     const redis = getRedisClient();
     
     // Get next sequence number for this user

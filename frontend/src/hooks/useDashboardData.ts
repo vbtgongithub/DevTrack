@@ -121,7 +121,7 @@ export function useDashboardData(): UseDashboardDataReturn {
   }, [fetchDashboard]);
 
   useEffect(() => {
-    if (storeLastFetchedAt === null && storeStatus !== 'loading' && userId) {
+    if (storeLastFetchedAt === null && storeStatus !== 'loading' && storeStatus !== 'error' && userId) {
       fetchDashboard(true);
     }
   }, [storeLastFetchedAt, storeStatus, userId, fetchDashboard]);

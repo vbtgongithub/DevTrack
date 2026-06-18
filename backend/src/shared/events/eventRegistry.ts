@@ -2,7 +2,8 @@
 // All emitted events support schema evolution, Redis Streams replication, and replay capabilities
 
 import { logger } from '../logger.js';
-import { getRedisClient } from '../redis/index.js';
+import { getRedisClient, getRedisHealth } from '../redis/index.js';
+import crypto from 'crypto';
 
 export const EVENT_VERSION = 1;
 
@@ -102,7 +103,6 @@ export function createEvent<T>(
   userId?: string,
   correlationId?: string
 ): BaseEvent<T> {
-  const crypto = require('crypto');
   const id = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
   return {
     id,
@@ -260,23 +260,27 @@ class EventRegistryClass {
     });
 
     // Append to Redis Streams for system auditing and replay reliability
-    try {
-      const redis = getRedisClient();
-      await redis.xadd(
-        'devtrack:events:stream',
-        '*',
-        'id', id || '',
-        'type', type,
-        'version', String(version),
-        'userId', userId || '',
-        'correlationId', correlationId || '',
-        'timestamp', event.timestamp,
-        'payload', JSON.stringify(event.payload)
-      );
-      // Retain the last 100k events to bound Redis memory growth
-      await redis.xtrim('devtrack:events:stream', 'MAXLEN', '~', 100000);
-    } catch (redisErr) {
-      logger.error('[event-registry] Failed to append event to Redis stream', redisErr, { eventId: id });
+    if (getRedisHealth().status === 'connected') {
+      try {
+        const redis = getRedisClient();
+        await redis.xadd(
+          'devtrack:events:stream',
+          '*',
+          'id', id || '',
+          'type', type,
+          'version', String(version),
+          'userId', userId || '',
+          'correlationId', correlationId || '',
+          'timestamp', event.timestamp,
+          'payload', JSON.stringify(event.payload)
+        );
+        // Retain the last 100k events to bound Redis memory growth
+        await redis.xtrim('devtrack:events:stream', 'MAXLEN', '~', 100000);
+      } catch (redisErr) {
+        logger.error('[event-registry] Failed to append event to Redis stream', redisErr, { eventId: id });
+      }
+    } else {
+      logger.debug('[event-registry] Redis offline — skipping stream append, direct in-memory publish only', { eventId: id });
     }
 
     // Trigger registered subscribers
@@ -302,6 +306,10 @@ class EventRegistryClass {
     onEvent: (event: BaseEvent) => Promise<void>
   ): Promise<number> {
     const redis = getRedisClient();
+    if (redis.status !== 'ready') {
+      logger.warn('[event-registry] Redis offline — skipping stream replay');
+      return 0;
+    }
     const startTimeMs = since.getTime();
     logger.info('[event-registry] Replaying events from stream', { since: since.toISOString() });
 

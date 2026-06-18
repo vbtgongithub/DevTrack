@@ -128,37 +128,31 @@ const RetentionBanner: React.FC = () => {
   }
 
   if (streakPressure && streakPressure.level !== 'none') {
-    const pressureConfig: Record<string, { bg: string; border: string; text: string; icon: string; gradient: string }> = {
-      gentle: { bg: 'from-blue-50 to-sky-50/50', border: 'border-blue-200/50', text: 'text-blue-900', icon: 'text-blue-500', gradient: 'from-blue-400 to-sky-500' },
-      moderate: { bg: 'from-amber-50 to-orange-50/50', border: 'border-amber-200/50', text: 'text-amber-900', icon: 'text-amber-500', gradient: 'from-amber-400 to-orange-500' },
-      urgent: { bg: 'from-rose-50 to-red-50/50', border: 'border-rose-200/50', text: 'text-rose-900', icon: 'text-rose-500', gradient: 'from-rose-400 to-red-500' },
-      critical: { bg: 'from-red-50 to-rose-50/50', border: 'border-red-300/50', text: 'text-red-900', icon: 'text-red-600', gradient: 'from-red-500 to-rose-600' },
-    };
-
-    const config = pressureConfig[streakPressure.level] || pressureConfig.gentle;
-
     return (
       <motion.div
-        initial={{ opacity: 0, y: -10, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        className={`relative rounded-[24px] overflow-hidden border ${config.border} bg-gradient-to-r ${config.bg} p-4 shadow-[0_8px_30px_rgba(0,0,0,0.04)]`}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative rounded-[20px] overflow-hidden border border-slate-200/60 bg-white p-4 shadow-sm"
       >
-        <button onClick={handleDismiss} className="absolute top-3 right-3 p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-white/50 transition-colors z-10">
+        <button onClick={handleDismiss} className="absolute top-3 right-3 p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors z-10">
           <X size={14} />
         </button>
         <div className="relative flex items-center gap-4 z-10">
-          <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${config.gradient} flex items-center justify-center shadow-lg shrink-0`}>
-            <Flame size={22} className="text-white" />
+          <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+            <Flame size={18} className={streakPressure.level === 'critical' ? 'text-red-500' : 'text-indigo-500'} />
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className={`text-[14px] font-black ${config.text} tracking-tight`}>
-              {streakPressure.emoji} {streakPressure.message}
+            <h4 className="text-[13px] font-bold text-slate-800 tracking-tight">
+              Maintain Operational Momentum
             </h4>
+            <p className="text-[12px] text-slate-500 font-medium">
+              {streakPressure.message}
+            </p>
           </div>
           {streakPressure.level === 'critical' && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 shrink-0 animate-pulse">
-              <Clock size={14} className="text-red-500" />
-              <span className="text-[12px] font-black text-red-700">{streakPressure.hoursRemaining}h left</span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 border border-red-100 shrink-0">
+              <Clock size={12} className="text-red-500" />
+              <span className="text-[11px] font-bold text-red-600">{streakPressure.hoursRemaining}h action window</span>
             </div>
           )}
         </div>

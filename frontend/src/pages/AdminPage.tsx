@@ -24,7 +24,52 @@ import { getTelemetryBuffer } from '../lib/telemetry';
 import { useSse } from '../hooks/useSse';
 import { useUIStore } from '../store/uiStore';
 
-type Tab = 'retention' | 'beta' | 'feature-gates' | 'kill-switches' | 'system';
+type Tab = 
+  | 'retention' | 'beta' | 'feature-gates' | 'kill-switches' | 'system'
+  | 'profile-integrity' | 'trust-scores' | 'verification-audits' | 'anomaly-detection' | 'timeline-integrity' | 'recruiter-signals'
+  | 'cache-health' | 'public-apis' | 'seo-health' | 'traffic-monitoring'
+  | 'suspicious-accounts' | 'abuse-investigations' | 'verification-locks' | 'manual-overrides';
+
+const CATEGORIES = [
+  {
+    name: 'Operations',
+    tabs: [
+      { id: 'retention', label: 'Retention' },
+      { id: 'feature-gates', label: 'Feature Gates' },
+      { id: 'kill-switches', label: 'Kill Switches' },
+      { id: 'system', label: 'System Health' },
+    ]
+  },
+  {
+    name: 'Trust Infrastructure',
+    tabs: [
+      { id: 'profile-integrity', label: 'Profile Integrity' },
+      { id: 'trust-scores', label: 'Trust Scores' },
+      { id: 'verification-audits', label: 'Verification Audits' },
+      { id: 'anomaly-detection', label: 'Anomaly Detection' },
+      { id: 'timeline-integrity', label: 'Timeline Integrity' },
+      { id: 'recruiter-signals', label: 'Recruiter Signals' },
+    ]
+  },
+  {
+    name: 'Public Systems',
+    tabs: [
+      { id: 'cache-health', label: 'Cache Health' },
+      { id: 'public-apis', label: 'Public APIs' },
+      { id: 'seo-health', label: 'SEO Health' },
+      { id: 'traffic-monitoring', label: 'Traffic Monitoring' },
+    ]
+  },
+  {
+    name: 'Moderation',
+    tabs: [
+      { id: 'suspicious-accounts', label: 'Suspicious Accounts' },
+      { id: 'abuse-investigations', label: 'Abuse Investigations' },
+      { id: 'verification-locks', label: 'Verification Locks' },
+      { id: 'manual-overrides', label: 'Manual Overrides' },
+    ]
+  }
+];
 
 export const AdminPage = () => {
   const [activeTab, setActiveTab] = useState<Tab>('retention');
@@ -40,7 +85,7 @@ export const AdminPage = () => {
       const { data } = await axiosClient.get('/ops/retention/dashboard');
       return data;
     },
-    refetchInterval: 15000, // auto-refresh every 15s for live view
+    refetchInterval: 15000,
   });
 
   const { data: betaData, isLoading: loadingBeta, refetch: refetchBeta } = useQuery({
@@ -82,9 +127,7 @@ export const AdminPage = () => {
       const { data } = await axiosClient.post('/ops/feature-gates/toggle', { featureName, enabled });
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ops-feature-gates'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ops-feature-gates'] }),
   });
 
   const configureGateMutation = useMutation({
@@ -92,9 +135,7 @@ export const AdminPage = () => {
       const { data } = await axiosClient.post('/ops/feature-gates/configure', payload);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ops-feature-gates'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ops-feature-gates'] }),
   });
 
   const toggleKillSwitchMutation = useMutation({
@@ -113,9 +154,7 @@ export const AdminPage = () => {
       const { data } = await axiosClient.post('/ops/beta/invites', payload);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ops-beta'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ops-beta'] }),
   });
 
   const createCohortMutation = useMutation({
@@ -123,9 +162,7 @@ export const AdminPage = () => {
       const { data } = await axiosClient.post('/ops/beta/cohorts', payload);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ops-beta'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['ops-beta'] }),
   });
 
   // ─── Forms State ───
@@ -134,16 +171,18 @@ export const AdminPage = () => {
   const [switchReason, setSwitchReason] = useState<Record<string, string>>({});
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-24 px-4 font-sans text-zinc-100">
+    <div className="max-w-7xl mx-auto space-y-6 pb-24 px-4 font-sans text-zinc-100 flex flex-col min-h-[calc(100vh-80px)]">
       {/* ─── Header ─── */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/60 pb-5">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/60 pb-5 pt-4">
         <div>
           <div className="flex items-center gap-2 text-emerald-400 mb-1.5">
             <Shield size={16} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Ops Console</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Platform Trust Operations</span>
           </div>
-          <h1 className="text-2xl font-bold text-zinc-50 tracking-tight">System Operations</h1>
-          <p className="text-xs text-zinc-500 mt-1">Pilot seat for closed beta controls, pacing safety limits, feature rollouts, and real user behavior telemetry.</p>
+          <h1 className="text-2xl font-bold text-zinc-50 tracking-tight">Trust & Platform Ops</h1>
+          <p className="text-xs text-zinc-500 mt-1 max-w-xl">
+            Internal visibility layer for public credibility systems, profile integrity, queue orchestration, and anomaly tracking.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Badge variant={connectionStatus === 'connected' ? 'success' : 'warning'} className="px-3 py-1 text-xs">
@@ -167,84 +206,92 @@ export const AdminPage = () => {
         </div>
       </header>
 
-      {/* ─── Navigation Tabs ─── */}
-      <div className="flex flex-wrap gap-1 bg-zinc-950/60 border border-zinc-900 rounded-xl p-1">
-        {(['retention', 'beta', 'feature-gates', 'kill-switches', 'system'] as Tab[]).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`
-              flex-1 sm:flex-initial px-4 py-2 text-xs font-semibold rounded-lg capitalize transition-all duration-200
-              ${activeTab === tab 
-                ? 'bg-zinc-900 border border-zinc-800/50 text-white shadow-sm' 
-                : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30'
-              }
-            `}
-          >
-            {tab.replace('-', ' ')}
-          </button>
-        ))}
+      <div className="flex flex-1 gap-8">
+        {/* ─── Navigation Sidebar ─── */}
+        <div className="w-56 shrink-0 space-y-6 border-r border-zinc-800/60 pr-4 hidden md:block">
+          {CATEGORIES.map(category => (
+            <div key={category.name}>
+              <h3 className="text-[10px] uppercase font-bold tracking-widest text-zinc-500 mb-2">{category.name}</h3>
+              <div className="flex flex-col gap-1">
+                {category.tabs.map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as Tab)}
+                    className={`
+                      text-left px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200
+                      ${activeTab === tab.id 
+                        ? 'bg-zinc-900 border border-zinc-800/50 text-emerald-400 shadow-sm' 
+                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/30 border border-transparent'
+                      }
+                    `}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ─── Content Render ─── */}
+        <div className="flex-1 min-w-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
+              {activeTab === 'retention' && <RetentionDashboard data={retentionData} loading={loadingRetention} />}
+              
+              {activeTab === 'beta' && (
+                <BetaManagementTab 
+                  data={betaData} loading={loadingBeta}
+                  inviteForm={inviteForm} setInviteForm={setInviteForm}
+                  cohortForm={cohortForm} setCohortForm={setCohortForm}
+                  generateInvite={generateInviteMutation} createCohort={createCohortMutation}
+                />
+              )}
+
+              {activeTab === 'feature-gates' && (
+                <FeatureGatesTab 
+                  data={featureGatesData} loading={loadingGates}
+                  toggleGate={toggleGateMutation} configureGate={configureGateMutation}
+                />
+              )}
+
+              {activeTab === 'kill-switches' && (
+                <KillSwitchesTab 
+                  data={killSwitchesData} loading={loadingSwitches}
+                  toggleSwitch={toggleKillSwitchMutation} switchReason={switchReason} setSwitchReason={setSwitchReason}
+                />
+              )}
+
+              {activeTab === 'system' && (
+                <SystemTab 
+                  metrics={systemMetrics} loading={loadingMetrics}
+                  telemetry={telemetry} sseStatus={sseStatus} connectionStatus={connectionStatus}
+                />
+              )}
+              
+              {activeTab === 'cache-health' && <CacheHealthTab />}
+              {activeTab === 'trust-scores' && <TrustScoresTab />}
+              {activeTab === 'verification-audits' && <VerificationAuditsTab />}
+              {activeTab === 'manual-overrides' && <ManualOverridesTab />}
+
+              {/* Placeholder for new tabs */}
+              {![...CATEGORIES[0].tabs.map(t=>t.id), 'beta', 'cache-health', 'trust-scores', 'verification-audits', 'manual-overrides'].includes(activeTab) && (
+                <div className="flex flex-col items-center justify-center py-32 text-center border border-dashed border-zinc-800 rounded-xl">
+                  <Activity className="text-zinc-600 mb-3" size={24} />
+                  <p className="text-sm font-bold text-zinc-300 capitalize">{activeTab.replace('-', ' ')}</p>
+                  <p className="text-xs text-zinc-500 mt-1">Component coming online...</p>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
-
-      {/* ─── Content Render ─── */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.25 }}
-        >
-          {activeTab === 'retention' && (
-            <RetentionDashboard 
-              data={retentionData} 
-              loading={loadingRetention} 
-            />
-          )}
-
-          {activeTab === 'beta' && (
-            <BetaManagementTab 
-              data={betaData} 
-              loading={loadingBeta}
-              inviteForm={inviteForm}
-              setInviteForm={setInviteForm}
-              cohortForm={cohortForm}
-              setCohortForm={setCohortForm}
-              generateInvite={generateInviteMutation}
-              createCohort={createCohortMutation}
-            />
-          )}
-
-          {activeTab === 'feature-gates' && (
-            <FeatureGatesTab 
-              data={featureGatesData} 
-              loading={loadingGates}
-              toggleGate={toggleGateMutation}
-              configureGate={configureGateMutation}
-            />
-          )}
-
-          {activeTab === 'kill-switches' && (
-            <KillSwitchesTab 
-              data={killSwitchesData} 
-              loading={loadingSwitches}
-              toggleSwitch={toggleKillSwitchMutation}
-              switchReason={switchReason}
-              setSwitchReason={setSwitchReason}
-            />
-          )}
-
-          {activeTab === 'system' && (
-            <SystemTab 
-              metrics={systemMetrics} 
-              loading={loadingMetrics}
-              telemetry={telemetry}
-              sseStatus={sseStatus}
-              connectionStatus={connectionStatus}
-            />
-          )}
-        </motion.div>
-      </AnimatePresence>
     </div>
   );
 };
@@ -912,11 +959,36 @@ const SystemTab: React.FC<SystemTabProps> = ({
   const queueData = metrics?.queues || [];
   const workerData = metrics?.workers?.xp || {};
   const sseData = metrics?.sse || {};
+  const aiLatency = metrics?.aiLatency || { gemini: 0, openai: 0 };
 
   return (
     <div className="space-y-6">
       {/* Real-time Diagnostics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* AI Provider Latency */}
+        <Card className="bg-zinc-950/40 border-zinc-800/80">
+          <CardHeader className="pb-3 border-b border-zinc-900">
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <Zap size={15} className="text-emerald-400" />
+              AI Latencies (Avg)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-3 text-xs">
+            <div className="flex justify-between">
+              <span className="text-zinc-500">Gemini 1.5 Pro:</span>
+              <span className="font-bold text-emerald-400 font-mono">{aiLatency.gemini || 'N/A'} ms</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-500">OpenAI GPT-4o:</span>
+              <span className="font-bold text-blue-400 font-mono">{aiLatency.openai || 'N/A'} ms</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-zinc-500">Active Routing:</span>
+              <Badge variant="success" className="px-1.5 py-0 text-[10px]">Deterministic</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* SSE State */}
         <Card className="bg-zinc-950/40 border-zinc-800/80">
           <CardHeader className="pb-3 border-b border-zinc-900">
@@ -1034,7 +1106,7 @@ const SystemTab: React.FC<SystemTabProps> = ({
   );
 };
 
-/* ─── UTILS & SMALL SUB-COMPONENTS ─── */
+  // ─── UTILS & SMALL SUB-COMPONENTS ─── */
 const TabLoader = () => (
   <div className="flex flex-col items-center justify-center py-24 text-center">
     <RefreshCw size={24} className="text-zinc-650 animate-spin mb-3" />
@@ -1052,6 +1124,291 @@ const TabError = ({ error }: { error: string }) => (
   </div>
 );
 
+/* ─── TAB: CACHE HEALTH ─── */
+const CacheHealthTab = () => {
+  const { data, isLoading } = useQuery({
+    queryKey: ['ops-cache-health'],
+    queryFn: async () => {
+      const { data } = await axiosClient.get('/ops/public/cache-health');
+      return data;
+    },
+    refetchInterval: 10000,
+  });
+
+  if (isLoading) return <TabLoader />;
+  if (!data) return <TabError error="Could not load cache diagnostics." />;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <HealthMetricCard label="Redis State" value={data.status} status={data.status === 'healthy' ? 'healthy' : 'critical'} />
+        <HealthMetricCard label="Total Keys" value={data.keys.toString()} status="healthy" />
+        <HealthMetricCard label="Public Profiles" value={data.publicProfileKeys.toString()} status="healthy" />
+        <HealthMetricCard label="Memory Used" value={data.memoryUsed} status="healthy" />
+      </div>
+
+      <Card className="bg-zinc-950/40 border-zinc-800/80">
+        <CardHeader className="pb-3 border-b border-zinc-900">
+          <CardTitle className="text-sm font-bold flex items-center gap-2">
+            <Server size={15} className="text-emerald-400" />
+            Cache Diagnostics (L2 Public API)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4 space-y-3 text-xs">
+          <div className="flex justify-between border-b border-zinc-900 pb-2">
+            <span className="text-zinc-500">Uptime:</span>
+            <span className="font-bold text-zinc-300 font-mono">{data.uptime} seconds</span>
+          </div>
+          <div className="flex justify-between border-b border-zinc-900 pb-2">
+            <span className="text-zinc-500">Connected Clients:</span>
+            <span className="font-bold text-zinc-300 font-mono">{data.connectedClients}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-zinc-500">Memory Fragmentation:</span>
+            <span className="font-bold text-zinc-300 font-mono">{data.memoryFragmentationRatio}</span>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+/* ─── TAB: TRUST SCORES ─── */
+const TrustScoresTab = () => {
+  const { data, isLoading } = useQuery({
+    queryKey: ['ops-trust-scores'],
+    queryFn: async () => {
+      const { data } = await axiosClient.get('/ops/trust/scores');
+      return data;
+    },
+    refetchInterval: 15000,
+  });
+
+  if (isLoading) return <TabLoader />;
+  if (!data) return <TabError error="Could not load trust scores." />;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-4">
+        <HealthMetricCard label="Total Monitored Profiles" value={data.aggregates?.totalProfiles?.toString() || '0'} status="healthy" />
+        <HealthMetricCard label="Low Trust Profiles (<400)" value={data.aggregates?.lowTrustProfiles?.toString() || '0'} status={data.aggregates?.lowTrustProfiles > 0 ? 'warning' : 'healthy'} />
+      </div>
+
+      <Card className="bg-zinc-950/40 border-zinc-800/80">
+        <CardHeader className="pb-3 border-b border-zinc-900">
+          <CardTitle className="text-sm font-bold flex items-center gap-2">
+            <Shield size={15} className="text-purple-400" />
+            Active Trust Profiles
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4 overflow-x-auto">
+          <table className="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr className="border-b border-zinc-900 text-zinc-500 font-bold">
+                <th className="py-2.5">User</th>
+                <th className="py-2.5">Trust Score</th>
+                <th className="py-2.5">Status</th>
+                <th className="py-2.5">Last Verified</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-900/40">
+              {data.profiles?.map((p: any) => (
+                <tr key={p.userId} className="hover:bg-zinc-900/10">
+                  <td className="py-3.5 font-bold text-zinc-200">{p.username}</td>
+                  <td className="py-3.5 font-mono text-zinc-300">
+                    <span className={p.verification?.trustScore < 400 ? 'text-red-400' : 'text-emerald-400'}>
+                      {p.verification?.trustScore || 0}
+                    </span>
+                  </td>
+                  <td className="py-3.5">
+                    <Badge variant={p.verification?.isVerified ? 'success' : 'default'} className="text-[10px] uppercase px-1.5 py-0">
+                      {p.verification?.isVerified ? 'Verified' : 'Pending'}
+                    </Badge>
+                  </td>
+                  <td className="py-3.5 text-zinc-500 font-mono">{new Date(p.verification?.lastVerifiedAt || p.createdAt).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+/* ─── TAB: VERIFICATION AUDITS ─── */
+const VerificationAuditsTab = () => {
+  const { data, isLoading } = useQuery({
+    queryKey: ['ops-verification-audits'],
+    queryFn: async () => {
+      const { data } = await axiosClient.get('/ops/trust/verifications');
+      return data;
+    },
+    refetchInterval: 15000,
+  });
+
+  if (isLoading) return <TabLoader />;
+  if (!data) return <TabError error="Could not load verification audit logs." />;
+
+  return (
+    <Card className="bg-zinc-950/40 border-zinc-800/80">
+      <CardHeader className="pb-3 border-b border-zinc-900">
+        <CardTitle className="text-sm font-bold flex items-center gap-2">
+          <CheckCircle size={15} className="text-emerald-400" />
+          Verification Audit Trail
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4 overflow-x-auto">
+        <table className="w-full text-xs text-left border-collapse">
+          <thead>
+            <tr className="border-b border-zinc-900 text-zinc-500 font-bold">
+              <th className="py-2.5">Time</th>
+              <th className="py-2.5">User ID</th>
+              <th className="py-2.5">Action</th>
+              <th className="py-2.5">Score Change</th>
+              <th className="py-2.5">Reason</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-900/40">
+            {data.logs?.map((log: any) => (
+              <tr key={log._id} className="hover:bg-zinc-900/10">
+                <td className="py-3.5 text-zinc-500 font-mono whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</td>
+                <td className="py-3.5 font-mono text-zinc-300">{log.userId}</td>
+                <td className="py-3.5">
+                  <Badge variant="default" className="text-[9px] uppercase px-1.5 py-0">
+                    {log.action}
+                  </Badge>
+                </td>
+                <td className="py-3.5 font-mono">
+                  {log.previousScore !== log.newScore ? (
+                    <span className={log.newScore < log.previousScore ? 'text-red-400' : 'text-emerald-400'}>
+                      {log.previousScore} → {log.newScore}
+                    </span>
+                  ) : (
+                    <span className="text-zinc-600">No Change</span>
+                  )}
+                </td>
+                <td className="py-3.5 text-zinc-400 truncate max-w-[250px]" title={log.reason}>{log.reason}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </CardContent>
+    </Card>
+  );
+};
+
+/* ─── TAB: MANUAL OVERRIDES ─── */
+const ManualOverridesTab = () => {
+  const [modalState, setModalState] = useState<{ isOpen: boolean; action: string; title: string; desc: string } | null>(null);
+  
+  const handleAction = async () => {
+    if (!modalState) return;
+    try {
+      if (modalState.action === 'rebuild-all') await axiosClient.post('/ops/recovery/rebuild-all');
+      if (modalState.action === 'invalidate-cache') await axiosClient.post('/ops/recovery/invalidate-cache');
+      // recalc-trust would need an input for userId, omit for simplicity or hardcode for demo
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card className="border-2 border-red-900/50 bg-red-950/10">
+        <CardHeader className="pb-3 border-b border-red-900/30">
+          <CardTitle className="text-sm font-bold flex items-center gap-2 text-red-500">
+            <AlertTriangle size={15} />
+            Destructive Recovery Operations
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-4">
+          <div className="flex items-center justify-between p-4 bg-zinc-950/50 border border-zinc-900 rounded-xl">
+            <div>
+              <p className="text-xs font-bold text-zinc-200">Global Profile Rebuild</p>
+              <p className="text-[10px] text-zinc-500 mt-1">Enqueues all profiles for a full snapshot recreation via BullMQ.</p>
+            </div>
+            <Button variant="danger" size="sm" onClick={() => setModalState({ isOpen: true, action: 'rebuild-all', title: 'Global Profile Rebuild', desc: 'This will enqueue thousands of jobs and may impact database performance.' })}>
+              Rebuild All
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-zinc-950/50 border border-zinc-900 rounded-xl">
+            <div>
+              <p className="text-xs font-bold text-zinc-200">Invalidate L2 Cache</p>
+              <p className="text-[10px] text-zinc-500 mt-1">Purges all public_profile:* keys from Redis, forcing immediate read-throughs.</p>
+            </div>
+            <Button variant="danger" size="sm" onClick={() => setModalState({ isOpen: true, action: 'invalidate-cache', title: 'Invalidate L2 Cache', desc: 'This will cause a spike in database reads as public profiles are re-cached.' })}>
+              Invalidate Cache
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {modalState?.isOpen && (
+        <DestructiveActionModal
+          title={modalState.title}
+          description={modalState.desc}
+          onConfirm={() => {
+            handleAction();
+            setModalState(null);
+          }}
+          onCancel={() => setModalState(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+const DestructiveActionModal = ({ title, description, onConfirm, onCancel }: { title: string, description: string, onConfirm: () => void, onCancel: () => void }) => {
+  const [confirmText, setConfirmText] = useState('');
+  
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md bg-zinc-950 border border-red-900/50 rounded-2xl shadow-2xl overflow-hidden"
+      >
+        <div className="p-5 border-b border-zinc-900">
+          <h3 className="text-lg font-bold text-red-500 flex items-center gap-2">
+            <AlertTriangle size={18} />
+            Confirm Destructive Action
+          </h3>
+          <p className="text-xs text-zinc-400 mt-2">{description}</p>
+        </div>
+        
+        <div className="p-5 space-y-4 bg-zinc-900/30">
+          <div className="space-y-2">
+            <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+              Type <span className="text-zinc-200 font-mono select-all px-1 bg-zinc-800 rounded">{title}</span> to confirm
+            </label>
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder={`Type "${title}"`}
+              className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-red-900/50 font-mono"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 p-5 border-t border-zinc-900 bg-zinc-950">
+          <Button variant="secondary" className="flex-1" onClick={onCancel}>Cancel</Button>
+          <Button 
+            variant="danger" 
+            className="flex-1"
+            disabled={confirmText !== title}
+            onClick={onConfirm}
+          >
+            Execute Action
+          </Button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 interface HealthMetricCardProps {
   label: string;
   value: string;
@@ -1065,7 +1422,7 @@ const HealthMetricCard: React.FC<HealthMetricCardProps> = ({ label, value, statu
       className="rounded-xl border border-zinc-800/80 bg-zinc-950/30 p-4 relative overflow-hidden"
     >
       <p className="text-[9px] uppercase font-bold tracking-wider text-zinc-500">{label}</p>
-      <p className="text-xl font-bold text-zinc-100 mt-1">{value}</p>
+      <p className="text-xl font-bold text-zinc-100 mt-1 capitalize">{value}</p>
       <div 
         className={`absolute bottom-0 left-0 right-0 h-[2px] 
           ${status === 'healthy' ? 'bg-emerald-500' : status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'}

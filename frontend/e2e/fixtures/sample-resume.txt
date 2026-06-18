@@ -1,0 +1,45 @@
+John Doe
+Software Engineer
+john.doe@example.com
+(555) 123-4567
+
+SUMMARY
+Experienced software engineer with 5+ years of experience in full-stack development. 
+Proficient in React, Node.js, Python, and cloud technologies. 
+Strong background in building scalable web applications and REST APIs.
+
+EXPERIENCE
+
+Senior Software Engineer | Tech Corp | 2020 - Present
+- Led development of microservices architecture serving 1M+ users
+- Implemented CI/CD pipelines reducing deployment time by 60%
+- Mentored junior developers and conducted code reviews
+
+Software Engineer | Startup Inc | 2018 - 2020
+- Built React-based dashboard with real-time data visualization
+- Developed REST APIs using Node.js and Express
+- Optimized database queries improving performance by 40%
+
+EDUCATION
+
+Bachelor of Science in Computer Science | University of Technology | 2018
+
+SKILLS
+
+Programming Languages: JavaScript, TypeScript, Python, Java
+Frameworks: React, Node.js, Express, Django
+Databases: MongoDB, PostgreSQL, Redis
+Cloud: AWS, Docker, Kubernetes
+Tools: Git, Jenkins, Jira
+
+PROJECTS
+
+E-Commerce Platform
+- Built full-stack e-commerce platform using MERN stack
+- Implemented payment gateway integration with Stripe
+- Developed admin dashboard for inventory management
+
+Real-Time Chat Application
+- Created WebSocket-based chat application using Socket.io
+- Implemented end-to-end encryption for secure messaging
+- Deployed on AWS with auto-scaling

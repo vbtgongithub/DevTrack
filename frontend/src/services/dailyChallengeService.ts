@@ -66,27 +66,3 @@ export function useMarkChallengeComplete() {
     },
   });
 }
-
-// ---------------------------------------------------------------------------
-// Mock Data (for development/demo)
-// ---------------------------------------------------------------------------
-
-export function getMockDailyChallenge(): DailyChallengeData {
-  const today = new Date();
-  const expiresAt = new Date(today);
-  expiresAt.setHours(23, 59, 59, 999);
-
-  return {
-    id: `challenge-${today.toISOString().split('T')[0]}`,
-    date: today.toISOString(),
-    title: 'Two Sum',
-    description: 'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.',
-    difficulty: 'easy',
-    platform: 'leetcode',
-    problemUrl: 'https://leetcode.com/problems/two-sum/',
-    xpReward: 25,
-    completionCount: 1247,
-    userCompleted: false,
-    expiresAt: expiresAt.toISOString(),
-  };
-}

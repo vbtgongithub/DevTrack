@@ -49,28 +49,28 @@ export class ErrorBoundary extends Component<Props, State> {
             <AlertTriangle size={40} className="text-rose-500" />
           </div>
           
-          <h2 className="text-2xl font-black text-slate-900 tracking-tighter mb-3">
-            Something went wrong
+          <h2 className="text-xl font-bold text-slate-800 tracking-tight mb-2">
+            Intelligence Feed Degraded
           </h2>
           
-          <p className="text-slate-500 font-medium max-w-[400px] mb-8 leading-relaxed">
-            A critical error occurred in this section of the dashboard. Our engineers have been notified.
+          <p className="text-sm text-slate-500 font-medium max-w-[400px] mb-8 leading-relaxed">
+            This module is currently operating in a degraded state. Core platform features remain unaffected. Our systems are actively recovering this component.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
             <button
               onClick={this.handleReset}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-dt-primary text-white font-black text-sm shadow-lg shadow-dt-primary/25 hover:bg-dt-primary-dark transition-all active:scale-[0.98]"
+              className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 text-white font-bold text-xs shadow-sm hover:bg-slate-700 transition-all"
             >
-              <RefreshCw size={18} />
-              <span>Retry Component</span>
+              <RefreshCw size={14} />
+              <span>Retry Connection</span>
             </button>
             <button
               onClick={this.handleGoHome}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 font-black text-sm hover:bg-slate-100 transition-all active:scale-[0.98]"
+              className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-100 transition-all"
             >
-              <Home size={18} />
-              <span>Go to Home</span>
+              <Home size={14} />
+              <span>Return Home</span>
             </button>
           </div>
 

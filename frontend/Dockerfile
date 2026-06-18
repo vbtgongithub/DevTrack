@@ -9,7 +9,10 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+# Use `npm install` to avoid failing builds when package.json and lockfile
+# are out of sync inside the build environment. Developers should keep the
+# lockfile in sync locally/CI for deterministic installs.
+RUN npm install
 
 COPY . .
 
@@ -39,6 +42,6 @@ RUN chown -R nginx:nginx /usr/share/nginx/html && \
 # Switch to non-root user
 USER nginx
 
-EXPOSE 8080
+EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]

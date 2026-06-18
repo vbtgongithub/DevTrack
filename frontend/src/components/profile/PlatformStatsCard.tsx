@@ -73,11 +73,11 @@ export const LeetCodeStatsCard: React.FC<{ state: PlatformState<LeetCodeStats>; 
         <div className="grid grid-cols-2 gap-2">
           <div className="platform-stat-item">
             <div className="platform-stat-item__label">Solved</div>
-            <div className="platform-stat-item__value">{state.data?.solvedProblem || '—'}</div>
+            <div className="platform-stat-item__value">{state.data?.solvedProblem ?? '—'}</div>
           </div>
           <div className="platform-stat-item">
             <div className="platform-stat-item__label">Top %</div>
-            <div className="platform-stat-item__value">{state.data?.contestTopPercentage?.toFixed(1) || '—'}%</div>
+            <div className="platform-stat-item__value">{state.data?.contestTopPercentage?.toFixed(1) ?? '—'}%</div>
           </div>
         </div>
 
@@ -117,11 +117,11 @@ export const CodeforcesStatsCard: React.FC<{ state: PlatformState<CodeforcesStat
         <div className="grid grid-cols-2 gap-2">
           <div className="platform-stat-item">
             <div className="platform-stat-item__label">Solved</div>
-            <div className="platform-stat-item__value">{state.data?.totalSolved || '—'}</div>
+            <div className="platform-stat-item__value">{state.data?.totalSolved ?? '—'}</div>
           </div>
           <div className="platform-stat-item">
             <div className="platform-stat-item__label">Contests</div>
-            <div className="platform-stat-item__value">{state.data?.totalContests || '—'}</div>
+            <div className="platform-stat-item__value">{state.data?.totalContests ?? '—'}</div>
           </div>
         </div>
 
@@ -133,11 +133,11 @@ export const CodeforcesStatsCard: React.FC<{ state: PlatformState<CodeforcesStat
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="text-[8px] font-bold text-slate-400 uppercase mb-1">Max Rating</div>
-              <div className="text-xs font-black text-slate-700">{state.data?.maxRating || '—'}</div>
+              <div className="text-xs font-black text-slate-700">{state.data?.maxRating ?? '—'}</div>
             </div>
             <div>
               <div className="text-[8px] font-bold text-slate-400 uppercase mb-1">Contribution</div>
-              <div className="text-xs font-black text-emerald-500">{state.data?.contribution || '0'}</div>
+              <div className="text-xs font-black text-emerald-500">{state.data?.contribution ?? '0'}</div>
             </div>
           </div>
         </div>
@@ -171,11 +171,11 @@ export const CodeChefStatsCard: React.FC<{ state: PlatformState<CodeChefStats>; 
         <div className="grid grid-cols-2 gap-2">
           <div className="platform-stat-item">
             <div className="platform-stat-item__label">Rating</div>
-            <div className="platform-stat-item__value">{state.data?.currentRating || '—'}</div>
+            <div className="platform-stat-item__value">{state.data?.currentRating ?? '—'}</div>
           </div>
           <div className="platform-stat-item">
             <div className="platform-stat-item__label">Solved</div>
-            <div className="platform-stat-item__value">{state.data?.totalProblemsSolved || '—'}</div>
+            <div className="platform-stat-item__value">{state.data?.totalProblemsSolved ?? '—'}</div>
           </div>
         </div>
 
@@ -183,11 +183,11 @@ export const CodeChefStatsCard: React.FC<{ state: PlatformState<CodeChefStats>; 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="text-[8px] font-bold text-slate-400 uppercase mb-1">Global Rank</div>
-              <div className="text-xs font-black text-slate-700">#{state.data?.globalRank?.toLocaleString() || '—'}</div>
+              <div className="text-xs font-black text-slate-700">#{state.data?.globalRank?.toLocaleString() ?? '—'}</div>
             </div>
             <div>
               <div className="text-[8px] font-bold text-slate-400 uppercase mb-1">Highest</div>
-              <div className="text-xs font-black text-slate-700">{state.data?.highestRating || '—'}</div>
+              <div className="text-xs font-black text-slate-700">{state.data?.highestRating ?? '—'}</div>
             </div>
           </div>
         </div>
@@ -220,11 +220,11 @@ export const GithubStatsCard: React.FC<{ state: PlatformState<GithubStats>; user
         <div className="grid grid-cols-2 gap-2">
           <div className="platform-stat-item">
             <div className="platform-stat-item__label">Repos</div>
-            <div className="platform-stat-item__value">{state.data?.publicRepos || '—'}</div>
+            <div className="platform-stat-item__value">{state.data?.publicRepos ?? '—'}</div>
           </div>
           <div className="platform-stat-item">
             <div className="platform-stat-item__label">Stars</div>
-            <div className="platform-stat-item__value">{state.data?.totalStars || '—'}</div>
+            <div className="platform-stat-item__value">{state.data?.totalStars ?? '—'}</div>
           </div>
         </div>
 
