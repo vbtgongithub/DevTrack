@@ -1,112 +1,99 @@
 # DevTrack E2E Operational Validation Suite
 
-## Overview
+Playwright-based E2E tests that verify **operational intelligence** — real runtime outputs and data persistence — not UI snapshots.
 
-This Playwright-based E2E testing suite validates **operational intelligence** flows in DevTrack, focusing on real runtime outputs and data persistence rather than UI snapshot testing.
+## Philosophy
 
-## Testing Philosophy
+| We test | We do not test |
+|---------|----------------|
+| Real ATS scores, embeddings, recommendations | Pixel-perfect UI snapshots |
+| Data persistence across reloads | Static mock responses |
+| Queue processing and job completion | Component isolation |
+| Graceful degradation under failures | Happy-path-only flows |
 
-**NOT:** UI snapshot testing
-**YES:** Operational intelligence verification
+## Test Suites
 
-Tests verify:
-- Real runtime outputs (embeddings, ATS scores, recommendations)
-- Data persistence across page reloads
-- Queue processing and job completion
-- Graceful degradation under failures
-- Dynamic behavior (recommendations change with context)
+| File | Flow |
+|------|------|
+| `resume-ats-flow.spec.ts` | Upload → ATS parsing; verifies real (non-mocked) scores |
+| `semantic-recommendation-flow.spec.ts` | Semantic extraction → recommendations; embedding dimensions |
+| `replay-persistence-flow.spec.ts` | Replay generation → render → persistence across reload |
+| `failure-scenarios.spec.ts` | Missing AI keys, Redis disconnect, queue stalls, worker recovery |
 
-## Test Structure
+## Setup
 
-### Critical Flow Tests
-
-1. **resume-ats-flow.spec.ts**
-   - Resume Upload → ATS Parsing
-   - Verifies ATS outputs are real (not mocked)
-   - Tests ATS worker failure handling
-
-2. **semantic-recommendation-flow.spec.ts**
-   - Semantic Extraction → Recommendation Generation
-   - Verifies embeddings persist with correct dimensions
-   - Tests dynamic recommendation updates
-
-3. **replay-persistence-flow.spec.ts**
-   - Replay Generation → Frontend Rendering → Persistence
-   - Verifies replay content updates with profile changes
-   - Tests persistence across page reloads
-   - Validates queue processing
-
-### Failure Scenario Tests
-
-4. **failure-scenarios.spec.ts**
-   - Missing AI provider handling
-   - Redis disconnect graceful degradation
-   - Queue stall and retry mechanism
-   - Worker restart recovery
-   - Session persistence during failures
-   - Concurrent operation failures
-
-## Running Tests
-
-### Install Dependencies
 ```bash
 cd frontend
 npm install
 npx playwright install
 ```
 
-### Run All Tests
+### Prerequisites
+
+A running DevTrack stack:
+
 ```bash
-npm run test:e2e
+# From repo root
+npm run dev:infra
+npm run dev:all
 ```
 
-### Run with UI
+Required services:
+
+| Service | Port |
+|---------|------|
+| Backend API | 3001 |
+| Frontend (Vite) | 5173 |
+| MongoDB | 27017 |
+| Redis | 6379 |
+
+Environment:
+
+- `OPENAI_API_KEY` or `GEMINI_API_KEY` (for intelligence flows)
+- `CLERK_SECRET_KEY` + `VITE_CLERK_PUBLISHABLE_KEY` (for auth)
+
+## Running Tests
+
 ```bash
-npm run test:e2e:ui
+npm run test:e2e           # Headless
+npm run test:e2e:ui        # Interactive UI mode
+npm run test:e2e:debug     # Debug mode
 ```
 
-### Debug Mode
-```bash
-npm run test:e2e:debug
-```
-
-## Test Data
-
-Test fixtures are located in `e2e/fixtures/`:
-- `sample-resume.txt` - Sample resume for upload tests
-
-## Requirements
-
-Tests require:
-- Backend running on port 3001
-- Frontend running on port 5173
-- MongoDB connection
-- Redis connection
-- AI API keys (OPENAI_API_KEY or GEMINI_API_KEY)
-
-## Environment Variables
+Optional:
 
 ```bash
 BASE_URL=http://localhost:5173
 ```
 
+## Test Fixtures
+
+`e2e/fixtures/sample-resume.txt` — sample resume for upload tests.
+
 ## Key Assertions
 
-Tests verify:
-- **Real Intelligence:** ATS scores, embeddings, recommendations are computed (not hardcoded)
-- **Persistence:** Data survives page reloads and service restarts
-- **Dynamic Behavior:** Recommendations change when context changes
-- **Graceful Degradation:** Platform remains functional during partial failures
-- **Queue Processing:** Jobs complete and queues drain correctly
+- **Real intelligence:** ATS scores, embeddings, and recommendations are computed, not hardcoded
+- **Persistence:** Data survives page reloads
+- **Dynamic behavior:** Recommendations change when profile context changes
+- **Graceful degradation:** Platform stays functional during partial failures
+- **Queue processing:** Jobs complete and queues drain
 
-## Failure Testing
+## Failure Scenarios Tested
 
-Tests simulate:
-- ATS worker failure (503 errors)
+- ATS worker failure (503)
 - Semantic extraction timeout
 - Redis disconnect
 - Missing AI API keys
 - Queue stalls
 - Replay generation failures
 
-All failure scenarios verify graceful degradation with user-friendly error messages.
+All scenarios verify user-friendly error messages and no silent data loss.
+
+## CI
+
+E2E tests are not currently in the PR check workflow (`.github/workflows/pr-checks.yml`). Run locally before merging intelligence-related changes.
+
+## Related Docs
+
+- [../README.md](../README.md) — Full dev setup
+- [../../CONTRIBUTING.md](../../CONTRIBUTING.md) — PR testing requirements

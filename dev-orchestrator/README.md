@@ -1,17 +1,19 @@
 # DevTrack Development Orchestrator
 
-Unified development runtime orchestration system for the DevTrack platform.
+Unified local development runtime for the DevTrack platform.
 
 ## Overview
 
-The Development Orchestrator provides a single command to boot the entire DevTrack intelligence platform locally, including:
+The orchestrator boots the full DevTrack stack in the correct order:
 
-- Infrastructure services (MongoDB, Redis)
-- Backend API
-- BullMQ workers
-- Frontend application
-- Health monitoring
-- Graceful shutdown
+1. Environment validation
+2. Infrastructure (MongoDB, Redis via Docker)
+3. Backend API
+4. BullMQ workers
+5. Frontend dev server
+6. Health monitoring
+
+Press `Ctrl+C` for graceful shutdown (workers → API → frontend; infrastructure stays running).
 
 ## Installation
 
@@ -19,151 +21,116 @@ The Development Orchestrator provides a single command to boot the entire DevTra
 npm run install:orchestrator
 ```
 
-## Available Commands
-
-### `npm run dev:all`
-
-Starts the entire DevTrack platform in the correct order:
-
-1. Environment validation
-2. Infrastructure startup (MongoDB, Redis)
-3. Backend API startup
-4. Worker startup
-5. Frontend startup
-6. Health monitoring
-
-### `npm run health:check`
-
-Runs environment validation and health checks:
-
-- Node.js version compatibility
-- Environment variables
-- Redis connection
-- MongoDB connection
-- Port availability
-
-### `npm run clean:runtime`
-
-Cleans up development runtime state:
-
-- Kills stale processes
-- Clears temp files
-- Checks orphaned ports
-
-### Individual Service Commands
+Or install everything from the repo root:
 
 ```bash
-npm run dev:infra      # Start infrastructure only
-npm run dev:backend    # Start backend only
-npm run dev:frontend   # Start frontend only
-npm run dev:workers   # Start workers only
+npm run install-all
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev:all` | Full orchestrated startup |
+| `npm run health:check` | Validate env, Redis, MongoDB, ports |
+| `npm run clean:runtime` | Kill stale processes, clear ports |
+| `npm run dev:infra` | Docker mongo + redis only |
+| `npm run dev:backend` | Backend API only |
+| `npm run dev:frontend` | Frontend only |
+| `npm run dev:workers` | BullMQ workers only |
+
+## Windows Alternative
+
+`start-dev.ps1` at the repo root provides the same functionality with PowerShell:
+
+```powershell
+.\start-dev.ps1              # Full startup
+.\start-dev.ps1 -SkipDocker  # Skip container boot
+.\start-dev.ps1 -StopAll     # Kill all processes + docker compose down
+.\start-dev.ps1 -ShowStatus  # Port and connectivity status
 ```
 
 ## Startup Sequence
 
-The orchestrator follows this startup sequence:
-
 ```
 Environment Validation
-↓
+  ↓
 Redis Verification
-↓
+  ↓
 MongoDB Verification
-↓
+  ↓
 Backend API Startup
-↓
+  ↓
 Worker Runtime Startup
-↓
+  ↓
 Frontend Startup
-↓
+  ↓
 Unified Runtime Ready
 ```
 
-## Graceful Shutdown
+## Service Priority
 
-Press `CTRL+C` to gracefully shutdown all services:
+| Priority | Service | Port |
+|----------|---------|------|
+| 1 | Infrastructure (mongo, redis) | 27017, 6379 |
+| 2 | Backend API | 3001 |
+| 3 | BullMQ workers | — |
+| 4 | Frontend (Vite) | 5173 |
 
-1. Workers stopped first
-2. Backend API stopped
-3. Frontend stopped
-4. Infrastructure remains running (use `docker-compose down` to stop)
+## Components
 
-## Configuration
+| Class | Role |
+|-------|------|
+| `EnvironmentReadinessValidator` | Pre-flight env checks |
+| `DevelopmentHealthMonitor` | Service health tracking |
+| `UnifiedRuntimeConsole` | Colored centralized logging |
+| `DevelopmentRuntimeOrchestrator` | Main boot engine |
+| `RuntimeCleaner` | Process and port cleanup |
 
-Edit `dev-orchestrator/src/index.ts` to configure:
-
-- Service startup order
-- Health check intervals
-- Startup timeouts
-- Graceful shutdown timeouts
+Source: `dev-orchestrator/src/`
 
 ## Environment Variables
 
-The orchestrator uses sensible defaults for development. Required variables:
+Uses the same variables as the backend. Defaults work for local development:
 
-- `MONGODB_URI` (defaults to `mongodb://localhost:27017/devtrack`)
-- `REDIS_HOST` (defaults to `localhost`)
-- `REDIS_PORT` (defaults to `6379`)
+| Variable | Default |
+|----------|---------|
+| `MONGODB_URI` | `mongodb://localhost:27017/devtrack` |
+| `REDIS_HOST` | `localhost` |
+| `REDIS_PORT` | `6379` |
 
-Optional variables:
+Optional for full intelligence features:
 
-- `OPENAI_API_KEY` (for AI features)
-- `GEMINI_API_KEY` (for AI features)
-
-## Architecture
-
-### Components
-
-- **EnvironmentReadinessValidator**: Validates environment before startup
-- **DevelopmentHealthMonitor**: Tracks service health status
-- **UnifiedRuntimeConsole**: Centralized logging with colors
-- **DevelopmentRuntimeOrchestrator**: Main orchestration engine
-- **RuntimeCleaner**: Cleanup utilities
-
-### Service Priority
-
-Services are started by priority (lower = earlier):
-
-1. Infrastructure (priority 1)
-2. Backend API (priority 2)
-3. Workers (priority 3)
-4. Frontend (priority 4)
+- `CLERK_SECRET_KEY`
+- `OPENAI_API_KEY` or `GEMINI_API_KEY`
 
 ## Troubleshooting
 
-### Port Already in Use
-
-If you see "Port already in use" errors:
+**Port already in use:**
 
 ```bash
 npm run clean:runtime
 ```
 
-### Redis Connection Failed
-
-Start infrastructure:
+**Redis or MongoDB connection failed:**
 
 ```bash
 npm run dev:infra
 ```
 
-### MongoDB Connection Failed
+**Workers not processing jobs:**
 
-Start infrastructure:
+Ensure Redis is running and start workers separately:
 
 ```bash
-npm run dev:infra
+npm run dev:workers
 ```
 
-## Development
+## Configuration
 
-The orchestrator is built with TypeScript and uses:
+Edit `dev-orchestrator/src/index.ts` to adjust startup order, health check intervals, and shutdown timeouts.
 
-- `tsx` for TypeScript execution
-- `chalk` for colored console output
-- `ioredis` for Redis connection checks
-- `mongoose` for MongoDB connection checks
+## Related Docs
 
-## License
-
-Part of the DevTrack platform.
+- [README.md](../README.md) — Full quick start guide
+- [ARCHITECTURE.md](../ARCHITECTURE.md) — Worker and queue topology
