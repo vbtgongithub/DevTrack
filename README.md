@@ -62,31 +62,56 @@ The closed loop is **Roadmap → Focus → Evolution → Roadmap**. Gaps drive m
 ## Project Structure
 
 ```
-DevTrack/
-├── backend/                  # Express 5 API + BullMQ workers
-│   └── src/
-│       ├── config/           # env.ts, constants.ts
-│       ├── db/models/        # 60+ Mongoose models
-│       ├── middleware/       # Clerk auth, rate limits, validation
-│       ├── modules/            # 23 domain modules (dsa, resume, readiness, …)
-│       ├── routes/             # Route composition
-│       ├── shared/             # Redis, BullMQ, SSE, logger
-│       ├── workers/            # Standalone worker entrypoints
-│       └── __tests__/          # Unit + integration tests
-├── frontend/                 # React 19 SPA
-│   └── src/
-│       ├── components/       # UI, layout, dashboard, DSA, focus
-│       ├── features/         # Domain feature modules
-│       ├── pages/            # Route-level pages
-│       ├── services/         # Axios API clients
-│       ├── store/            # Zustand stores
-│       └── router/           # React Router v7
-├── dev-orchestrator/         # Local multi-process dev boot
-├── Codex/                    # AI agent reference package
-├── docker-compose.yml        # Dev full-stack (mongo, redis, api, frontend)
-├── docker-compose.prod.yml   # Production split (api + workers)
-├── start-dev.ps1             # Windows dev environment starter
-└── package.json              # Monorepo scripts
+DevTrack/                         # Monorepo Workspace Root
+├── .Codex/                       # Orchestration rules & AI maps
+├── Codex/                        # AI-ready project reference files
+├── docs/                         # Architecture & operational manuals
+├── dev-orchestrator/             # Multi-process development orchestrator
+│   ├── src/
+│   │   ├── console/              # UnifiedRuntimeConsole terminal formatting
+│   │   ├── monitor/              # DevelopmentHealthMonitor checking Redis/Mongo ports
+│   │   ├── orchestrator/         # Multi-process orchestrator spawning API & client tasks
+│   │   ├── utils/                # RuntimeCleaner wiping out locked caches
+│   │   └── validators/           # EnvironmentReadinessValidator validating .env variables
+│   └── package.json
+├── backend/                      # Express 5 + Mongoose + BullMQ workspace
+│   ├── src/
+│   │   ├── config/               # Environment config & constants
+│   │   ├── db/                   # Database models & connections
+│   │   │   └── models/           # Mongoose schemas (Readiness, Resume, Analytics)
+│   │   ├── middleware/           # JWT Auth, rate-limiters, error interceptors
+│   │   ├── modules/              # Modular business domains
+│   │   │   ├── auth/             # Sign-in & Clerk synchronizers
+│   │   │   ├── analytics/        # User feedback & conversion funnel logging
+│   │   │   ├── readiness/        # Skill Gaps, diagnostic Benchmarks & Evolution timelines
+│   │   │   ├── resume/           # PDF parsing, ATS scoring & Github claim validators
+│   │   │   └── operations/       # Snapshot versioners, diagnostics, health metrics
+│   │   └── shared/               # Shared utilities
+│   │       ├── redis/            # Redis singleton connection pools
+│   │       ├── jobs/             # BullMQ factories & platform crawler workers
+│   │       └── sse/              # Server-Sent Events multi-tab singleton WebChannels
+│   └── package.json
+├── frontend/                     # React 19 Client
+│   ├── src/
+│   │   ├── components/           # UI controls, layouts, Pomodoro timers
+│   │   ├── features/             # Feature-specific pages, hooks & context
+│   │   │   ├── admin/            # AI Provider telemetry dashboards
+│   │   │   ├── ai/               # Copilot chat panels & guidance feeds
+│   │   │   ├── readiness/        # Roadmap diagrams, blocker panels, charts
+│   │   │   └── resume-tracker/   # Resume upload dropzones & credibility checkers
+│   │   ├── pages/                # Workspace page layouts matching route targets
+│   │   │   ├── admin/            # PMF funnel analytics & dashboard portal
+│   │   │   ├── readiness/        # Roadmap, DSA, and Evolution timelines
+│   │   │   └── FocusPage.tsx     # Persistent Daily Mission stopwatch timers
+│   │   ├── store/                # Persistent Zustand state stores
+│   │   │   └── progressionStore.ts # Persistent active gamification store
+│   │   ├── services/             # Axios API client services (Readiness, Analytics)
+│   │   └── router/               # Navigation target routing paths
+│   └── package.json
+├── docker-compose.yml             # Dev full-stack (mongo, redis, api, frontend)
+├── docker-compose.prod.yml        # Production split (api + workers)
+├── start-dev.ps1                  # Windows dev environment starter
+└── package.json                   # Monorepo scripts
 ```
 
 ---
