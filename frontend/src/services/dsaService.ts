@@ -26,8 +26,8 @@ const DSA_BASE = '/dsa';
 /**
  * Fetch complete DSA dashboard data (heatmap, submissions, topics, platform stats).
  */
-export async function fetchDsaDashboard(): Promise<ApiResponse<ApiDsaDashboardResponse>> {
-  const { data } = await axiosClient.get<ApiResponse<ApiDsaDashboardResponse>>(`${DSA_BASE}/dashboard`);
+export async function fetchDsaDashboard(options?: { signal?: AbortSignal }): Promise<ApiResponse<ApiDsaDashboardResponse>> {
+  const { data } = await axiosClient.get<ApiResponse<ApiDsaDashboardResponse>>(`${DSA_BASE}/dashboard`, { signal: options?.signal });
   return data;
 }
 
@@ -135,11 +135,12 @@ export async function bulkUpdateDsaStatus(
  * Fetch paginated submission history.
  */
 export async function fetchDsaSubmissions(
-  filters: { platform?: string; status?: string; page?: number; pageSize?: number } = {}
+  filters: { platform?: string; status?: string; page?: number; pageSize?: number } = {},
+  options?: { signal?: AbortSignal }
 ): Promise<ApiResponse<ApiDsaSubmissionsListResponse>> {
   const { data } = await axiosClient.get<ApiResponse<ApiDsaSubmissionsListResponse>>(
     `${DSA_BASE}/submissions`,
-    { params: filters }
+    { params: filters, signal: options?.signal }
   );
   return data;
 }
@@ -148,11 +149,12 @@ export async function fetchDsaSubmissions(
  * Fetch paginated contest history.
  */
 export async function fetchDsaContests(
-  filters: { platform?: string; page?: number; pageSize?: number } = {}
+  filters: { platform?: string; page?: number; pageSize?: number } = {},
+  options?: { signal?: AbortSignal }
 ): Promise<ApiResponse<ApiDsaContestsListResponse>> {
   const { data } = await axiosClient.get<ApiResponse<ApiDsaContestsListResponse>>(
     `${DSA_BASE}/contests`,
-    { params: filters }
+    { params: filters, signal: options?.signal }
   );
   return data;
 }
@@ -160,9 +162,10 @@ export async function fetchDsaContests(
 /**
  * Fetch topic analytics with per-difficulty breakdowns.
  */
-export async function fetchDsaTopics(): Promise<ApiResponse<ApiDsaTopicsListResponse>> {
+export async function fetchDsaTopics(options?: { signal?: AbortSignal }): Promise<ApiResponse<ApiDsaTopicsListResponse>> {
   const { data } = await axiosClient.get<ApiResponse<ApiDsaTopicsListResponse>>(
-    `${DSA_BASE}/topics`
+    `${DSA_BASE}/topics`,
+    { signal: options?.signal }
   );
   return data;
 }
@@ -185,7 +188,7 @@ export interface SchedulerStatus {
  * Fetch global scheduler status — lightweight, no DB.
  * Polled by the frontend to drive sync state indicators.
  */
-export async function fetchSchedulerStatus(): Promise<ApiResponse<SchedulerStatus>> {
-  const { data } = await axiosClient.get<ApiResponse<SchedulerStatus>>('/platforms/sync-scheduler-status');
+export async function fetchSchedulerStatus(options?: { signal?: AbortSignal }): Promise<ApiResponse<SchedulerStatus>> {
+  const { data } = await axiosClient.get<ApiResponse<SchedulerStatus>>('/platforms/sync-scheduler-status', { signal: options?.signal });
   return data;
 }

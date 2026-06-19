@@ -24,11 +24,12 @@ const PROJECTS_BASE = '/projects';
  * Fetch paginated project list with filters and stats.
  */
 export async function fetchProjects(
-  filters: ApiProjectFilters = {}
+  filters: ApiProjectFilters = {},
+  options?: { signal?: AbortSignal }
 ): Promise<ApiResponse<ApiProjectListResponse>> {
   const { data } = await axiosClient.get<ApiResponse<ApiProjectListResponse>>(
     `${PROJECTS_BASE}`,
-    { params: filters }
+    { params: filters, signal: options?.signal }
   );
   return data;
 }
@@ -37,10 +38,12 @@ export async function fetchProjects(
  * Fetch a single project by ID with full details.
  */
 export async function fetchProject(
-  projectId: string
+  projectId: string,
+  options?: { signal?: AbortSignal }
 ): Promise<ApiResponse<ApiProject>> {
   const { data } = await axiosClient.get<ApiResponse<ApiProject>>(
-    `${PROJECTS_BASE}/${projectId}`
+    `${PROJECTS_BASE}/${projectId}`,
+    { signal: options?.signal }
   );
   return data;
 }
@@ -98,10 +101,12 @@ export async function deleteProject(
  * Fetch tasks for a project.
  */
 export async function fetchProjectTasks(
-  projectId: string
+  projectId: string,
+  options?: { signal?: AbortSignal }
 ): Promise<ApiResponse<ApiProjectTask[]>> {
   const { data } = await axiosClient.get<ApiResponse<ApiProjectTask[]>>(
-    `${PROJECTS_BASE}/${projectId}/tasks`
+    `${PROJECTS_BASE}/${projectId}/tasks`,
+    { signal: options?.signal }
   );
   return data;
 }

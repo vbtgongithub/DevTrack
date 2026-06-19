@@ -4,8 +4,8 @@ import { readinessService, type ReadinessSnapshot, type CareerIntentInput } from
 export function useReadinessData() {
   const query = useQuery<ReadinessSnapshot>({
     queryKey: ['readinessData'],
-    queryFn: async () => {
-      const res = await readinessService.getSnapshot();
+    queryFn: async ({ signal }) => {
+      const res = await readinessService.getSnapshot({ signal });
       if (!res.success) throw new Error('Failed to load readiness snapshot');
       return res.data;
     },
@@ -24,8 +24,8 @@ export function useReadinessData() {
 export function useReadinessDomain(domain: string) {
   const query = useQuery<any>({
     queryKey: ['readinessDomain', domain],
-    queryFn: async () => {
-      const res = await readinessService.getDomainIntelligence(domain);
+    queryFn: async ({ signal }) => {
+      const res = await readinessService.getDomainIntelligence(domain, { signal });
       if (!res.success) throw new Error(`Failed to load ${domain} intelligence`);
       return res.data;
     },

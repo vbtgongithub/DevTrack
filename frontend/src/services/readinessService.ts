@@ -201,13 +201,13 @@ export type DomainIntelligence =
   | CopilotIntelligence;
 
 export const readinessService = {
-  async getSnapshot(): Promise<{ success: boolean; data: ReadinessSnapshot }> {
-    const res = await axiosClient.get('/readiness/snapshot');
+  async getSnapshot(options?: { signal?: AbortSignal }): Promise<{ success: boolean; data: ReadinessSnapshot }> {
+    const res = await axiosClient.get('/readiness/snapshot', { signal: options?.signal });
     return res.data;
   },
 
-  async getDomainIntelligence(domain: string): Promise<{ success: boolean; data: DomainIntelligence | EvolutionIntelligenceNormalized | ReadinessRoadmapDomainResponse }> {
-    const res = await axiosClient.get(`/readiness/domain/${domain}`);
+  async getDomainIntelligence(domain: string, options?: { signal?: AbortSignal }): Promise<{ success: boolean; data: DomainIntelligence | EvolutionIntelligenceNormalized | ReadinessRoadmapDomainResponse }> {
+    const res = await axiosClient.get(`/readiness/domain/${domain}`, { signal: options?.signal });
     return res.data;
   },
 

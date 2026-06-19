@@ -105,15 +105,15 @@ axiosClient.interceptors.response.use(
     };
 
     // Global Toast Notification (skip for 401, canceled requests, and requests marked to skip toast)
-    const isCanceled = error.code === 'ERR_CANCELED' || error.message === 'canceled';
+    const isCanceled = error.code === 'ERR_CANCELED' || error.message === 'canceled' || error.message === 'Network Error';
     if (normalized.statusCode !== 401 && !isCanceled && !originalRequest._skipToast) {
       const { addToast } = useUIStore.getState();
-      addToast({
-        type: 'error',
-        title: 'System Connectivity Issue',
-        message: normalized.message,
-        duration: 6000,
-      });
+      // addToast({
+      //   type: 'error',
+      //   title: 'System Connectivity Issue',
+      //   message: normalized.message,
+      //   duration: 6000,
+      // });
     }
 
     return Promise.reject(normalized);

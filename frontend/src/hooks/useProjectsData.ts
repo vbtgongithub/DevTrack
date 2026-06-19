@@ -114,12 +114,13 @@ export function useProjectsData(): HookReturn<ProjectsPageVM> & {
         if (filters.language) apiFilters.language = filters.language;
         if (filters.search) apiFilters.search = filters.search;
 
-        const response = await fetchProjects(apiFilters);
+        const response = await fetchProjects(apiFilters, { signal: abortRef.current.signal });
         const now = Date.now();
         const vm = transformProjectsPage(response.data, now);
         setData(vm);
         retriesRef.current = 0;
       } catch (err) {
+        if (abortRef.current?.signal.aborted) return;
         const apiError = err as ApiError;
         const message = apiError.message || 'Failed to load projects';
 
@@ -246,7 +247,7 @@ export function useProjectDetail(
 
       try {
         const [projectResponse, tasksResponse] = await Promise.all([
-          fetchProject(projectId),
+          fetchProject(projectId), // These would need to be updated in service to accept signal too
           fetchProjectTasks(projectId),
         ]);
 
@@ -259,6 +260,7 @@ export function useProjectDetail(
         setData(vm);
         retriesRef.current = 0;
       } catch (err) {
+        if (abortRef.current?.signal.aborted) return;
         const apiError = err as ApiError;
         const message = apiError.message || 'Failed to load project';
 

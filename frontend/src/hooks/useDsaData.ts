@@ -72,8 +72,8 @@ interface ApiDashboardResponse {
 function useDsaDashboard() {
   return useQuery<ApiDashboardResponse>({
     queryKey: queryKeys.dsa.dashboard,
-    queryFn: async () => {
-      const res = await fetchDsaDashboard();
+    queryFn: async ({ signal }) => {
+      const res = await fetchDsaDashboard({ signal });
       if (!res.success) throw new Error(res.message || 'Failed to load dashboard');
       return res.data;
     },
@@ -89,8 +89,8 @@ function useDsaDashboard() {
 function useDsaSubmissions() {
   return useQuery<Submission[]>({
     queryKey: queryKeys.dsa.submissions({ pageSize: 100 }),
-    queryFn: async () => {
-      const res = await fetchDsaSubmissions({ pageSize: 100 });
+    queryFn: async ({ signal }) => {
+      const res = await fetchDsaSubmissions({ pageSize: 100 }, { signal });
       if (!res.success) throw new Error(res.message || 'Failed to load submissions');
       return res.data.submissions
         .filter((s) => isDsaPlatform(s.platform))
@@ -121,8 +121,8 @@ function useDsaSubmissions() {
 function useDsaContests() {
   return useQuery({
     queryKey: queryKeys.dsa.contests({ pageSize: 20 }),
-    queryFn: async () => {
-      const res = await fetchDsaContests({ pageSize: 20 });
+    queryFn: async ({ signal }) => {
+      const res = await fetchDsaContests({ pageSize: 20 }, { signal });
       if (!res.success) throw new Error(res.message || 'Failed to load contests');
       return res.data.contests
         .filter((c) => isDsaPlatform(c.platform))
@@ -149,8 +149,8 @@ function useDsaContests() {
 function useDsaTopics() {
   return useQuery({
     queryKey: queryKeys.dsa.topics,
-    queryFn: async () => {
-      const res = await fetchDsaTopics();
+    queryFn: async ({ signal }) => {
+      const res = await fetchDsaTopics({ signal });
       if (!res.success) throw new Error(res.message || 'Failed to load topics');
       return res.data.topics.map((t) => ({
         name: t.topicName,
@@ -192,8 +192,8 @@ const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes without a successful sync
 function useSchedulerStatus() {
   return useQuery<SchedulerStatus>({
     queryKey: queryKeys.dsa.syncStatus,
-    queryFn: async () => {
-      const res = await fetchSchedulerStatus();
+    queryFn: async ({ signal }) => {
+      const res = await fetchSchedulerStatus({ signal });
       if (!res.success) throw new Error(res.message || 'Failed to load scheduler status');
       return res.data;
     },
