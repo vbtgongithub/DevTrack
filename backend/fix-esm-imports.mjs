@@ -6,7 +6,7 @@
  * extensions to relative imports. This is required because:
  *  - The source TypeScript files use extensionless relative imports (e.g. './controller')
  *  - TypeScript compiles them as-is to ESM output
- *  - Node.js strict ESM mode requires explicit .js extensions
+ *  - Node.js strict ESM mode requires explicit .js extensions          
  *  - --experimental-specifier-resolution=node was removed in Node 22
  *
  * Run after tsc: `tsc && node fix-esm-imports.mjs`

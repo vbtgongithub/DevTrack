@@ -34,10 +34,21 @@ export function AppProviders({ children }: AppProvidersProps) {
   const queryClient = useQueryClient();
   const { liveLevel } = useXpState();
 
+  const setLastSseEvent = useUIStore((s) => (s as any).setLastSseEvent);
+
   useSse({
     enabled: isAuthenticated,
-    onEvent: (event) => handleSseEvent(event, queryClient),
+    onEvent: (event) => {
+      // Persist latest SSE event for lightweight UI consumers (avoid duplicating EventSource subscriptions)
+      try {
+        setLastSseEvent?.(event);
+      } catch {
+        // ignore
+      }
+      handleSseEvent(event, queryClient);
+    },
   });
+
   useUserObservation(isAuthenticated);
 
   useEffect(() => {

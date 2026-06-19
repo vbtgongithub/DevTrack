@@ -100,6 +100,9 @@ interface AppState {
   setSseStatus: (status: 'connected' | 'reconnecting' | 'disconnected') => void;
   isInfrastructureDegraded: boolean;
   setInfrastructureDegraded: (degraded: boolean) => void;
+  lastSseEvent: unknown | null;
+  setLastSseEvent: (event: unknown) => void;
+
   isSearchOpen: boolean;
   toggleSearch: () => void;
   setSearchOpen: (open: boolean) => void;
@@ -217,6 +220,9 @@ export const useAppStateStore = create<AppState>()(
       setSseStatus: (status) => set({ sseStatus: status }),
       isInfrastructureDegraded: false,
       setInfrastructureDegraded: (degraded) => set({ isInfrastructureDegraded: degraded }),
+      lastSseEvent: null,
+      setLastSseEvent: (event) => set({ lastSseEvent: event }),
+
       isSearchOpen: false,
       toggleSearch: () => set((state) => ({ isSearchOpen: !state.isSearchOpen })),
       setSearchOpen: (open) => set({ isSearchOpen: open }),
