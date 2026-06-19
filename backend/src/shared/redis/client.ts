@@ -69,12 +69,10 @@ export function getRedisClient(): Redis {
       };
 
   if (redisUrl) {
-    const parsed = new URL(redisUrl);
-    _client = new Redis({
-      host: parsed.hostname,
-      port: parseInt(parsed.port || '6379', 10),
-      password: parsed.password || undefined,
-      ...redisConfig as Record<string, unknown>,
+    // Pass the full URL string to ioredis so it automatically handles the 'rediss://' TLS configuration
+    _client = new Redis(redisUrl, {
+      ...(redisConfig as Record<string, unknown>),
+      family: 0, // Use IPv4/IPv6 dual-stack resolution, helpful in Docker
     });
   } else {
     _client = new Redis(redisConfig as Record<string, unknown>);
@@ -83,8 +81,8 @@ export function getRedisClient(): Redis {
   _client.on('connect', () => {
     logger.info('[redis] Connected', {
       event: 'redis_connected',
-      host: env.REDIS_HOST,
-      port: env.REDIS_PORT,
+      host: _client?.options?.host || 'unknown',
+      port: _client?.options?.port || 6379,
     });
     _connecting = false;
   });
@@ -92,16 +90,16 @@ export function getRedisClient(): Redis {
   _client.on('ready', () => {
     logger.info('[redis] Ready', {
       event: 'redis_ready',
-      host: env.REDIS_HOST,
-      port: env.REDIS_PORT,
+      host: _client?.options?.host || 'unknown',
+      port: _client?.options?.port || 6379,
     });
   });
 
   _client.on('error', (err: Error) => {
     logger.error('[redis] Error', err, {
       event: 'redis_error',
-      host: env.REDIS_HOST,
-      port: env.REDIS_PORT,
+      host: _client?.options?.host || 'unknown',
+      port: _client?.options?.port || 6379,
     });
     _connecting = false;
   });
