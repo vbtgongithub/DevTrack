@@ -1,25 +1,22 @@
 # Stage 1: Build
+# Docker context: repo root (.)
+# Dockerfile path: backend/Dockerfile
 FROM node:22-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files from backend/ subdirectory (context is repo root)
+COPY backend/package*.json ./
 
-# Install dependencies (including devDependencies for build)
-# Use `npm install` here to avoid failing when package-lock.json and package.json
-# are out of sync in the CI/container environment. It's less strict than `npm ci`
-# but ensures the image builds successfully. Keep deterministic installs in
-# local development or CI where lockfile is maintained.
+# Install all dependencies (including devDependencies for TypeScript build)
 RUN npm install
 
-# Copy source code and build scripts
-COPY tsconfig.json ./
-COPY fix-esm-imports.mjs ./
-COPY src ./src
+# Copy source code and build scripts from backend/ subdirectory
+COPY backend/tsconfig.json ./
+COPY backend/fix-esm-imports.mjs ./
+COPY backend/src ./src
 
-# Build the TypeScript code
+# Build the TypeScript code (tsc + ESM import fixer)
 RUN npm run build
 
 # Stage 2: Production
@@ -32,16 +29,13 @@ ENV NODE_ENV=production
 RUN apk add --no-cache dumb-init
 
 # Create a non-root user to run the app
-# Use a specific UID/GID for predictability
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 -G nodejs
 
 WORKDIR /app
 
 # Copy package files and install ONLY production dependencies
-COPY package*.json ./
-# Use `npm install --omit=dev` here as well to avoid lockfile mismatch failures
-# during image builds. Clean npm cache afterwards to reduce image size.
+COPY backend/package*.json ./
 RUN npm install --omit=dev && npm cache clean --force
 
 # Copy compiled output from the builder stage
