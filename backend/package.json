@@ -11,7 +11,7 @@
     "worker:xp": "tsx src/workers/worker-xp.ts",
     "worker:maintenance": "tsx src/workers/worker-maintenance.ts",
     "worker:resume-intelligence": "tsx src/workers/worker-resume-intelligence.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node fix-esm-imports.mjs",
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:unit": "vitest run --exclude src/__tests__/integration/**",
