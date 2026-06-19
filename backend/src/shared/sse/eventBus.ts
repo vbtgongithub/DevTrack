@@ -301,11 +301,10 @@ class EventBus extends EventEmitter {
   private async initRedisPubSub(): Promise<void> {
     try {
       const Redis = (await import('ioredis')).default;
-      const connectionOptions = {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379', 10),
-        password: process.env.REDIS_PASSWORD || undefined,
+      const redisUrl = process.env.REDIS_URL;
+      const connectionOptions: any = {
         lazyConnect: true,
+        family: 0,
         retryStrategy(times: number) {
           const delay = Math.min(times * 100, 3000);
           logger.warn('[sse-redis] Reconnecting to Redis', { attempt: times, delayMs: delay });
@@ -313,8 +312,16 @@ class EventBus extends EventEmitter {
         }
       };
 
+      if (!redisUrl) {
+        connectionOptions.host = process.env.REDIS_HOST || 'localhost';
+        connectionOptions.port = parseInt(process.env.REDIS_PORT || '6379', 10);
+        connectionOptions.password = process.env.REDIS_PASSWORD || undefined;
+      }
+
       // Persistent subscriber
-      const subscriber = new (Redis as unknown as { new(options: Record<string, unknown>): unknown })(connectionOptions);
+      const subscriber = redisUrl 
+        ? new (Redis as any)(redisUrl, connectionOptions)
+        : new (Redis as any)(connectionOptions);
       (subscriber as any).on('message', (_channel: string, message: string) => {
         try {
           const event = JSON.parse(message) as SseEvent;
@@ -332,7 +339,9 @@ class EventBus extends EventEmitter {
       this.redisSubscriber = subscriber as any;
 
       // Shared singleton publisher
-      const publisher = new (Redis as unknown as { new(options: Record<string, unknown>): unknown })(connectionOptions);
+      const publisher = redisUrl 
+        ? new (Redis as any)(redisUrl, connectionOptions)
+        : new (Redis as any)(connectionOptions);
       (publisher as any).on('error', (err: Error) => {
         logger.error('[sse-redis] Publisher error', err);
       });
