@@ -1,5 +1,5 @@
 // ============================================================================
-// axiosClient.ts — Centralized HTTP Client
+// axiosClient.ts - Centralized HTTP Client
 // ============================================================================
 // Single axios instance with interceptors for error normalization,
 // request/response logging, and Clerk token injection.
@@ -12,7 +12,6 @@ import axios, {
 } from 'axios';
 import type { ApiError } from '../types/api.types';
 import { envConfig } from './envCheck';
-import { useUIStore } from '../store/uiStore';
 
 // Add Clerk to Window interface
 declare global {
@@ -45,7 +44,7 @@ const axiosClient: AxiosInstance = axios.create({
 });
 
 // ---------------------------------------------------------------------------
-// Request Interceptor — Attach Clerk Token
+// Request Interceptor - Attach Clerk Token
 // ---------------------------------------------------------------------------
 
 axiosClient.interceptors.request.use(
@@ -67,7 +66,7 @@ axiosClient.interceptors.request.use(
 );
 
 // ---------------------------------------------------------------------------
-// Response Interceptor — Normalize Errors
+// Response Interceptor - Normalize Errors
 // ---------------------------------------------------------------------------
 
 axiosClient.interceptors.response.use(
@@ -77,12 +76,12 @@ axiosClient.interceptors.response.use(
       _skipToast?: boolean;
     };
 
-    // Handle 401 — Unauthorized
+    // Handle 401 - Unauthorized
     if (error.response?.status === 401) {
-      // With Clerk, a 401 means the session token wasn't attached or has expired.
+      // With Clerk, a 401 means the session token was not attached or has expired.
       // We call the optional auth-invalid handler (e.g. to clear local state)
-      // but do NOT hard-redirect — Clerk's route protection handles unauthenticated
-      // users, and a transient 401 (token not yet ready on mount) should not
+      // but do NOT hard-redirect - Clerk route protection handles unauthenticated
+      // users, and a transient 401 (token not ready on mount) should not
       // kick the user to the login page.
       try {
         onAuthInvalid?.();
@@ -103,18 +102,6 @@ axiosClient.interceptors.response.use(
       timestamp: new Date().toISOString(),
       details: error.response?.data?.details,
     };
-
-    // Global Toast Notification (skip for 401, canceled requests, and requests marked to skip toast)
-    const isCanceled = error.code === 'ERR_CANCELED' || error.message === 'canceled' || error.message === 'Network Error';
-    if (normalized.statusCode !== 401 && !isCanceled && !originalRequest._skipToast) {
-      const { addToast } = useUIStore.getState();
-      // addToast({
-      //   type: 'error',
-      //   title: 'System Connectivity Issue',
-      //   message: normalized.message,
-      //   duration: 6000,
-      // });
-    }
 
     return Promise.reject(normalized);
   }
