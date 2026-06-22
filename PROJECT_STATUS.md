@@ -42,9 +42,9 @@
 
 | Area | Gap |
 |------|-----|
-| LeetCode sync | Public API limits — not full history |
+| LeetCode sync | Public API limits - not full history |
 | CodeChef | Stats only, no submission history |
-| ATS integrations | Simulators only (Greenhouse, Workday, Lever, Taleo) — no live OAuth |
+| ATS integrations | Simulators only (Greenhouse, Workday, Lever, Taleo) - no live OAuth |
 | AI features | Degrade when `OPENAI_API_KEY` / `GEMINI_API_KEY` unset |
 | ML training pipelines | Infrastructure present; datasets not loaded in production |
 
@@ -83,6 +83,7 @@ readiness, resume (upload), resume-intelligence, recommendations, analytics
 
 Estimated backend test coverage: ~65%. Gaps in ML module, platform sync adapters, and ops module tests.
 
+
 ---
 
 ## Frontend Health
@@ -106,16 +107,17 @@ Resume entry workspace uses a dark theme (`slate-950`) while the main app uses t
 
 ### Medium priority
 
-1. **Root `.env.example` stale JWT vars** — References `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`; auth is Clerk-based. Use `backend/.env.example` instead.
-2. **Docker frontend build arg** — Dockerfile may use `VITE_API_URL`; app reads `VITE_API_BASE_URL`.
-3. **Production port mismatch** — `docker-compose.prod.yml` defaults to 4000; dev uses 3001.
-4. **DSA-resume credibility gap** — Some resume credibility paths may return simulated DSA data instead of live submission cross-checks.
+1. **Docker frontend build arg** - Dockerfile may use `VITE_API_URL`; app reads `VITE_API_BASE_URL`.
+2. **Production port mismatch** - `docker-compose.prod.yml` defaults to 4000; dev uses 3001.
+3. **DSA-resume credibility gap** - Some resume credibility paths may return simulated DSA data instead of live submission cross-checks.
+
 
 ### Low priority
 
-1. **Orphaned internal modules** — `operations/`, `validation/`, `calibration/` have classes not fully exported through route modules.
-2. **Dataset registry** — References `placement-intelligence-data/` paths; datasets not wired into runtime training.
-3. **Worker restart** — No automatic recovery if a worker process crashes outside Docker orchestration.
+1. **Orphaned internal modules** - `operations/`, `validation/`, `calibration/` have classes not fully exported through route modules.
+2. **Dataset registry** - References `placement-intelligence-data/` paths; datasets not wired into runtime training.
+3. **Worker restart** - No automatic recovery if a worker process crashes outside Docker orchestration.
+
 
 ---
 
@@ -130,9 +132,9 @@ Resume entry workspace uses a dark theme (`slate-950`) while the main app uses t
 
 ## Roadmap (next sprints)
 
+
 | Priority | Item |
 |----------|------|
-| High | Align root `.env.example` with Clerk auth |
 | High | Wire DSA submission data into resume credibility scoring |
 | Medium | Add platform sync adapter unit tests |
 | Medium | Unify resume entry workspace theme |
@@ -155,4 +157,4 @@ Resume entry workspace uses a dark theme (`slate-950`) while the main app uses t
 
 ## Assessment
 
-DevTrack is a feature-rich beta platform with a sound architectural foundation: decoupled workers, Clerk auth, versioned API, SSE real-time layer, and comprehensive domain modules. The frontend is production-ready. Remaining work centers on integration hardening (DSA-resume cross-validation, env template cleanup), test coverage expansion, and optional ML dataset activation.
+DevTrack is a feature-rich beta platform with a sound architectural foundation: decoupled workers, Clerk auth, versioned API, SSE real-time layer, and comprehensive domain modules. The frontend is production-ready. Remaining work centers on integration hardening (DSA-resume cross-validation), test coverage expansion, and optional ML dataset activation.

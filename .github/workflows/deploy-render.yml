@@ -1,0 +1,28 @@
+
+name: Deploy to Render
+
+on:
+  push:
+    branches: [main]
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render redeploy
+        env:
+          RENDER_DEPLOY_WEBHOOK_URL: ${{ secrets.RENDER_DEPLOY_WEBHOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_WEBHOOK_URL" ]; then
+            echo "Missing secret: RENDER_DEPLOY_WEBHOOK_URL";
+            exit 1;
+          fi
+
+          echo "Triggering Render deploy webhook..."
+          curl -sS -X POST "$RENDER_DEPLOY_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d '{"ref":"${GITHUB_REF}","sha":"${GITHUB_SHA}"}' 
+

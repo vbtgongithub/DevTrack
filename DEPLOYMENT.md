@@ -9,12 +9,13 @@ Instructions for deploying DevTrack in staging and production environments.
 | Component | Recommended Host | Notes |
 |-----------|-----------------|-------|
 | Frontend | Vercel | Static SPA + env injection at build time |
-| Backend API | Railway | Express + SSE; set `ENABLE_WORKERS=false` |
-| Workers | Railway (separate services) | One service per `WORKER_TYPE` |
+| Backend API | Render | Express + SSE; set `ENABLE_WORKERS=false` |
+| Workers | Render (separate services) | One service per `WORKER_TYPE` |
 | MongoDB | MongoDB Atlas | Required |
 | Redis | Upstash / Redis Cloud | Required for BullMQ and SSE pub/sub |
 
 GitHub Actions workflows in `.github/workflows/` automate staging and production deploys on merge to `main`.
+
 
 ---
 
@@ -31,9 +32,12 @@ npm run build && npm start
 npm run worker
 ```
 
+
 Or use `docker compose up --build` from the repo root.
 
+
 ### Mode 2: Split production (recommended)
+
 
 Separate the HTTP server from background workers so each scales independently.
 
@@ -56,27 +60,29 @@ docker compose -f docker-compose.prod.yml logs -f
 
 > **Port note:** `docker-compose.prod.yml` defaults API to port **4000**. Development uses **3001**. Set `PORT` and `API_PORT` consistently across your environment.
 
+
 ---
 
 ## Environment Variables
 
 ### Backend (required in production)
 
+
 | Variable | Required | Default (dev) | Description |
 |----------|----------|---------------|-------------|
 | `NODE_ENV` | Yes | `development` | `production` in prod |
 | `PORT` | No | `3001` | HTTP listen port |
 | `MONGODB_URI` | Yes | `mongodb://localhost:27017/devtrack` | MongoDB connection string |
-| `CORS_ORIGIN` | Yes | `http://localhost:5173` | Frontend origin — **must be HTTPS in production** |
-| `CLERK_SECRET_KEY` | Yes | — | Clerk backend secret |
-| `REDIS_URL` | Recommended | — | Full Redis URL (overrides host/port) |
+| `CORS_ORIGIN` | Yes | `http://localhost:5173` | Frontend origin - **must be HTTPS in production** |
+| `CLERK_SECRET_KEY` | Yes | - | Clerk backend secret |
+| `REDIS_URL` | Recommended | - | Full Redis URL (overrides host/port) |
 | `REDIS_HOST` | No | `localhost` | Redis hostname |
 | `REDIS_PORT` | No | `6379` | Redis port |
 | `REDIS_PASSWORD` | No | `''` | Redis password |
-| `OPENAI_API_KEY` | One of two | — | OpenAI for embeddings and intelligence |
-| `GEMINI_API_KEY` | One of two | — | Google Gemini fallback |
-| `GITHUB_TOKEN` | No | — | Raises GitHub API rate limits |
-| `ENABLE_WORKERS` | No | — | Set `false` on API-only containers |
+| `OPENAI_API_KEY` | One of two | - | OpenAI for embeddings and intelligence |
+| `GEMINI_API_KEY` | One of two | - | Google Gemini fallback |
+| `GITHUB_TOKEN` | No | - | Raises GitHub API rate limits |
+| `ENABLE_WORKERS` | No | - | Set `false` on API-only containers |
 | `WORKER_TYPE` | No | `all` | Worker process selector |
 | `SYNC_ENABLED` | No | `true` | Platform sync scheduler |
 | `SYNC_INTERVAL_MINUTES` | No | `15` (prod) | Sync cron interval |
@@ -84,20 +90,21 @@ docker compose -f docker-compose.prod.yml logs -f
 | `RATE_LIMIT_WINDOW_MS` | No | `900000` | Global rate limit window |
 | `RATE_LIMIT_MAX_REQUESTS` | No | `100` | Max requests per window |
 
-Copy `backend/.env.example` as a starting template.
+Copy `.env.example` (root) as a starting template for production.
 
-> **Auth note:** DevTrack uses **Clerk**, not custom JWT. The root `.env.example` still lists `JWT_*` variables from a legacy auth system — ignore those and use `CLERK_SECRET_KEY` instead.
+> **Auth note:** DevTrack uses **Clerk** for authentication. The root `.env.example` templates all required environment variables for both Render and Vercel deployments.
+
 
 ### Frontend (build-time)
 
 | Variable | Required | Default (dev) | Description |
 |----------|----------|---------------|-------------|
 | `VITE_API_BASE_URL` | Yes | `http://localhost:3001/api` | Backend API base URL |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Yes | — | Clerk frontend key |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Yes | - | Clerk frontend key |
 
 Copy `frontend/.env.example` as a starting template.
 
-> **Docker build note:** The frontend `Dockerfile` may accept a `VITE_API_URL` build arg. The application code reads `VITE_API_BASE_URL` — ensure your CI/CD injects the correct variable name.
+> **Docker build note:** The frontend `Dockerfile` may accept a `VITE_API_URL` build arg. The application code reads `VITE_API_BASE_URL` - ensure your CI/CD injects the correct variable name.
 
 ---
 
@@ -109,6 +116,7 @@ Copy `frontend/.env.example` as a starting template.
 docker compose up --build
 ```
 
+
 Services: `mongo` (7), `redis` (7-alpine), `backend`, `frontend` (Nginx).
 
 - Frontend: ports 80/443, proxies `/api` to backend
@@ -119,7 +127,7 @@ Services: `mongo` (7), `redis` (7-alpine), `backend`, `frontend` (Nginx).
 
 `docker-compose.prod.yml` defines:
 
-- `api` — Express only, `ENABLE_WORKERS=false`
+- `api` - Express only, `ENABLE_WORKERS=false`
 - `worker-sync` (2 replicas), `worker-xp`, `worker-orch`, `worker-maint`
 - `mongo`, `redis` with health checks
 
@@ -130,6 +138,7 @@ Requires `.env.production` at the repo root.
 ```bash
 ./deploy.sh
 ```
+
 
 Builds images, starts containers, and checks backend health.
 
@@ -143,52 +152,62 @@ Builds images, starts containers, and checks backend health.
 4. Build command: `npm run build`
 5. Output directory: `dist`
 6. Inject environment variables:
-   - `VITE_API_BASE_URL=https://your-api.railway.app/api`
+   - `VITE_API_BASE_URL=https://your-api.render.com/api`
    - `VITE_CLERK_PUBLISHABLE_KEY=pk_live_...`
 
-Rollback: Vercel Dashboard → Deployments → select last working build → Promote to Production.
+Rollback: Vercel Dashboard - Deployments - select last working build - Promote to Production.
 
 ---
 
-## Backend (Railway)
+## Backend (Render)
 
-### 1. Create project and infrastructure
+### 1. Create project and services
 
-```bash
-railway login
-railway init devtrack
-railway add -c mongodb
-railway add -c redis
-railway variables   # copy MONGODB_URI and REDIS_URL
-```
+1. Create a new Web Service at https://dashboard.render.com
+2. Connect your GitHub repository
+3. Create a separate service for each worker type
 
-### 2. API service
+### 2. Backend API Service
 
-1. Create service `backend`, connect GitHub repo
+1. Name: `devtrack-api`
 2. Root directory: `backend/`
-3. Build: `npm run build`
-4. Start: `node dist/index.js`
-5. Set `ENABLE_WORKERS=false`
+3. Build command: `npm run build`
+4. Start command: `node dist/index.js`
+5. Environment: `Node`
+6. Set `ENABLE_WORKERS=false`
 
-### 3. Worker services
+### 3. Worker Services
 
-Create one Railway service per worker type, each running `node dist/worker-entrypoint.js` with the appropriate `WORKER_TYPE` (`sync`, `xp`, `orch`, `maint`, `resume-intelligence`).
+Create one Render service per worker type:
 
-### 4. Required variables
+
+| Service Name | `WORKER_TYPE` | Start Command |
+|---------------|---------------|---------------|
+| `devtrack-sync` | `sync` | `node dist/worker-entrypoint.js` |
+| `devtrack-xp` | `xp` | `node dist/worker-entrypoint.js` |
+| `devtrack-orch` | `orch` | `node dist/worker-entrypoint.js` |
+| `devtrack-maint` | `maint` | `node dist/worker-entrypoint.js` |
+
+### 4. Required Environment Variables (Render Dashboard)
 
 | Variable | Value |
 |----------|-------|
 | `NODE_ENV` | `production` |
 | `PORT` | `3001` |
-| `MONGODB_URI` | From Railway MongoDB |
-| `REDIS_URL` | From Railway Redis |
+| `MONGODB_URI` | From MongoDB Atlas |
+| `REDIS_URL` | From Upstash/Redis Cloud |
 | `CORS_ORIGIN` | `https://your-app.vercel.app` |
 | `CLERK_SECRET_KEY` | From Clerk dashboard |
 | `OPENAI_API_KEY` or `GEMINI_API_KEY` | At least one |
+| `ENABLE_WORKERS` | `false` (API only) |
 
-Health check: `GET /health` or `GET /api/v1/ops/health`
+### 5. Deployment Hook (GitHub Actions)
 
-Rollback: Railway Dashboard → Deployments → Rollback to last working deployment.
+The `.github/workflows/deploy-render.yml` workflow triggers Render redeploys on push to `main`:
+- Set your Render Deploy Hook URL in GitHub secrets as `RENDER_DEPLOY_WEBHOOK_URL`
+- The workflow sends a POST request to trigger a redeploy
+
+Health check: `GET /health`
 
 ---
 
@@ -196,19 +215,20 @@ Rollback: Railway Dashboard → Deployments → Rollback to last working deploym
 
 Existing workflows in `.github/workflows/`:
 
+
 | Workflow | Trigger | Actions |
 |----------|---------|---------|
 | `pr-checks.yml` | PR to `main`/`develop` | Typecheck, lint, unit + integration tests, Docker build |
-| `deploy-staging.yml` | Staging deploy | Railway + Vercel |
-| `deploy-production.yml` | Push to `main` | Railway + Vercel |
+| `deploy-staging.yml` | Staging deploy | Render + Vercel |
+| `deploy-production.yml` | Push to `main` | Render + Vercel |
+| `deploy-render.yml` | Push to `main` | Triggers Render redeploy |
 
 Required GitHub secrets for deploy workflows:
 
 | Secret | Source |
 |--------|--------|
-| `RAILWAY_TOKEN` | Railway → Account Settings → Tokens |
-| `RAILWAY_BACKEND_SERVICE_ID` | Railway service settings |
-| `VERCEL_TOKEN` | Vercel → Account Settings → Tokens |
+| `RENDER_DEPLOY_WEBHOOK_URL` | Render Dashboard - Deploy Hooks |
+| `VERCEL_TOKEN` | Vercel - Account Settings - Tokens |
 | `VERCEL_ORG_ID` | Vercel project settings |
 | `VERCEL_PROJECT_ID` | Vercel project settings |
 
@@ -216,21 +236,21 @@ Required GitHub secrets for deploy workflows:
 
 ## Pre-deploy Checklist
 
-- [ ] `CLERK_SECRET_KEY` and `VITE_CLERK_PUBLISHABLE_KEY` configured
-- [ ] `MONGODB_URI` points to production cluster
-- [ ] `REDIS_URL` configured (BullMQ will not start without Redis)
-- [ ] `CORS_ORIGIN` is HTTPS and matches the frontend URL
-- [ ] At least one AI key (`OPENAI_API_KEY` or `GEMINI_API_KEY`) set
-- [ ] `ENABLE_WORKERS=false` on API containers
-- [ ] Worker services running with correct `WORKER_TYPE`
-- [ ] `VITE_API_BASE_URL` matches the deployed API URL
+- [ ] `CLERK_SECRET_KEY` and `VITE_CLERK_PUBLISHABLE_KEY` configured |
+- [ ] `MONGODB_URI` points to production cluster |
+- [ ] `REDIS_URL` configured (BullMQ will not start without Redis) |
+- [ ] `CORS_ORIGIN` is HTTPS and matches the frontend URL |
+- [ ] At least one AI key (`OPENAI_API_KEY` or `GEMINI_API_KEY`) set |
+- [ ] `ENABLE_WORKERS=false` on API containers |
+- [ ] Worker services running with correct `WORKER_TYPE` |
+- [ ] `VITE_API_BASE_URL` matches the deployed API URL (Render) |
 
 ---
 
 ## Monitoring
 
 | Endpoint | Access | Purpose |
-|----------|--------|---------|
+|----------|---------|---------|
 | `GET /health` | Public | Liveness probe |
 | `GET /health/detailed` | Admin | Dependency status |
 | `GET /metrics` | Admin | Prometheus metrics |
@@ -257,17 +277,19 @@ Required GitHub secrets for deploy workflows:
 ### Health endpoints
 
 ```bash
-curl https://your-api.railway.app/health
-curl https://your-api.railway.app/health/detailed  # requires admin auth
+curl https://your-api.render.com/health
+curl https://your-api.render.com/health/detailed  # requires admin auth
 ```
 
+
 ### Common issues
+
 
 | Issue | Fix |
 |-------|-----|
 | CORS errors | Set `CORS_ORIGIN` to exact Vercel URL (HTTPS) |
 | 401 on API calls | Verify `CLERK_SECRET_KEY` and frontend Clerk key match the same Clerk app |
-| MongoDB connection failed | Check `MONGODB_URI` in Railway variables |
+| MongoDB connection failed | Check `MONGODB_URI` in Render variables |
 | Blank frontend page | Verify `VITE_API_BASE_URL` in Vercel build env |
 | Workers not processing | Confirm `REDIS_URL` is set and worker services are running |
 | AI features unavailable | Set `OPENAI_API_KEY` or `GEMINI_API_KEY` |
@@ -276,6 +298,6 @@ curl https://your-api.railway.app/health/detailed  # requires admin auth
 
 ## Related Docs
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — Worker topology and queue names
-- [README.md](./README.md) — Local development setup
-- [PROJECT_STATUS.md](./PROJECT_STATUS.md) — Known production gaps
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Worker topology and queue names
+- [README.md](./README.md) - Local development setup
+- [PROJECT_STATUS.md](./PROJECT_STATUS.md) - Known production gaps
