@@ -7,7 +7,7 @@
 // infrastructure degradation banners.
 // ============================================================================
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useUIStore } from '../../store/uiStore';
 import { Icon } from './Icon';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -96,52 +96,7 @@ function InfrastructureBanner() {
 // ─── Connection Status Indicator ──────────────────────────────────────────
 
 function ConnectionBanner() {
-  const isOnline = useUIStore((s) => s.isOnline);
-  const sseStatus = useUIStore((s) => s.sseStatus);
-  const setOnline = useUIStore((s) => s.setOnline);
-
-  useEffect(() => {
-    const handleOnline = () => setOnline(true);
-    const handleOffline = () => setOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [setOnline]);
-
-  if (isOnline && (sseStatus === 'connected' || sseStatus === 'disconnected')) {
-    return null;
-  }
-
-  // Offline banner
-  if (!isOnline) {
-    return (
-      <div className="fixed top-0 left-0 right-0 z-[100] bg-gradient-to-r from-red-50 to-rose-50 border-b border-red-200/50 px-4 py-2 flex items-center justify-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-        <span className="text-[13px] font-semibold text-red-700">
-          You're offline — changes will sync when connection is restored
-        </span>
-      </div>
-    );
-  }
-
-  // SSE reconnecting indicator
-  if (sseStatus === 'reconnecting') {
-    return (
-      <div className="fixed top-0 left-0 right-0 z-[100] bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-amber-200/50 px-4 py-2 flex items-center justify-center gap-2">
-        <div className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
-        </div>
-        <span className="text-[13px] font-semibold text-amber-700">
-          Reconnecting to real-time sync...
-        </span>
-      </div>
-    );
-  }
-
+  // Disabled: removed noisy connectivity UI to prevent repeated “system connectivity issue”/reconnect messages.
   return null;
 }
 
@@ -252,7 +207,8 @@ export const ToastContainer: React.FC = () => {
       )}
 
       {/* SSE disconnected badge — subtle, persistent */}
-      {sseStatus === 'disconnected' && toasts.length === 0 && (
+      {/* Removed bottom-right connectivity banner to avoid noisy "system connectivity" messages */}
+      {false && sseStatus === 'disconnected' && toasts.length === 0 && (
         <div className="fixed bottom-4 right-4 z-[200] flex items-center gap-2 px-3 py-2 rounded-xl bg-white/90 backdrop-blur-md border border-dt-primary/10 shadow-md">
           <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
           <span className="text-[10px] font-bold text-dt-textSecondary uppercase tracking-widest">
