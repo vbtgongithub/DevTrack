@@ -8,7 +8,7 @@ import { ActiveBlockersPanel } from '../features/readiness/components/ActiveBloc
 import { NextBestActionsPanel } from '../features/readiness/components/NextBestActionsPanel';
 import { EvolutionPreviewPanel } from '../features/readiness/components/EvolutionPreviewPanel';
 import { TrustConfidenceLayer } from '../features/readiness/components/TrustConfidenceLayer';
-import { EmptyState } from '../components/shared/EmptyState';
+
 
 // ---------------------------------------------------------------------------
 // Network-aware error panel
@@ -75,7 +75,7 @@ function ReadinessErrorPanel({ error, onRetry }: { error: string; onRetry: () =>
 }
 
 const ReadinessPage: React.FC = () => {
-  const { data, loading, error } = useReadinessData();
+  const { data, loading, error, refetch } = useReadinessData();
 
   if (loading) {
     return (

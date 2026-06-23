@@ -161,7 +161,7 @@ function SyncStatusBar({ isSyncing, lastSyncCompletedAt, lastSyncStatus, isDataS
 }
 
 const DsaPage: React.FC = () => {
-  const { data, loading, error, isSyncing, isDataStale, schedulerStatus } = useDsaData();
+  const { data, loading, error, refetch, isSyncing, isDataStale, schedulerStatus } = useDsaData();
   const [mounted, setMounted] = React.useState(false);
   const { scrollYProgress } = useScroll();
 
