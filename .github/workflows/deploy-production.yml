@@ -1,8 +1,57 @@
-name: Deploy to Production (Disabled: Render)
+name: Deploy to Production
 
-# Kept intentionally disabled.
-# This repo now deploys via Render webhook triggered by .github/workflows/deploy-render.yml
+# Triggers automatically on every push to main.
+#
+# ── What this does ────────────────────────────────────────────────────────────
+#  1. Frontend (Vercel)  — Vercel's native GitHub integration handles this
+#                          automatically. No token or step needed here.
+#                          Just make sure your repo is connected in the
+#                          Vercel dashboard (vercel.com → your project → Settings → Git).
+#
+#  2. Backend (Render)   — Pings the devtrack-backend deploy hook so Render
+#                          pulls the latest commit and redeploys.
+#
+# ── Secret required (add once in GitHub → Settings → Secrets → Actions) ──────
+#   RENDER_BACKEND_DEPLOY_HOOK
+#     → Render Dashboard → devtrack-backend → Settings → Deploy Hook → Copy URL
 
-on: 
-  workflow_dispatch:
+on:
+  push:
+    branches: [main]
 
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false   # Never cancel a running deploy; queue the next one
+
+jobs:
+  deploy-render:
+    name: Deploy Backend → Render (devtrack-backend)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render redeploy
+        env:
+          RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_BACKEND_DEPLOY_HOOK" ]; then
+            echo "❌ ERROR: RENDER_BACKEND_DEPLOY_HOOK secret is not set."
+            echo ""
+            echo "   How to fix:"
+            echo "   1. Go to https://dashboard.render.com"
+            echo "   2. Open devtrack-backend → Settings → Deploy Hook"
+            echo "   3. Copy the URL"
+            echo "   4. Add it as a secret named RENDER_BACKEND_DEPLOY_HOOK in"
+            echo "      your GitHub repo: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+
+          echo "🚀 Triggering redeploy for devtrack-backend..."
+          HTTP_STATUS=$(curl -sSo /dev/null -w "%{http_code}" -X POST "$RENDER_BACKEND_DEPLOY_HOOK")
+
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "✅ Render accepted the deploy trigger (HTTP $HTTP_STATUS)."
+            echo "   Monitor progress at https://dashboard.render.com"
+          else
+            echo "❌ Render returned HTTP $HTTP_STATUS — the deploy hook URL may be invalid."
+            echo "   Regenerate it in Render Dashboard → devtrack-backend → Settings → Deploy Hook."
+            exit 1
+          fi

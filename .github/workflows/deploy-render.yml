@@ -1,28 +1,18 @@
+name: Deploy to Render (Legacy – Superseded)
 
-name: Deploy to Render
+# This workflow is intentionally DISABLED.
+# It has been superseded by deploy-production.yml which handles both
+# Vercel (frontend) and Render (backend + workers) in a single, unified pipeline.
+#
+# Keeping this file so the webhook secret names are documented here:
+#   RENDER_API_DEPLOY_HOOK   → devtrack-api service
+#   RENDER_SYNC_DEPLOY_HOOK  → devtrack-sync worker
+#   RENDER_XP_DEPLOY_HOOK    → devtrack-xp worker
+#   RENDER_ORCH_DEPLOY_HOOK  → devtrack-orch worker
+#   RENDER_MAINT_DEPLOY_HOOK → devtrack-maint worker
+#
+# To re-enable this file, change `workflow_dispatch` back to `push: branches: [main]`
+# and remove the equivalent job in deploy-production.yml to avoid double-deploys.
 
 on:
-  push:
-    branches: [main]
-
-env:
-  NODE_VERSION: '22'
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger Render redeploy
-        env:
-          RENDER_DEPLOY_WEBHOOK_URL: ${{ secrets.RENDER_DEPLOY_WEBHOOK_URL }}
-        run: |
-          if [ -z "$RENDER_DEPLOY_WEBHOOK_URL" ]; then
-            echo "Missing secret: RENDER_DEPLOY_WEBHOOK_URL";
-            exit 1;
-          fi
-
-          echo "Triggering Render deploy webhook..."
-          curl -sS -X POST "$RENDER_DEPLOY_WEBHOOK_URL" \
-            -H 'Content-Type: application/json' \
-            -d '{"ref":"${GITHUB_REF}","sha":"${GITHUB_SHA}"}' 
-
+  workflow_dispatch:

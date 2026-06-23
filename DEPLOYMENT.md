@@ -203,9 +203,13 @@ Create one Render service per worker type:
 
 ### 5. Deployment Hook (GitHub Actions)
 
-The `.github/workflows/deploy-render.yml` workflow triggers Render redeploys on push to `main`:
-- Set your Render Deploy Hook URL in GitHub secrets as `RENDER_DEPLOY_WEBHOOK_URL`
-- The workflow sends a POST request to trigger a redeploy
+The `.github/workflows/deploy-production.yml` workflow triggers a redeploy of `devtrack-backend` on Render on every push to `main`.
+
+Only **one** GitHub secret is required:
+
+| Secret | Source |
+|--------|--------|
+| `RENDER_BACKEND_DEPLOY_HOOK` | Render Dashboard → `devtrack-backend` → Settings → Deploy Hook → Copy URL |
 
 Health check: `GET /health`
 
@@ -213,24 +217,16 @@ Health check: `GET /health`
 
 ## CI/CD
 
-Existing workflows in `.github/workflows/`:
-
+Workflows in `.github/workflows/`:
 
 | Workflow | Trigger | Actions |
 |----------|---------|---------|
 | `pr-checks.yml` | PR to `main`/`develop` | Typecheck, lint, unit + integration tests, Docker build |
-| `deploy-staging.yml` | Staging deploy | Render + Vercel |
-| `deploy-production.yml` | Push to `main` | Render + Vercel |
-| `deploy-render.yml` | Push to `main` | Triggers Render redeploy |
+| `deploy-production.yml` | Push to `main` | Pings Render deploy hook → redeploys `devtrack-backend` |
+| `deploy-staging.yml` | Manual (`workflow_dispatch`) | Same as production, triggered on demand |
+| `deploy-render.yml` | Disabled (legacy) | Superseded by `deploy-production.yml` |
 
-Required GitHub secrets for deploy workflows:
-
-| Secret | Source |
-|--------|--------|
-| `RENDER_DEPLOY_WEBHOOK_URL` | Render Dashboard - Deploy Hooks |
-| `VERCEL_TOKEN` | Vercel - Account Settings - Tokens |
-| `VERCEL_ORG_ID` | Vercel project settings |
-| `VERCEL_PROJECT_ID` | Vercel project settings |
+> **Vercel (Frontend):** Vercel redeploys automatically via its native GitHub integration — no token or workflow step is needed. Verify at [vercel.com](https://vercel.com) → your project → **Settings → Git** → confirm your GitHub repo is connected and the production branch is set to `main`.
 
 ---
 

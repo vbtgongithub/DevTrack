@@ -1,8 +1,40 @@
-name: Deploy to Staging (Disabled: Render)
+name: Deploy to Staging
 
-# Kept intentionally disabled.
-# This repo now deploys via Render webhook triggered by .github/workflows/deploy-render.yml
+# Trigger manually from the GitHub Actions tab when you want to push
+# a specific branch or commit to staging without going through main.
 
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch or commit SHA to deploy (leave blank for current branch)'
+        required: false
+        default: ''
 
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: true   # Cancel stale staging deploys immediately
+
+jobs:
+  deploy-render-staging:
+    name: Deploy Backend → Render (devtrack-backend)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render redeploy
+        env:
+          RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_BACKEND_DEPLOY_HOOK" ]; then
+            echo "❌ ERROR: RENDER_BACKEND_DEPLOY_HOOK secret is not set."
+            exit 1
+          fi
+
+          echo "🚀 Triggering staging redeploy for devtrack-backend..."
+          HTTP_STATUS=$(curl -sSo /dev/null -w "%{http_code}" -X POST "$RENDER_BACKEND_DEPLOY_HOOK")
+
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "✅ Render accepted the deploy trigger (HTTP $HTTP_STATUS)."
+          else
+            echo "❌ Render returned HTTP $HTTP_STATUS."
+            exit 1
+          fi
