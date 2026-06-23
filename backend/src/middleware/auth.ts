@@ -21,7 +21,7 @@ export interface AuthenticatedRequest extends Request {
 
 // Intercept the clerk requireAuth to also inject our Mongo user
 export const authMiddleware = [
-  clerkRequireAuth({ signInUrl: '/login' }),
+  clerkRequireAuth(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const auth = getAuth(req);

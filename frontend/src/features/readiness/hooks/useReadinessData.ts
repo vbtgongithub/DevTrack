@@ -16,7 +16,7 @@ export function useReadinessData() {
   return {
     data: query.data,
     loading: query.isLoading,
-    error: query.error instanceof Error ? query.error.message : null,
+    error: query.error instanceof Error ? query.error.message : (query.error as any)?.message || null,
     refetch: () => query.refetch(),
   };
 }
@@ -37,7 +37,7 @@ export function useReadinessDomain(domain: string) {
   return {
     data: query.data,
     loading: query.isLoading,
-    error: query.error instanceof Error ? query.error.message : null,
+    error: query.error instanceof Error ? query.error.message : (query.error as any)?.message || null,
     refetch: () => query.refetch(),
   };
 }
