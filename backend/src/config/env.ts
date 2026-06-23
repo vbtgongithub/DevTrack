@@ -45,7 +45,9 @@ function getCorsOrigin(): string {
   return origin;
 }
 
-const NODE_ENV = getEnvVar('NODE_ENV', 'development');
+const isRender = process.env.RENDER === 'true';
+const defaultEnv = isRender ? 'production' : 'development';
+const NODE_ENV = getEnvVar('NODE_ENV', defaultEnv);
 const IS_PROD = NODE_ENV === 'production';
 
 // ---------------------------------------------------------------------------
