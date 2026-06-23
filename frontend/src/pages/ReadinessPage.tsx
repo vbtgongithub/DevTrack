@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Code2, Map, TrendingUp, MessageSquare, Target, Flame } from 'lucide-react';
+import { Code2, Map, TrendingUp, MessageSquare, Target, Flame, Wifi, WifiOff } from 'lucide-react';
 import { useReadinessData } from '../features/readiness/hooks/useReadinessData';
 import { ReadinessHero } from '../features/readiness/components/ReadinessHero';
 import { DomainCard } from '../features/readiness/components/DomainCard';
@@ -9,6 +9,70 @@ import { NextBestActionsPanel } from '../features/readiness/components/NextBestA
 import { EvolutionPreviewPanel } from '../features/readiness/components/EvolutionPreviewPanel';
 import { TrustConfidenceLayer } from '../features/readiness/components/TrustConfidenceLayer';
 import { EmptyState } from '../components/shared/EmptyState';
+
+// ---------------------------------------------------------------------------
+// Network-aware error panel
+// ---------------------------------------------------------------------------
+const RETRY_INTERVAL_S = 15;
+
+function isNetworkError(msg: string | null): boolean {
+  if (!msg) return false;
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes('network') ||
+    lower.includes('failed to fetch') ||
+    lower.includes('etimedout') ||
+    lower.includes('econnrefused') ||
+    lower.includes('econnreset') ||
+    lower.includes('readiness')
+  );
+}
+
+function ReadinessErrorPanel({ error, onRetry }: { error: string; onRetry: () => void }) {
+  const [countdown, setCountdown] = React.useState(RETRY_INTERVAL_S);
+  const networkErr = isNetworkError(error);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 1) { onRetry(); return RETRY_INTERVAL_S; }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [onRetry]);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-[60vh] gap-6">
+      <div className={`flex h-16 w-16 items-center justify-center rounded-[20px] ${
+        networkErr ? 'bg-amber-50 border border-amber-100' : 'bg-red-50 border border-red-100'
+      } shadow-sm`}>
+        {networkErr
+          ? <Wifi className="text-amber-500 animate-pulse" size={28} />
+          : <WifiOff className="text-red-500" size={28} />}
+      </div>
+      <div className="text-center">
+        <h3 className="text-xl font-bold text-slate-800 mb-2">
+          {networkErr ? 'Server is Waking Up' : 'Intelligence Unavailable'}
+        </h3>
+        {networkErr ? (
+          <>
+            <p className="text-sm text-slate-500 mb-1">The backend is starting up — this takes ~30 seconds on first load.</p>
+            <p className="text-xs text-slate-400 mb-4">Auto-retrying in <span className="font-bold text-indigo-600 tabular-nums">{countdown}s</span></p>
+          </>
+        ) : (
+          <p className="text-sm text-slate-500 mb-4">We couldn't load your readiness intelligence. Please try again.</p>
+        )}
+        <button
+          onClick={() => { setCountdown(RETRY_INTERVAL_S); onRetry(); }}
+          className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors"
+        >
+          Retry Now
+        </button>
+      </div>
+    </div>
+  );
+}
 
 const ReadinessPage: React.FC = () => {
   const { data, loading, error } = useReadinessData();
@@ -31,16 +95,7 @@ const ReadinessPage: React.FC = () => {
   }
 
   if (error || !data) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[60vh]">
-        <EmptyState
-          size="lg"
-          icon="alert"
-          title="Intelligence Unavailable"
-          description="We couldn't load your readiness intelligence. Please try again."
-        />
-      </div>
-    );
+    return <ReadinessErrorPanel error={error || 'No data available'} onRetry={refetch} />;
   }
 
 

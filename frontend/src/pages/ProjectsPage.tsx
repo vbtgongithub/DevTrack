@@ -12,6 +12,75 @@ import { motion } from 'framer-motion';
 import type { ProjectCardVM } from '../types/vm.types';
 import type { ApiProjectCreatePayload } from '../types/api.types';
 
+// ---------------------------------------------------------------------------
+// Network-aware error panel — handles Render free-tier cold starts gracefully
+// ---------------------------------------------------------------------------
+const RETRY_INTERVAL_S = 15;
+
+function isNetworkError(msg: string | null): boolean {
+  if (!msg) return false;
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes('network') ||
+    lower.includes('failed to fetch') ||
+    lower.includes('etimedout') ||
+    lower.includes('econnrefused') ||
+    lower.includes('econnreset') ||
+    lower.includes('load projects')
+  );
+}
+
+function ProjectsErrorPanel({ error, onRetry }: { error: string; onRetry: () => void }) {
+  const [countdown, setCountdown] = React.useState(RETRY_INTERVAL_S);
+  const networkErr = isNetworkError(error);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 1) { onRetry(); return RETRY_INTERVAL_S; }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [onRetry]);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-xl p-10 text-center max-w-md w-full">
+        <div className={`mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-[20px] ${
+          networkErr ? 'bg-amber-50 border border-amber-100' : 'bg-red-50 border border-red-100'
+        } shadow-sm`}>
+          {networkErr ? (
+            <svg className="w-7 h-7 text-amber-500 animate-pulse" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z" />
+            </svg>
+          ) : (
+            <Icon name="exclamation-triangle" size={24} className="text-red-500" />
+          )}
+        </div>
+        <h3 className="text-lg font-bold text-dt-text mb-2">
+          {networkErr ? 'Server is Waking Up' : 'Failed to Load Projects'}
+        </h3>
+        {networkErr ? (
+          <>
+            <p className="text-sm text-dt-textSecondary mb-1">The backend is starting up — this takes ~30 seconds on first load.</p>
+            <p className="text-xs text-dt-textMuted mb-6">Auto-retrying in <span className="font-bold text-dt-primary tabular-nums">{countdown}s</span></p>
+          </>
+        ) : (
+          <p className="text-sm text-dt-textSecondary mb-6">{error}</p>
+        )}
+        <button
+          type="button"
+          onClick={() => { setCountdown(RETRY_INTERVAL_S); onRetry(); }}
+          className="dt-btn dt-btn-primary dt-btn-md px-8"
+        >
+          Retry
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const ProjectBoardView = React.lazy(() =>
   import('../features/projects/components/ProjectBoardView').then((m) => ({ default: m.ProjectBoardView }))
 );
@@ -593,6 +662,11 @@ const ProjectsPage: React.FC = () => {
   );
 
   /* ─── Loading Skeleton ─── */
+  // Show network-aware error panel instead of crashing the entire page
+  if (status === 'error' && error && !data) {
+    return <ProjectsErrorPanel error={error} onRetry={refresh} />;
+  }
+
   if (status === 'loading' && !data) {
     return (
       <PageShell title="Projects" subtitle="Manage your development workspaces" status="loading" error={null}>
