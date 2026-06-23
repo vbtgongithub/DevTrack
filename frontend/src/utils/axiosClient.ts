@@ -72,9 +72,6 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<ApiError>) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & {
-      _skipToast?: boolean;
-    };
 
     // Handle 401 - Unauthorized
     if (error.response?.status === 401) {
