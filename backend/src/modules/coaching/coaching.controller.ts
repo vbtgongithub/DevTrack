@@ -1,68 +1,29 @@
-import { Request, Response } from 'express';
 import { CoachingService } from './coaching.service.js';
 import { ReflectionService } from './reflection.service.js';
 import { momentumEngine } from '../observation/momentumEngine.service.js';
 import { FocusIntelligenceService } from '../observation/focusIntelligence.service.js';
-import type { AuthenticatedRequest } from '../../middleware/auth.js';
+import { ApiResponse } from '../../shared/response.js';
+import { withAuth } from '../../shared/controllerUtils.js';
 
 export class CoachingController {
-  static async getInsights(req: AuthenticatedRequest, res: Response) {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-
+  static getInsights = withAuth('[coaching]', 'get insights', async (userId, _req, res) => {
     const insights = await CoachingService.generateCoachingInsights(userId);
     const emotionalState = await CoachingService.detectEmotionalState(userId);
+    ApiResponse.success(res, { insights, emotionalState });
+  });
 
-    res.json({
-      success: true,
-      data: {
-        insights,
-        emotionalState
-      }
-    });
-  }
-
-  static async getReflections(req: AuthenticatedRequest, res: Response) {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-
+  static getReflections = withAuth('[coaching]', 'get reflections', async (userId, _req, res) => {
     const reflection = await ReflectionService.generateWeeklyReflection(userId);
+    ApiResponse.success(res, reflection);
+  });
 
-    res.json({
-      success: true,
-      data: reflection
-    });
-  }
-
-  static async getMomentum(req: AuthenticatedRequest, res: Response) {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-
+  static getMomentum = withAuth('[coaching]', 'get momentum', async (userId, _req, res) => {
     const momentum = await momentumEngine.getFullIntelligence(userId);
+    ApiResponse.success(res, momentum);
+  });
 
-    res.json({
-      success: true,
-      data: momentum
-    });
-  }
-
-  static async getFocusAnalytics(req: AuthenticatedRequest, res: Response) {
-    const userId = req.user?.id;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-
+  static getFocusAnalytics = withAuth('[coaching]', 'get focus analytics', async (userId, _req, res) => {
     const focus = await FocusIntelligenceService.analyzeUserFocus(userId);
-
-    res.json({
-      success: true,
-      data: focus
-    });
-  }
+    ApiResponse.success(res, focus);
+  });
 }

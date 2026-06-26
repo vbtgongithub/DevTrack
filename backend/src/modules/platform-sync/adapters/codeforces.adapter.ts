@@ -2,44 +2,33 @@
 // Isolated Codeforces adapter — normalizes REST API responses into canonical shapes.
 // Handles paginated submission fetching and unique problem counting.
 
-import { logger } from '../../../shared/logger.js';
+import { fetchWithTimeout } from '../../../shared/fetchWithTimeout.js';
+import { BasePlatformAdapter } from './BasePlatformAdapter.js';
 import type {
-  PlatformAdapter,
   PlatformSubmission,
   PlatformStats,
   PlatformProfile,
-  AdapterSyncResult,
 } from './types.js';
 
-const FETCH_TIMEOUT = 15_000;
 const CF_BASE = 'https://codeforces.com/api';
 
 async function cfFetch<T>(path: string): Promise<T> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+  const res = await fetchWithTimeout(`${CF_BASE}${path}`);
 
-  try {
-    const res = await fetch(`${CF_BASE}${path}`, { signal: controller.signal });
-    clearTimeout(timer);
+  if (!res.ok) throw new Error(`Codeforces API error (${res.status})`);
 
-    if (!res.ok) throw new Error(`Codeforces API error (${res.status})`);
-
-    const json = await res.json() as { status: string; result?: T };
-    if (json.status !== 'OK' || !json.result) {
-      throw new Error('Codeforces returned non-OK status');
-    }
-    return json.result;
-  } catch (err) {
-    clearTimeout(timer);
-    throw err;
+  const json = await res.json() as { status: string; result?: T };
+  if (json.status !== 'OK' || !json.result) {
+    throw new Error('Codeforces returned non-OK status');
   }
+  return json.result;
 }
 
 // ---------------------------------------------------------------------------
 // Adapter implementation
 // ---------------------------------------------------------------------------
 
-export class CodeforcesAdapter implements PlatformAdapter {
+export class CodeforcesAdapter extends BasePlatformAdapter {
   readonly platform = 'codeforces' as const;
 
   async fetchSubmissions(username: string, _since?: Date): Promise<PlatformSubmission[]> {
@@ -99,36 +88,6 @@ export class CodeforcesAdapter implements PlatformAdapter {
       profileUrl: `https://codeforces.com/profile/${username}`,
       fetchedAt: new Date(),
     };
-  }
-
-  async sync(username: string, since?: Date): Promise<AdapterSyncResult> {
-    const start = Date.now();
-    try {
-      const [stats, submissions, profile] = await Promise.all([
-        this.fetchStats(username),
-        this.fetchSubmissions(username, since),
-        this.fetchProfile(username),
-      ]);
-
-      return {
-        success: true,
-        submissions,
-        stats,
-        profile,
-        newCount: submissions.length,
-        durationMs: Date.now() - start,
-      };
-    } catch (err) {
-      logger.error('[codeforces-adapter] Sync failed', err);
-      return {
-        success: false,
-        submissions: [],
-        stats: { platform: 'codeforces', totalSolved: 0, easySolved: 0, mediumSolved: 0, hardSolved: 0, fetchedAt: new Date() },
-        newCount: 0,
-        error: err instanceof Error ? err.message : String(err),
-        durationMs: Date.now() - start,
-      };
-    }
   }
 
   // ─── Private helpers ─────────────────────────────────────────────────────
