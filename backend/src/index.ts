@@ -343,12 +343,12 @@ function setupHealthEndpoints(
     });
   });
 
-  app.get('/api/system/infrastructure', (_req: express.Request, res: express.Response) => {
+  app.get('/api/system/infrastructure', authMiddleware, adminMiddleware, (_req: AuthenticatedRequest, res: express.Response) => {
     const state = getInfrastructureState();
     res.json({ success: true, data: state });
   });
 
-  app.get('/api/system/request-metrics', (_req: express.Request, res: express.Response) => {
+  app.get('/api/system/request-metrics', authMiddleware, adminMiddleware, (_req: AuthenticatedRequest, res: express.Response) => {
     const snapshot = getMetricsSnapshot();
     const endpoints = getEndpointLatencies();
     res.json({ success: true, data: { ...snapshot, endpoints } });

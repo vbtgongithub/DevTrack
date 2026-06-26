@@ -105,7 +105,7 @@ export const env = {
 
   // AI/ML API Keys - REQUIRED for production intelligence
   // In development, warn but allow startup with degraded mode
-  GEMINI_API_KEY: getEnvVar('GEMINI_API_KEY', 'AIzaSyCtG6Pl2Wp8CQFAi69OVojiMxbiOtPBUMc'),
+  GEMINI_API_KEY: getEnvVar('GEMINI_API_KEY', ''),
 };
 
 export default env;

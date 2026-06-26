@@ -36,7 +36,7 @@ router.post(
       res.status(200).json({ success: true });
     } catch (err: any) {
       logger.error('[observation] Failed to start session', { error: err.message });
-      res.status(500).json({ error: err.message || 'Failed to start session' });
+      res.status(500).json({ error: 'Failed to start session' });
     }
   }
 );
@@ -57,7 +57,7 @@ router.post(
       res.status(200).json({ success: true });
     } catch (err: any) {
       logger.error('[observation] Failed to end session', { error: err.message });
-      res.status(500).json({ error: err.message || 'Failed to end session' });
+      res.status(500).json({ error: 'Failed to end session' });
     }
   }
 );
@@ -110,7 +110,7 @@ router.post(
       res.status(200).json({ success: true });
     } catch (err: any) {
       logger.error('[observation] Failed to ingest telemetry events', { error: err.message });
-      res.status(500).json({ error: err.message || 'Failed to ingest telemetry' });
+      res.status(500).json({ error: 'Failed to ingest telemetry' });
     }
   }
 );
@@ -125,7 +125,7 @@ router.get(
       res.status(200).json({ success: true, data: insights });
     } catch (err: any) {
       logger.error('[observation] Failed to get insights', { error: err.message });
-      res.status(500).json({ error: err.message || 'Failed to get insights' });
+      res.status(500).json({ error: 'Failed to get insights' });
     }
   }
 );
@@ -140,7 +140,7 @@ router.get(
       res.status(200).json({ success: true, data: intelligence });
     } catch (err: any) {
       logger.error('[observation] Failed to get momentum intelligence', { error: err.message });
-      res.status(500).json({ error: err.message || 'Failed to get momentum intelligence' });
+      res.status(500).json({ error: 'Failed to get momentum intelligence' });
     }
   }
 );
@@ -164,7 +164,7 @@ router.get(
       res.status(200).json({ success: true, data: context });
     } catch (err: any) {
       logger.error('[observation] Failed to get retention context', { error: err.message });
-      res.status(500).json({ error: err.message || 'Failed to get retention context' });
+      res.status(500).json({ error: 'Failed to get retention context' });
     }
   }
 );
