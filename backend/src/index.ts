@@ -1,4 +1,5 @@
 // src/index.ts - DevTrack Backend Entry Point
+import { createRequire } from 'node:module';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -21,8 +22,21 @@ import { orchestrator } from './shared/runtime/index.js';
 import { getInfrastructureState } from './shared/runtime/infrastructureRegistry.js';
 import routes from './routes/index.js';
 
+const require = createRequire(import.meta.url);
+const { version: APP_VERSION } = require('../package.json') as { version: string };
+
 export async function createApp(): Promise<express.Express> {
   const app = express();
+
+  // Root info endpoint
+  app.get('/', (_req, res) => {
+    res.json({
+      message: 'DevTrack API Server is running',
+      version: APP_VERSION,
+      health: '/health',
+      timestamp: new Date().toISOString()
+    });
+  });
 
   // Phase 1: Core middleware (before any async work)
   app.use(requestContextMiddleware);
@@ -158,15 +172,6 @@ function setupHealthEndpoints(
   syncState: { getSnapshot(): { status: string; lastSyncStartedAt: string | null; lastSyncCompletedAt: string | null; lastSyncStatus: 'success' | 'partial' | 'failed' | null; lastSyncDurationMs: number | null; totalSyncs: number; failedSyncs: number } },
   getInfrastructureState: () => { api: { status: string }; mongodb: { status: string }; redis: { status: string }; queues: { status: string }; platformSyncWorker: { status: string }; xpWorker: { status: string }; scheduler: { status: string }; sse: { status: string }; degraded: boolean; degradedComponents: string[]; startedAt: number },
 ): void {
-  app.get('/', (_req, res) => {
-    res.json({
-      message: 'DevTrack API Server is running',
-      version: '1.0.0',
-      health: '/health',
-      timestamp: new Date().toISOString()
-    });
-  });
-
   app.get('/health', (_req, res) => {
     const state = getInfrastructureState();
     res.json({

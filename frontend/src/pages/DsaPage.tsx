@@ -9,93 +9,13 @@ import { PlatformOverview } from '../components/dsa/PlatformOverview';
 import { ContestList } from '../components/dsa/ContestList';
 import { InsightsCard } from '../components/dsa/InsightsCard';
 import { Icon } from '../components/shared/Icon';
+import { NetworkErrorPanel } from '../components/shared/NetworkErrorPanel';
 
 const HeatmapCard = React.lazy(() =>
   import('../components/dsa/HeatmapCard').then((m) => ({ default: m.HeatmapCard }))
 );
 import type { DsaData } from '../types/dsa';
 import { motion, useScroll, useTransform } from 'framer-motion';
-
-// ---------------------------------------------------------------------------
-// Network-aware error panel — handles Render free-tier cold starts gracefully
-// ---------------------------------------------------------------------------
-const RETRY_INTERVAL_S = 15;
-
-function isNetworkError(msg: string | null): boolean {
-  if (!msg) return false;
-  const lower = msg.toLowerCase();
-  return (
-    lower.includes('network') ||
-    lower.includes('failed to fetch') ||
-    lower.includes('etimedout') ||
-    lower.includes('econnrefused') ||
-    lower.includes('econnreset') ||
-    lower.includes('load dashboard') ||
-    lower.includes('load submissions') ||
-    lower.includes('load platform')
-  );
-}
-
-function ErrorPanel({ error, onRetry }: { error: string; onRetry: () => void }) {
-  const [countdown, setCountdown] = React.useState(RETRY_INTERVAL_S);
-  const networkErr = isNetworkError(error);
-
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          onRetry();
-          return RETRY_INTERVAL_S;
-        }
-        return c - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [onRetry]);
-
-  return (
-    <div className="dt-fade-in">
-      <div className="dt-card dt-card-pad-xl text-center max-w-md mx-auto shadow-dt-floating">
-        <div className={`mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-[20px] ${
-          networkErr ? 'bg-amber-50 border border-amber-100' : 'bg-red-50 border border-red-100'
-        } shadow-sm`}>
-          {networkErr ? (
-            <svg className="w-7 h-7 text-amber-500 animate-pulse" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 011.06 0z" />
-            </svg>
-          ) : (
-            <Icon name="exclamation-triangle" size={24} className="text-red-500" />
-          )}
-        </div>
-
-        {networkErr ? (
-          <>
-            <h3 className="text-dashboard-title text-lg mb-1">Server is Waking Up</h3>
-            <p className="text-body-sm mb-1 text-dt-textSecondary">
-              The backend is starting up — this takes ~30 seconds on first load.
-            </p>
-            <p className="text-[11px] text-dt-textMuted mb-6">
-              Auto-retrying in <span className="font-bold text-dt-primary tabular-nums">{countdown}s</span>
-            </p>
-          </>
-        ) : (
-          <>
-            <h3 className="text-dashboard-title text-lg mb-2">Neural Link Failed</h3>
-            <p className="text-body-sm mb-6 text-dt-textSecondary">{error}</p>
-          </>
-        )}
-
-        <button
-          type="button"
-          onClick={() => { setCountdown(RETRY_INTERVAL_S); onRetry(); }}
-          className="dt-btn dt-btn-primary dt-btn-md px-8"
-        >
-          Retry Sync
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Sync status helpers
@@ -177,6 +97,8 @@ const DsaPage: React.FC = () => {
   // Calendar-year heatmap — data comes pre-aligned from backend (Jan 1 – Dec 31)
   const heatmapCells = React.useMemo(() => safeData.heatmap ?? [], [safeData.heatmap]);
 
+  const handleRetry = React.useCallback(() => { void refetch(); }, [refetch]);
+
   React.useEffect(() => {
     setMounted(true);
   }, []);
@@ -197,7 +119,7 @@ const DsaPage: React.FC = () => {
   }
 
   if (error && !data) {
-    return <ErrorPanel error={error} onRetry={() => void refetch()} />;
+    return <NetworkErrorPanel error={error} onRetry={handleRetry} />;
   }
 
   return (

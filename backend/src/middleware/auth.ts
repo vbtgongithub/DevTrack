@@ -1,11 +1,10 @@
 // src/middleware/auth.ts
-import { clerkMiddleware, requireAuth as clerkRequireAuth, getAuth } from '@clerk/express';
 import type { Request, Response, NextFunction } from 'express';
+import { verifyToken } from '@clerk/backend';
 import { commonErrors } from '../shared/response.js';
 import { User } from '../db/models/index.js';
 import { syncClerkUser } from '../services/auth/ClerkUserSyncService.js';
-
-import { verifyToken } from '@clerk/backend';
+import { logger } from '../shared/logger.js';
 
 export interface AuthUser {
   id: string; // Mongo ID
@@ -29,6 +28,15 @@ export const authMiddleware = [
       }
       
       const token = authHeader.split(' ')[1];
+      if (!token) {
+        return commonErrors.unauthorized(res);
+      }
+
+      if (!process.env.CLERK_SECRET_KEY) {
+        logger.error('auth_config_missing', new Error('CLERK_SECRET_KEY is not configured'));
+        return commonErrors.unauthorized(res);
+      }
+
       const payload = await verifyToken(token, {
         secretKey: process.env.CLERK_SECRET_KEY,
       });
@@ -61,7 +69,7 @@ export const authMiddleware = [
       }
       next();
     } catch (err) {
-      console.error('Auth verification failed:', err);
+      logger.warn('auth_verification_failed', { error: err instanceof Error ? err.message : String(err) });
       return commonErrors.unauthorized(res);
     }
   }
@@ -73,6 +81,10 @@ export const optionalAuthMiddleware = [
       const authHeader = req.headers.authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.split(' ')[1];
+        if (!token || !process.env.CLERK_SECRET_KEY) {
+          next();
+          return;
+        }
         try {
           const payload = await verifyToken(token, {
             secretKey: process.env.CLERK_SECRET_KEY,
@@ -103,7 +115,7 @@ export const optionalAuthMiddleware = [
           }
         } catch (err) {
           // It's optional auth, ignore invalid token and proceed without user
-          console.warn('Optional auth verification failed:', err);
+          logger.debug('optional_auth_skipped', { error: err instanceof Error ? err.message : String(err) });
         }
       }
       next();
