@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 import { env, API_BASE_PATH } from './config/index.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { requestContextMiddleware } from './middleware/requestContext.js';
-import { authMiddleware, adminMiddleware, clerkMiddleware, type AuthenticatedRequest } from './middleware/auth.js';
+import { authMiddleware, adminMiddleware, type AuthenticatedRequest } from './middleware/auth.js';
 import { requestMetricsMiddleware, getMetricsSnapshot, getEndpointLatencies } from './shared/requestMetrics.js';
 import { sanitizeRequest } from './middleware/validation.js';
 import { logger } from './shared/logger.js';
@@ -61,7 +61,6 @@ export async function createApp(): Promise<express.Express> {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(sanitizeRequest);
-  app.use(clerkMiddleware());
 
   // Phase 2: Health & observability endpoints (before routes)
   setupHealthEndpoints(app, getRedisHealth, getWorkerStatus, getXpWorkerStatus, getOrCreateQueue, QueueNames, eventBus, syncState, getInfrastructureState);
@@ -159,6 +158,15 @@ function setupHealthEndpoints(
   syncState: { getSnapshot(): { status: string; lastSyncStartedAt: string | null; lastSyncCompletedAt: string | null; lastSyncStatus: 'success' | 'partial' | 'failed' | null; lastSyncDurationMs: number | null; totalSyncs: number; failedSyncs: number } },
   getInfrastructureState: () => { api: { status: string }; mongodb: { status: string }; redis: { status: string }; queues: { status: string }; platformSyncWorker: { status: string }; xpWorker: { status: string }; scheduler: { status: string }; sse: { status: string }; degraded: boolean; degradedComponents: string[]; startedAt: number },
 ): void {
+  app.get('/', (_req, res) => {
+    res.json({
+      message: 'DevTrack API Server is running',
+      version: '1.0.0',
+      health: '/health',
+      timestamp: new Date().toISOString()
+    });
+  });
+
   app.get('/health', (_req, res) => {
     const state = getInfrastructureState();
     res.json({

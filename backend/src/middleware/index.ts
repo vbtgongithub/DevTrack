@@ -7,7 +7,6 @@ export {
 } from './error.js';
 
 export {
-  clerkMiddleware,
   authMiddleware,
   optionalAuthMiddleware,
   adminMiddleware,

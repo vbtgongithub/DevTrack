@@ -5,7 +5,7 @@ import { commonErrors } from '../shared/response.js';
 import { User } from '../db/models/index.js';
 import { syncClerkUser } from '../services/auth/ClerkUserSyncService.js';
 
-export { clerkMiddleware };
+import { verifyToken } from '@clerk/backend';
 
 export interface AuthUser {
   id: string; // Mongo ID
@@ -21,22 +21,31 @@ export interface AuthenticatedRequest extends Request {
 
 // Intercept the clerk requireAuth to also inject our Mongo user
 export const authMiddleware = [
-  clerkMiddleware(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const auth = getAuth(req);
-      if (!auth.userId) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return commonErrors.unauthorized(res);
       }
       
-      let user = await User.findOne({ clerkId: auth.userId });
+      const token = authHeader.split(' ')[1];
+      const payload = await verifyToken(token, {
+        secretKey: process.env.CLERK_SECRET_KEY,
+      });
+      
+      const userId = payload.sub;
+      if (!userId) {
+        return commonErrors.unauthorized(res);
+      }
+      
+      let user = await User.findOne({ clerkId: userId });
       
       // If user doesn't exist locally, sync them from Clerk
       if (!user) {
-        const syncRes = await syncClerkUser(auth.userId);
+        const syncRes = await syncClerkUser(userId);
         (req as AuthenticatedRequest).user = {
           id: syncRes.id,
-          clerkId: auth.userId,
+          clerkId: userId,
           email: syncRes.email,
           username: syncRes.username,
           role: syncRes.role,
@@ -52,36 +61,49 @@ export const authMiddleware = [
       }
       next();
     } catch (err) {
-      next(err);
+      console.error('Auth verification failed:', err);
+      return commonErrors.unauthorized(res);
     }
   }
 ];
 
 export const optionalAuthMiddleware = [
-  clerkMiddleware(),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const auth = getAuth(req);
-      if (auth.userId) {
-        let user = await User.findOne({ clerkId: auth.userId });
-        if (!user) {
-           // We might not want to proactively sync on optional auth, but let's do it to be safe
-           const syncRes = await syncClerkUser(auth.userId);
-           (req as AuthenticatedRequest).user = {
-             id: syncRes.id,
-             clerkId: auth.userId,
-             email: syncRes.email,
-             username: syncRes.username,
-             role: syncRes.role,
-           };
-        } else {
-          (req as AuthenticatedRequest).user = {
-            id: user._id.toString(),
-            clerkId: user.clerkId,
-            email: user.email,
-            username: user.username,
-            role: user.role,
-          };
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        try {
+          const payload = await verifyToken(token, {
+            secretKey: process.env.CLERK_SECRET_KEY,
+          });
+          const userId = payload.sub;
+          
+          if (userId) {
+            let user = await User.findOne({ clerkId: userId });
+            if (!user) {
+               // We might not want to proactively sync on optional auth, but let's do it to be safe
+               const syncRes = await syncClerkUser(userId);
+               (req as AuthenticatedRequest).user = {
+                 id: syncRes.id,
+                 clerkId: userId,
+                 email: syncRes.email,
+                 username: syncRes.username,
+                 role: syncRes.role,
+               };
+            } else {
+              (req as AuthenticatedRequest).user = {
+                id: user._id.toString(),
+                clerkId: user.clerkId,
+                email: user.email,
+                username: user.username,
+                role: user.role,
+              };
+            }
+          }
+        } catch (err) {
+          // It's optional auth, ignore invalid token and proceed without user
+          console.warn('Optional auth verification failed:', err);
         }
       }
       next();
