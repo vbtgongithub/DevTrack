@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { trackEvent, submitFeedback, getDashboardMetrics } from './analytics.controller';
 import { validateBody } from '../../middleware/validation';
 import { rateLimiters } from '../../middleware/rateLimitAdvanced';
+import { authMiddleware, adminMiddleware } from '../../middleware/auth';
 
 const router = Router();
 
@@ -25,7 +26,7 @@ router.use(rateLimiters.analytics);
 router.post('/event', validateBody(eventSchema), trackEvent);
 router.post('/feedback', validateBody(feedbackSchema), submitFeedback);
 
-// Dashboard should probably be protected in a real app
-router.get('/dashboard', getDashboardMetrics);
+// Dashboard exposes aggregate funnel metrics and user feedback — admin only
+router.get('/dashboard', authMiddleware, adminMiddleware, getDashboardMetrics);
 
 export default router;
