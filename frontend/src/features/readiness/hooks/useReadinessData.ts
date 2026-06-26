@@ -19,6 +19,8 @@ export function useReadinessData() {
     },
     staleTime: 5 * 60 * 1000,
     refetchInterval: 10 * 60 * 1000,
+    retry: 1,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 
   return {

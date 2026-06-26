@@ -5,7 +5,12 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "https://devtrack-backend-la3j.onrender.com/api/$1"
+      "dest": "https://devtrack-backend-la3j.onrender.com/api/$1",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
     },
     {
       "src": "/assets/(.*)",
@@ -38,5 +43,8 @@
         }
       ]
     }
-  ]
+  ],
+  "env": {
+    "VITE_API_BASE_URL": "https://devtrack-backend-la3j.onrender.com/api"
+  }
 }

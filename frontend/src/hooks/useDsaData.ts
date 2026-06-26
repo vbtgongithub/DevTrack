@@ -82,7 +82,8 @@ function useDsaDashboard() {
     refetchInterval: 60_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
-    retry: 2,
+    retry: 1,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 }
 
@@ -114,7 +115,8 @@ function useDsaSubmissions() {
     refetchInterval: 60_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
-    retry: 2,
+    retry: 1,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 }
 
@@ -142,7 +144,8 @@ function useDsaContests() {
     refetchInterval: 300_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
-    retry: 2,
+    retry: 1,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 }
 
@@ -162,7 +165,8 @@ function useDsaTopics() {
     refetchInterval: 300_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
-    retry: 2,
+    retry: 1,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 }
 
@@ -179,7 +183,8 @@ function usePlatformStats() {
     refetchInterval: 60_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
-    retry: 2,
+    retry: 1,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
 }
 
@@ -203,7 +208,8 @@ function useSchedulerStatus() {
     refetchInterval: 20_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
-    retry: 2,
+    retry: 1,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000),
   });
 }
 

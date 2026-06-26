@@ -28,8 +28,8 @@ import type {
 } from '../types/vm.types';
 import type { ApiError, ApiProjectFilters, ApiProjectCreatePayload, ApiProjectUpdatePayload } from '../types/api.types';
 
-const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 1500;
+const MAX_RETRIES = 1;
+const RETRY_DELAY_MS = 1000;
 
 // ---------------------------------------------------------------------------
 // LIST HOOK
@@ -131,7 +131,7 @@ export function useProjectsData(): HookReturn<ProjectsPageVM> & {
           retriesRef.current++;
           setTimeout(() => {
             void fetchDataRef.current(true);
-          }, RETRY_DELAY_MS * retriesRef.current);
+          }, RETRY_DELAY_MS);
           return;
         }
 
@@ -271,7 +271,7 @@ export function useProjectDetail(
           retriesRef.current++;
           setTimeout(() => {
             void fetchDetailRef.current(true);
-          }, RETRY_DELAY_MS * retriesRef.current);
+          }, RETRY_DELAY_MS);
           return;
         }
 

@@ -3,6 +3,14 @@ import { useSessionState } from '../state/useSessionState';
 import { TrendingUp, Zap, CheckCircle2, AlertTriangle, Shield, Brain, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
+
+const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <motion.div variants={fadeUp} className={`bg-white rounded-2xl border border-[rgba(124,92,252,0.08)] shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6 ${className}`}>
+    {children}
+  </motion.div>
+);
+
 export const OverviewSection: React.FC = () => {
   const { currentSession } = useSessionState();
   const report = currentSession?.reportData;
@@ -64,14 +72,6 @@ export const OverviewSection: React.FC = () => {
     || `Your resume has an ATS score of ${atsScore}/100. ${potentialGain > 0 ? `There are ${potentialGain} points of improvement available.` : 'No major issues detected.'}`;
 
   const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
-  const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
-
-  // Card wrapper helper
-  const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-    <motion.div variants={fadeUp} className={`bg-white rounded-2xl border border-[rgba(124,92,252,0.08)] shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6 ${className}`}>
-      {children}
-    </motion.div>
-  );
 
   return (
     <motion.div variants={stagger} initial="hidden" animate="show" className="flex flex-col gap-5">

@@ -21,7 +21,7 @@ declare global {
 }
 
 const BASE_URL = envConfig.VITE_API_BASE_URL;
-const TIMEOUT = 15_000; // 15 seconds
+const TIMEOUT = 30_000; // 30 seconds - increased to handle slow backend responses
 
 type AuthInvalidHandler = (() => void) | null;
 let onAuthInvalid: AuthInvalidHandler = null;

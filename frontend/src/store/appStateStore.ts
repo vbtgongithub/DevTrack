@@ -154,7 +154,9 @@ function saveToStorage(notifications: Notification[]) {
   try {
     const toSave = notifications.slice(0, PERSIST_COUNT);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
-  } catch {}
+  } catch (err) {
+    // Ignore storage errors
+  }
 }
 
 const initialNotifications = loadFromStorage();

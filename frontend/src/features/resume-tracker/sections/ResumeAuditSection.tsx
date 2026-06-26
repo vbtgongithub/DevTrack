@@ -3,6 +3,14 @@ import { useSessionState } from '../state/useSessionState';
 import { motion } from 'framer-motion';
 import { CheckCircle2, AlertTriangle, XCircle, Shield, ShieldAlert, Cpu, Layers, Network } from 'lucide-react';
 
+const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
+
+const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <motion.div variants={fadeUp} className={`bg-white rounded-2xl border border-[rgba(124,92,252,0.08)] shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6 ${className}`}>
+    {children}
+  </motion.div>
+);
+
 export const ResumeAuditSection: React.FC = () => {
   const { currentSession } = useSessionState();
   const report = currentSession?.reportData;
@@ -54,13 +62,6 @@ export const ResumeAuditSection: React.FC = () => {
   const parsingErrors = diagnostics?.errors || [];
 
   const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
-  const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
-
-  const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
-    <motion.div variants={fadeUp} className={`bg-white rounded-2xl border border-[rgba(124,92,252,0.08)] shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6 ${className}`}>
-      {children}
-    </motion.div>
-  );
 
   return (
     <motion.div variants={stagger} initial="hidden" animate="show" className="flex flex-col gap-5">
