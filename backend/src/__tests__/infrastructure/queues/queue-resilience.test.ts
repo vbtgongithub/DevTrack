@@ -3,7 +3,7 @@ import { WorkerFactory } from '../../../infrastructure/queues/WorkerFactory.js';
 import { QueueRegistry } from '../../../infrastructure/queues/QueueRegistry.js';
 import { DeadLetterJob } from '../../../db/models/deadLetterJob.model.js';
 import { NonRetryableError, RetryableError } from '../../../infrastructure/queues/ErrorClassifier.js';
-import { Job, Queue } from 'bullmq';
+import { Job, Queue, type ConnectionOptions } from 'bullmq';
 import { getRedisClient } from '../../../shared/redis/index.js';
 import mongoose from 'mongoose';
 
@@ -32,7 +32,7 @@ describe('Queue Resilience and WorkerFactory Tests', () => {
     const mockProcessor = vi.fn().mockResolvedValue(true);
     
     const worker = WorkerFactory.createWorker(TEST_QUEUE, mockProcessor, {
-      connection: getRedisClient()
+      connection: getRedisClient() as unknown as ConnectionOptions
     });
 
     const job = await queue.add('test-job', { data: 'test' });
@@ -51,7 +51,7 @@ describe('Queue Resilience and WorkerFactory Tests', () => {
     const mockProcessor = vi.fn().mockRejectedValue(new Error('malformed json'));
     
     const worker = WorkerFactory.createWorker(TEST_QUEUE, mockProcessor, {
-      connection: getRedisClient()
+      connection: getRedisClient() as unknown as ConnectionOptions
     });
 
     const job = await queue.add('dlq-job', { payload: 'bad' });
@@ -83,7 +83,7 @@ describe('Queue Resilience and WorkerFactory Tests', () => {
     });
     
     const worker = WorkerFactory.createWorker(TEST_QUEUE, mockProcessor, {
-      connection: getRedisClient()
+      connection: getRedisClient() as unknown as ConnectionOptions
     });
 
     const job = await queue.add('retry-job', { payload: 'retryable' });
