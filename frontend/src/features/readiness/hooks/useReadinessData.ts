@@ -1,6 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { readinessService, type ReadinessSnapshot, type CareerIntentInput } from '../../../services/readinessService';
 
+function extractErrorMessage(err: unknown): string | null {
+  if (err instanceof Error) return err.message;
+  if (err !== null && typeof err === 'object' && 'message' in err) {
+    return String((err as { message: unknown }).message);
+  }
+  return err ? String(err) : null;
+}
+
 export function useReadinessData() {
   const query = useQuery<ReadinessSnapshot>({
     queryKey: ['readinessData'],
@@ -16,7 +24,7 @@ export function useReadinessData() {
   return {
     data: query.data,
     loading: query.isLoading,
-    error: query.error instanceof Error ? query.error.message : (query.error as any)?.message || null,
+    error: extractErrorMessage(query.error),
     refetch: () => query.refetch(),
   };
 }
@@ -37,7 +45,7 @@ export function useReadinessDomain(domain: string) {
   return {
     data: query.data,
     loading: query.isLoading,
-    error: query.error instanceof Error ? query.error.message : (query.error as any)?.message || null,
+    error: extractErrorMessage(query.error),
     refetch: () => query.refetch(),
   };
 }
