@@ -2,17 +2,15 @@
 // Isolated LeetCode adapter — normalizes GraphQL responses into canonical shapes.
 // All LeetCode-specific parsing lives here; sync.service.ts never touches raw LC data.
 
-import { logger } from '../../../shared/logger.js';
+import { fetchWithTimeout } from '../../../shared/fetchWithTimeout.js';
+import { BasePlatformAdapter } from './BasePlatformAdapter.js';
 import type {
-  PlatformAdapter,
   PlatformSubmission,
   PlatformStats,
   PlatformProfile,
-  AdapterSyncResult,
 } from './types.js';
 
 const LEETCODE_GRAPHQL = 'https://leetcode.com/graphql';
-const FETCH_TIMEOUT = 15_000;
 
 const LC_HEADERS: Record<string, string> = {
   'Content-Type': 'application/json',
@@ -22,26 +20,16 @@ const LC_HEADERS: Record<string, string> = {
 };
 
 async function gql(query: string, variables: Record<string, unknown>): Promise<any> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+  const res = await fetchWithTimeout(LEETCODE_GRAPHQL, {
+    method: 'POST',
+    headers: LC_HEADERS,
+    body: JSON.stringify({ query, variables }),
+  });
 
-  try {
-    const res = await fetch(LEETCODE_GRAPHQL, {
-      method: 'POST',
-      headers: LC_HEADERS,
-      body: JSON.stringify({ query, variables }),
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-
-    if (!res.ok) {
-      throw new Error(`LeetCode GraphQL error: ${res.status}`);
-    }
-    return res.json();
-  } catch (err) {
-    clearTimeout(timer);
-    throw err;
+  if (!res.ok) {
+    throw new Error(`LeetCode GraphQL error: ${res.status}`);
   }
+  return res.json();
 }
 
 // ---------------------------------------------------------------------------
@@ -92,7 +80,7 @@ const RECENT_SUBMISSIONS_QUERY = `
 // Adapter implementation
 // ---------------------------------------------------------------------------
 
-export class LeetCodeAdapter implements PlatformAdapter {
+export class LeetCodeAdapter extends BasePlatformAdapter {
   readonly platform = 'leetcode' as const;
 
   async fetchSubmissions(username: string, _since?: Date): Promise<PlatformSubmission[]> {
@@ -150,35 +138,6 @@ export class LeetCodeAdapter implements PlatformAdapter {
     };
   }
 
-  async sync(username: string, since?: Date): Promise<AdapterSyncResult> {
-    const start = Date.now();
-    try {
-      const [stats, submissions, profile] = await Promise.all([
-        this.fetchStats(username),
-        this.fetchSubmissions(username, since),
-        this.fetchProfile(username),
-      ]);
-
-      return {
-        success: true,
-        submissions,
-        stats,
-        profile,
-        newCount: submissions.length,
-        durationMs: Date.now() - start,
-      };
-    } catch (err) {
-      logger.error('[leetcode-adapter] Sync failed', err);
-      return {
-        success: false,
-        submissions: [],
-        stats: { platform: 'leetcode', totalSolved: 0, easySolved: 0, mediumSolved: 0, hardSolved: 0, fetchedAt: new Date() },
-        newCount: 0,
-        error: err instanceof Error ? err.message : String(err),
-        durationMs: Date.now() - start,
-      };
-    }
-  }
 }
 
 export const leetcodeAdapter = new LeetCodeAdapter();

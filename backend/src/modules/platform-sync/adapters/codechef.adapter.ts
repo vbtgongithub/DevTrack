@@ -2,29 +2,22 @@
 // Isolated CodeChef adapter — normalizes responses into canonical shapes.
 
 import { logger } from '../../../shared/logger.js';
+import { fetchWithTimeout } from '../../../shared/fetchWithTimeout.js';
+import { BasePlatformAdapter } from './BasePlatformAdapter.js';
 import type {
-  PlatformAdapter,
   PlatformSubmission,
   PlatformStats,
   PlatformProfile,
-  AdapterSyncResult,
 } from './types.js';
 
-const CODECHEF_API = 'https://codechef-api.vercel.app'; // Known public scraper/endpoint
-const FETCH_TIMEOUT = 15_000;
+const CODECHEF_API = 'https://codechef-api.vercel.app';
 
-export class CodeChefAdapter implements PlatformAdapter {
+export class CodeChefAdapter extends BasePlatformAdapter {
   readonly platform = 'codechef' as const;
 
   async fetchSubmissions(username: string, since?: Date): Promise<PlatformSubmission[]> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
-
     try {
-      const res = await fetch(`${CODECHEF_API}/submissions/${username}`, {
-        signal: controller.signal,
-      });
-      clearTimeout(timer);
+      const res = await fetchWithTimeout(`${CODECHEF_API}/submissions/${username}`);
 
       if (!res.ok) {
         return this.getMockSubmissions(username, since);
@@ -44,21 +37,14 @@ export class CodeChefAdapter implements PlatformAdapter {
         _raw: s,
       }));
     } catch (err) {
-      clearTimeout(timer);
       logger.warn(`[codechef-adapter] Direct fetch failed, falling back to local mock for ${username}`);
       return this.getMockSubmissions(username, since);
     }
   }
 
   async fetchStats(username: string): Promise<PlatformStats> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
-
     try {
-      const res = await fetch(`${CODECHEF_API}/handle/${username}`, {
-        signal: controller.signal,
-      });
-      clearTimeout(timer);
+      const res = await fetchWithTimeout(`${CODECHEF_API}/handle/${username}`);
 
       if (!res.ok) {
         return this.getMockStats();
@@ -77,8 +63,7 @@ export class CodeChefAdapter implements PlatformAdapter {
         totalContests: json.contestsCount || 0,
         fetchedAt: new Date(),
       };
-    } catch (err) {
-      clearTimeout(timer);
+    } catch {
       return this.getMockStats();
     }
   }
@@ -91,36 +76,6 @@ export class CodeChefAdapter implements PlatformAdapter {
       profileUrl: `https://www.codechef.com/users/${username}`,
       fetchedAt: new Date(),
     };
-  }
-
-  async sync(username: string, since?: Date): Promise<AdapterSyncResult> {
-    const start = Date.now();
-    try {
-      const [stats, submissions, profile] = await Promise.all([
-        this.fetchStats(username),
-        this.fetchSubmissions(username, since),
-        this.fetchProfile(username),
-      ]);
-
-      return {
-        success: true,
-        submissions,
-        stats,
-        profile,
-        newCount: submissions.length,
-        durationMs: Date.now() - start,
-      };
-    } catch (err) {
-      logger.error('[codechef-adapter] Sync failed', err);
-      return {
-        success: false,
-        submissions: [],
-        stats: { platform: 'codechef', totalSolved: 0, easySolved: 0, mediumSolved: 0, hardSolved: 0, fetchedAt: new Date() },
-        newCount: 0,
-        error: err instanceof Error ? err.message : String(err),
-        durationMs: Date.now() - start,
-      };
-    }
   }
 
   private mapRatingToDifficulty(rating: number | string): 'easy' | 'medium' | 'hard' | 'unknown' {
