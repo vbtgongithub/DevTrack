@@ -156,8 +156,8 @@ router.get(
       try {
         const momentum = await momentumEngine.calculateMomentumScore(req.user!.id);
         momentumScore = momentum;
-      } catch {
-        // Non-fatal — retention works without momentum
+      } catch (err) {
+        logger.warn('[observation] Momentum calculation failed, proceeding without it', { userId: req.user!.id, error: err instanceof Error ? err.message : String(err) });
       }
 
       const context = await retentionEngine.getRetentionContext(req.user!.id, momentumScore);

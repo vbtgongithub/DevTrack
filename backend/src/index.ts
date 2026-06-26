@@ -332,7 +332,8 @@ function setupHealthEndpoints(
           const q = getOrCreateQueue(name);
           const counts = await q.getJobCounts();
           return { name, active: counts.active ?? 0, waiting: counts.waiting ?? 0, failed: counts.failed ?? 0, completed: counts.completed ?? 0, delayed: counts.delayed ?? 0 };
-        } catch {
+        } catch (err) {
+          logger.warn('[health] Failed to get queue status', { queueName: name, error: err instanceof Error ? err.message : String(err) });
           return { name, active: 0, waiting: 0, failed: 0, completed: 0, delayed: 0 };
         }
       })

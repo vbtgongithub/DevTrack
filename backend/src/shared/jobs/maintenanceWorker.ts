@@ -34,8 +34,8 @@ async function runCleanupFailedJobs(): Promise<void> {
       try {
         const cleaned = await dlqService.cleanupDlq(q);
         totalCleaned += cleaned;
-      } catch {
-        // Individual queue cleanup failure is non-fatal
+      } catch (err) {
+        logger.warn('[maintenance] Individual queue DLQ cleanup failed', { queue: q, error: err instanceof Error ? err.message : String(err) });
       }
     }
     logger.info('[maintenance] DLQ cleanup completed', { totalCleaned });

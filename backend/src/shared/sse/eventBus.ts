@@ -334,7 +334,9 @@ class EventBus extends EventEmitter {
         logger.error('[sse-redis] Subscriber error', err);
       });
 
-      await (subscriber as any).connect().catch(() => {});
+      await (subscriber as any).connect().catch((err: unknown) => {
+        logger.warn('[sse-redis] Subscriber connect failed', { error: err instanceof Error ? err.message : String(err) });
+      });
       await (subscriber as any).subscribe(SSE_CHANNEL);
       this.redisSubscriber = subscriber as any;
 
@@ -345,7 +347,9 @@ class EventBus extends EventEmitter {
       (publisher as any).on('error', (err: Error) => {
         logger.error('[sse-redis] Publisher error', err);
       });
-      await (publisher as any).connect().catch(() => {});
+      await (publisher as any).connect().catch((err: unknown) => {
+        logger.warn('[sse-redis] Publisher connect failed', { error: err instanceof Error ? err.message : String(err) });
+      });
       this.redisPublisher = publisher as any;
 
       logger.info('[sse] Redis PubSub & Publisher singletons initialized', { channel: SSE_CHANNEL });

@@ -71,7 +71,8 @@ export class GitHubAdapter implements PlatformAdapter {
           submittedAt: new Date(e.created_at),
           _raw: e,
         }));
-    } catch {
+    } catch (err) {
+      logger.warn('[github-adapter] Failed to fetch submissions', { username, error: err instanceof Error ? err.message : String(err) });
       return [];
     }
   }
@@ -87,8 +88,8 @@ export class GitHubAdapter implements PlatformAdapter {
       for (const r of repos) {
         totalStars += r.stargazers_count ?? 0;
       }
-    } catch {
-      // non-fatal
+    } catch (err) {
+      logger.debug('[github-adapter] Failed to fetch repos for star count', { username, error: err instanceof Error ? err.message : String(err) });
     }
 
     return {

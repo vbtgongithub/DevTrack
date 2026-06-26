@@ -251,7 +251,8 @@ export const dlqService = {
         try {
           await manager.replayJob(job.id || '');
           succeeded++;
-        } catch {
+        } catch (err) {
+          logger.warn('[dlq] Failed to replay job', { queueName, jobId: job.id, error: err instanceof Error ? err.message : String(err) });
           failed++;
         }
       }

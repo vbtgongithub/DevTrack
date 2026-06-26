@@ -80,8 +80,8 @@ export function parseLeetCodeCalendar(rawData: Record<string, unknown>): Record<
         calendar[dateStr] = (calendar[dateStr] ?? 0) + count;
       }
     }
-  } catch {
-    /* graceful fallback */
+  } catch (err) {
+    logger.debug('[dsa] Failed to parse LeetCode submission calendar', { error: err instanceof Error ? err.message : String(err) });
   }
   return calendar;
 }

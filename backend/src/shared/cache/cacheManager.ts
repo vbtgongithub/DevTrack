@@ -113,8 +113,8 @@ export const cacheManager = {
     if (cached) {
       try {
         return JSON.parse(cached) as T;
-      } catch {
-        // Invalid JSON, fetch fresh
+      } catch (err) {
+        logger.debug('[cache] Invalid JSON in cache, fetching fresh', { key, error: err instanceof Error ? err.message : String(err) });
       }
     }
 
@@ -165,8 +165,8 @@ export const cacheManager = {
         }
 
         return { data, isStale: ttl <= 0 };
-      } catch {
-        // Invalid cache, fetch fresh
+      } catch (err) {
+        logger.debug('[cache] Invalid cache entry in SWR, fetching fresh', { key, error: err instanceof Error ? err.message : String(err) });
       }
     }
 
@@ -221,7 +221,8 @@ export const cacheManager = {
       await redis.ping();
       const keys = (await redis.dbsize()) || 0;
       return { status: 'healthy', keys };
-    } catch {
+    } catch (err) {
+      logger.warn('[cache] Health check failed', { error: err instanceof Error ? err.message : String(err) });
       return { status: 'unhealthy', keys: 0 };
     }
   },
