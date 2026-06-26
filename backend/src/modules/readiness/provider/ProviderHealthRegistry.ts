@@ -124,7 +124,9 @@ export const ProviderHealthRegistry = {
         healthCache.set(providerId, parsed);
         return parsed;
       }
-    } catch (err) {}
+    } catch (err) {
+      logger.debug('[ProviderHealthRegistry] Redis read failed in getHealth, using memory cache', { providerId, error: err instanceof Error ? err.message : String(err) });
+    }
     return this.getHealthSync(providerId);
   },
 
@@ -158,7 +160,9 @@ export const ProviderHealthRegistry = {
         if (parsed.lastSyncAt) parsed.lastSyncAt = new Date(parsed.lastSyncAt);
         healthCache.set(id, parsed);
       }
-    } catch (err) {}
+    } catch (err) {
+      logger.debug('[ProviderHealthRegistry] Redis read failed in getAllProviders, using memory cache', { error: err instanceof Error ? err.message : String(err) });
+    }
     return this.getAllProvidersSync();
   },
 
@@ -271,7 +275,9 @@ export const ProviderHealthRegistry = {
     try {
       const redis = getRedisClient();
       await redis.hset(REGISTRY_KEY, providerId, JSON.stringify(currentHealth));
-    } catch (err) {}
+    } catch (err) {
+      logger.debug('[ProviderHealthRegistry] Redis write failed in updateProviderHealth', { providerId, error: err instanceof Error ? err.message : String(err) });
+    }
   },
 
   /**
@@ -322,7 +328,9 @@ export const ProviderHealthRegistry = {
     try {
       const redis = getRedisClient();
       await redis.hset(REGISTRY_KEY, providerId, JSON.stringify(health));
-    } catch (err) {}
+    } catch (err) {
+      logger.warn('[ProviderHealthRegistry] Redis write failed in enableDegradedMode', { providerId, error: err instanceof Error ? err.message : String(err) });
+    }
 
     logger.warn('[ProviderHealthRegistry] Manually enabled degraded mode', { 
       providerId, 
@@ -346,7 +354,9 @@ export const ProviderHealthRegistry = {
     try {
       const redis = getRedisClient();
       await redis.hset(REGISTRY_KEY, providerId, JSON.stringify(health));
-    } catch (err) {}
+    } catch (err) {
+      logger.warn('[ProviderHealthRegistry] Redis write failed in disableDegradedMode', { providerId, error: err instanceof Error ? err.message : String(err) });
+    }
 
     logger.info('[ProviderHealthRegistry] Manually disabled degraded mode', { providerId });
   },
@@ -364,7 +374,9 @@ export const ProviderHealthRegistry = {
     try {
       const redis = getRedisClient();
       await redis.hset(REGISTRY_KEY, providerId, JSON.stringify(defaultHealth));
-    } catch (err) {}
+    } catch (err) {
+      logger.warn('[ProviderHealthRegistry] Redis write failed in resetProviderHealth', { providerId, error: err instanceof Error ? err.message : String(err) });
+    }
 
     logger.info('[ProviderHealthRegistry] Reset provider health', { providerId });
   },
@@ -408,5 +420,7 @@ void ProviderHealthRegistry.initialize();
 
 // Start a periodic background sync to pull latest statuses from Redis (every 10s)
 setInterval(() => {
-  void ProviderHealthRegistry.getAllProviders().catch(() => {});
+  void ProviderHealthRegistry.getAllProviders().catch((err) => {
+    logger.debug('[ProviderHealthRegistry] Background sync failed', { error: err instanceof Error ? err.message : String(err) });
+  });
 }, 10000);

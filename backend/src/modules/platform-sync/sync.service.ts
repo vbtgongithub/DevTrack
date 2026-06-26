@@ -248,7 +248,9 @@ async function fetchCodeforcesRealStats(username: string): Promise<FetchedPlatfo
         ratingHistory = ratingData.result;
       }
     }
-  } catch { /* optional */ }
+  } catch (err) {
+    logger.debug('[sync] Optional codeforces rating fetch failed', { username, error: err instanceof Error ? err.message : String(err) });
+  }
 
   // Count unique solved problems
   const uniqueSolved = await fetchUniqueSolvedProblems(username);
@@ -1520,7 +1522,9 @@ async function generateSyncActivityEvents(
             tags: ['milestone', platformName],
             metadata: { milestone, platform: platformName, totalSolved: fetched.totalSolved },
           });
-        } catch { /* non-fatal */ }
+        } catch (err) {
+          logger.warn('[sync] Failed to create milestone activity', { userId, milestone, error: err instanceof Error ? err.message : String(err) });
+        }
       }
     }
   }
@@ -1554,7 +1558,9 @@ async function generateSyncActivityEvents(
             tags: ['contest', platformName],
             metadata: { contestName: lastContest.contestName, rank: lastContest.rank, ratingChange, newRating: lastContest.newRating },
           });
-        } catch { /* non-fatal */ }
+        } catch (err) {
+          logger.warn('[sync] Failed to create contest activity', { userId, contestName: lastContest.contestName, error: err instanceof Error ? err.message : String(err) });
+        }
       }
     }
   }

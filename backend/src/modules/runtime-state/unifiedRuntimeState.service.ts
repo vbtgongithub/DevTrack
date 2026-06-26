@@ -268,7 +268,8 @@ export class UnifiedRuntimeStateService {
         totalActiveDays: (analytics as any).totalActiveDays ?? 0,
         totalProblemsSolved: (analytics as any).totalProblemsSolved ?? 0,
       };
-    } catch {
+    } catch (err) {
+      logger.warn('[UnifiedRuntimeState] Failed to fetch user analytics', { error: err instanceof Error ? err.message : String(err) });
       return null;
     }
   }

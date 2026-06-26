@@ -72,7 +72,9 @@ export class CodeforcesAdapter implements PlatformAdapter {
     try {
       const ratings = await cfFetch<any[]>(`/user.rating?handle=${encodeURIComponent(username)}`);
       totalContests = ratings.length;
-    } catch { /* optional */ }
+    } catch (err) {
+      logger.debug('[codeforces-adapter] Failed to fetch contest count', { username, error: err instanceof Error ? err.message : String(err) });
+    }
 
     return {
       platform: 'codeforces',
@@ -153,7 +155,8 @@ export class CodeforcesAdapter implements PlatformAdapter {
 
         if (batch.length < count) break;
         from += count;
-      } catch {
+      } catch (err) {
+        logger.debug('[codeforces-adapter] Submissions pagination fetch failed, stopping', { handle, error: err instanceof Error ? err.message : String(err) });
         break;
       }
     }

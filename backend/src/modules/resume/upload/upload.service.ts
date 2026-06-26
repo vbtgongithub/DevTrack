@@ -179,7 +179,9 @@ export class UploadService {
             failedAt: new Date(),
           },
         }
-      ).catch(() => {});
+      ).catch((dbErr: unknown) => {
+        logger.warn('[UploadService] Failed to update session failure state in DB', { sessionId, error: dbErr instanceof Error ? dbErr.message : String(dbErr) });
+      });
       throw new Error(`Failed to queue processing orchestration: ${err.message}`);
     }
 

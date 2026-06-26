@@ -404,8 +404,8 @@ function normalizeToUserDate(date: Date, timezone: string): Date {
     });
     const dateStr = formatter.format(date); // "YYYY-MM-DD"
     return new Date(dateStr + 'T00:00:00.000Z');
-  } catch {
-    // Fallback if timezone string is invalid
+  } catch (err) {
+    logger.debug('[streak] Invalid timezone, using UTC fallback', { timezone, error: err instanceof Error ? err.message : String(err) });
     const d = new Date(date);
     d.setUTCHours(0, 0, 0, 0);
     return d;
@@ -416,7 +416,8 @@ async function getUserTimezone(userId: string): Promise<string> {
   try {
     const user = await User.findById(userId).select('timezone').lean();
     return (user as Record<string, unknown>)?.timezone as string || 'UTC';
-  } catch {
+  } catch (err) {
+    logger.warn('[streak] Failed to fetch user timezone', { userId, error: err instanceof Error ? err.message : String(err) });
     return 'UTC';
   }
 }

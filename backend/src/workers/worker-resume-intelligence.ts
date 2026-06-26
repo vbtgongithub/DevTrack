@@ -77,7 +77,9 @@ async function shutdown(signal: string): Promise<void> {
     try {
       const { stopProfileRebuildWorker } = await import('../shared/jobs/profileRebuildWorker.js');
       await stopProfileRebuildWorker();
-    } catch {}
+    } catch {
+      // Module may not be available — already logged at startup
+    }
     
     const healthMonitor = (global as any).healthMonitor;
     if (healthMonitor) {

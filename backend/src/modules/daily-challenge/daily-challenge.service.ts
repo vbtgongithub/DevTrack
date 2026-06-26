@@ -90,8 +90,9 @@ async function selectAdaptiveDifficulty(userId: string): Promise<'easy' | 'mediu
       return dateHash % 10 < 3 ? 'medium' : 'easy';
     }
     return 'easy'; // New or low-streak users get easy
-  } catch {
-    return 'easy'; // Fallback
+  } catch (err) {
+    logger.debug('[daily-challenge] Difficulty calculation failed, defaulting to easy', { userId, error: err instanceof Error ? err.message : String(err) });
+    return 'easy';
   }
 }
 

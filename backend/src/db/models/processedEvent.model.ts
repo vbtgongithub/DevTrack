@@ -117,8 +117,9 @@ processedEventSchema.statics.markFailed = async function (
       },
       { upsert: true, lean: true }
     );
-  } catch {
-    // Ignore errors on failure marking
+  } catch (err) {
+    const { logger } = await import('../../shared/logger.js');
+    logger.warn('[ProcessedEvent] Failed to mark event as failed', { eventId, eventType, error: err instanceof Error ? err.message : String(err) });
   }
 };
 

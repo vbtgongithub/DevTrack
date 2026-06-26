@@ -30,7 +30,10 @@ export class CodeChefAdapter implements PlatformAdapter {
         return this.getMockSubmissions(username, since);
       }
 
-      const json = await res.json().catch(() => ({}));
+      const json = await res.json().catch((parseErr: unknown) => {
+        logger.warn('[codechef-adapter] Failed to parse submissions response JSON', { username, error: parseErr instanceof Error ? parseErr.message : String(parseErr) });
+        return {};
+      });
       const raw = json.submissions || [];
 
       return raw.map((s: any) => ({
@@ -64,7 +67,10 @@ export class CodeChefAdapter implements PlatformAdapter {
         return this.getMockStats();
       }
 
-      const json = await res.json().catch(() => ({}));
+      const json = await res.json().catch((parseErr: unknown) => {
+        logger.warn('[codechef-adapter] Failed to parse stats response JSON', { username, error: parseErr instanceof Error ? parseErr.message : String(parseErr) });
+        return {};
+      });
       const rating = json.currentRating || json.rating || undefined;
 
       return {
