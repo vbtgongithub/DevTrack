@@ -31,10 +31,13 @@ function getEnvVarNumber(key: string, defaultValue: number): number {
   return num;
 }
 
+const isRender = process.env.RENDER === 'true';
+const defaultEnv = isRender ? 'production' : 'development';
+const NODE_ENV = getEnvVar('NODE_ENV', defaultEnv);
+
 function getCorsOrigin(): string {
   const origin = getEnvVar('CORS_ORIGIN', 'http://localhost:5173');
-  const nodeEnv = getEnvVar('NODE_ENV', 'development');
-  const isProd = nodeEnv === 'production';
+  const isProd = NODE_ENV === 'production';
 
   // In production, validate it's an HTTPS origin
   if (isProd) {
@@ -45,9 +48,6 @@ function getCorsOrigin(): string {
   return origin;
 }
 
-const isRender = process.env.RENDER === 'true';
-const defaultEnv = isRender ? 'production' : 'development';
-const NODE_ENV = getEnvVar('NODE_ENV', defaultEnv);
 const IS_PROD = NODE_ENV === 'production';
 
 // ---------------------------------------------------------------------------
