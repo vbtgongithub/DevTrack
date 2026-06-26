@@ -4,6 +4,7 @@
 
 import { fetchWithTimeout } from '../../../shared/fetchWithTimeout.js';
 import { BasePlatformAdapter } from './BasePlatformAdapter.js';
+import { logger } from '../../../shared/logger.js';
 import type {
   PlatformSubmission,
   PlatformStats,
