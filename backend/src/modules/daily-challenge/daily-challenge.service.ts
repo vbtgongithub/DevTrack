@@ -143,17 +143,11 @@ async function fetchLeetcodeDailyChallenge(): Promise<{
     const difficultyLower = q.difficulty.toLowerCase() as 'easy' | 'medium' | 'hard';
 
     let xpReward = 30;
-    let completionCount = 380;
     if (difficultyLower === 'medium') {
       xpReward = 50;
-      completionCount = 180;
     } else if (difficultyLower === 'hard') {
       xpReward = 80;
-      completionCount = 75;
     }
-
-    const day = new Date().getDate();
-    completionCount += (day % 15) * 5;
 
     return {
       title: q.title,
@@ -162,7 +156,7 @@ async function fetchLeetcodeDailyChallenge(): Promise<{
       difficulty: difficultyLower,
       problemUrl: `https://leetcode.com${challengeData.link}`,
       xpReward,
-      completionCount,
+      completionCount: 0, // This will be updated by the background job
     };
   } catch (err) {
     logger.error('[daily-challenge] Error fetching LeetCode daily challenge', err);
@@ -231,151 +225,4 @@ export async function getTodayChallenge(userId: string) {
         }
       }
     } catch (lcErr) {
-      logger.error('[daily-challenge] Failed to upgrade today\'s challenge to dynamic LeetCode challenge', lcErr);
-    }
-  }
-
-  if (!challenge) {
-    // Primary: Attempt to seed today's official LeetCode challenge dynamically
-    try {
-      const leetcodeChallenge = await fetchLeetcodeDailyChallenge();
-      if (leetcodeChallenge) {
-        challenge = await DailyChallenge.create({
-          date: dateStr,
-          title: leetcodeChallenge.title,
-          titleSlug: leetcodeChallenge.titleSlug,
-          description: leetcodeChallenge.description,
-          difficulty: leetcodeChallenge.difficulty,
-          platform: 'leetcode',
-          problemUrl: leetcodeChallenge.problemUrl,
-          xpReward: leetcodeChallenge.xpReward,
-          completionCount: leetcodeChallenge.completionCount,
-        });
-        logger.info('[daily-challenge] Seeded LeetCode daily challenge dynamically', {
-          date: dateStr,
-          title: leetcodeChallenge.title,
-        });
-      }
-    } catch (lcErr) {
-      logger.error('[daily-challenge] Failed to fetch/seed dynamic LeetCode challenge', lcErr);
-    }
-
-    // Fallback: If dynamic fetch failed, fall back to adaptive pool
-    if (!challenge) {
-      const adaptiveDifficulty = await selectAdaptiveDifficulty(userId);
-      const seededData = getChallengeForDate(dateStr, adaptiveDifficulty);
-      try {
-        challenge = await DailyChallenge.create({
-          date: dateStr,
-          ...seededData,
-        });
-        logger.info('[daily-challenge] Seeded adaptive fallback challenge', {
-          date: dateStr,
-          difficulty: adaptiveDifficulty,
-          title: seededData.title,
-        });
-      } catch (err: any) {
-        if (err?.code === 11000) {
-          challenge = await DailyChallenge.findOne({ date: dateStr });
-        } else {
-          throw err;
-        }
-      }
-    }
-  }
-
-  if (!challenge) {
-    throw new Error('Failed to seed or retrieve daily challenge');
-  }
-
-  // Check completion
-  const completedTx = await XpTransaction.findOne({
-    userId: new Types.ObjectId(userId),
-    sourceType: 'challenge_completed',
-    sourceId: challenge._id.toString(),
-  }).lean();
-
-  let userCompleted = !!completedTx;
-
-  if (!userCompleted) {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const problem = await DsaProblem.findOne({
-      userId: new Types.ObjectId(userId),
-      platform: challenge.platform,
-      externalId: challenge.titleSlug,
-      status: 'solved',
-    }).lean();
-
-    if (problem) {
-      const submissionToday = await DsaSubmission.findOne({
-        userId: new Types.ObjectId(userId),
-        problemId: problem._id,
-        status: 'accepted',
-        submittedAt: { $gte: startOfDay, $lte: endOfDay },
-      }).lean();
-
-      if (submissionToday) {
-        await checkChallengeCompletion(userId, challenge.platform, challenge.titleSlug);
-        userCompleted = true;
-      }
-    }
-  }
-
-  return {
-    challenge,
-    userCompleted,
-  };
-}
-
-export async function checkChallengeCompletion(userId: string, platform: string, titleSlug: string): Promise<boolean> {
-  const dateStr = getTodayDateString();
-  const challenge = await DailyChallenge.findOne({ date: dateStr });
-
-  if (!challenge) return false;
-
-  // Compare platform and titleSlug case-insensitively
-  if (
-    challenge.platform === platform.toLowerCase() &&
-    challenge.titleSlug.toLowerCase() === titleSlug.toLowerCase()
-  ) {
-    const challengeId = challenge._id.toString();
-    const existingTx = await XpTransaction.findOne({
-      userId: new Types.ObjectId(userId),
-      sourceType: 'challenge_completed',
-      sourceId: challengeId,
-    });
-
-    if (!existingTx) {
-      logger.info(`[daily-challenge] Awarding XP for daily challenge completion`, {
-        userId,
-        challengeId,
-        title: challenge.title,
-      });
-
-      // Award XP
-      await processXpEvent({
-        userId,
-        sourceType: 'challenge_completed',
-        sourceId: challengeId,
-        metadata: {
-          xpReward: challenge.xpReward,
-          challengeId,
-          title: challenge.title,
-        },
-      });
-
-      // Emit SSE event
-      await eventBus.emitChallengeCompleted(userId, challengeId, challenge.title, challenge.xpReward);
-
-      // Increment challenge completion count
-      await DailyChallenge.findByIdAndUpdate(challenge._id, { $inc: { completionCount: 1 } });
-      return true;
-    }
-  }
-
-  return false;
-}
+      logger.error('[daily-challenge] Failed to upg

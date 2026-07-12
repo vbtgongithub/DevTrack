@@ -12,7 +12,7 @@ import { cleanupStaleLocks } from '../redis/syncLock.service.js';
 import { UserAnalytics, DailyChallenge } from '../../db/models/index.js';
 import { getNotificationQueue } from './queueFactory.js';
 
-let _worker: Worker<SystemMaintenanceJobData> | null = null;
+let _worker: Worker<SystemMaintenanceJobData, any, string> | null = null;
 let _queue: Queue<SystemMaintenanceJobData> | null = null;
 
 // ---------------------------------------------------------------------------
@@ -222,6 +222,29 @@ async function runGenerateDailyChallenge(): Promise<void> {
   }
 }
 
+async function runUpdateDailyChallengeCount(): Promise<void> {
+  logger.info('[maintenance] Updating daily challenge completion count');
+  try {
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+
+    const challenge = await DailyChallenge.findOne({ date: dateStr });
+
+    if (!challenge) {
+      logger.info('[maintenance] No daily challenge found for today to update count.', { date: dateStr });
+      return;
+    }
+
+    const completionCount = challenge.completedBy?.length ?? 0;
+
+    await DailyChallenge.updateOne({ _id: challenge._id }, { $set: { completionCount } });
+
+    logger.info('[maintenance] Daily challenge completion count updated', { date: dateStr, completionCount });
+  } catch (err) {
+    logger.error('[maintenance] Daily challenge count update failed', err);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Worker
 // ---------------------------------------------------------------------------
@@ -265,6 +288,9 @@ export function startMaintenanceWorker(): Worker<SystemMaintenanceJobData> {
           break;
         case 'generate_daily_challenge':
           await runGenerateDailyChallenge();
+          break;
+        case 'update_daily_challenge_count':
+          await runUpdateDailyChallengeCount();
           break;
         default:
           logger.warn('[maintenance] Unknown task type', { task });
@@ -386,6 +412,18 @@ export async function scheduleMaintenanceTasks(): Promise<void> {
     {
       repeat: { pattern: '0 23 * * *' }, // 23:00 UTC daily
       jobId: 'maintenance-daily-challenge',
+      removeOnComplete: { count: 5 },
+      removeOnFail: { count: 10 },
+    }
+  );
+
+  // Update daily challenge completion count every hour
+  await _queue.add(
+    'update-daily-challenge-count',
+    { task: 'update_daily_challenge_count' },
+    {
+      repeat: { every: 60 * 60 * 1000 }, // every hour
+      jobId: 'maintenance-update-challenge-count',
       removeOnComplete: { count: 5 },
       removeOnFail: { count: 10 },
     }
