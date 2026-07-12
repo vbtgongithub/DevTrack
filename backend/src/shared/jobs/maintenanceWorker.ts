@@ -9,7 +9,7 @@ import { dlqService } from './dlq.service.js';
 import { QueueNames, SystemMaintenanceJobData } from './types.js';
 import { generateDailyMissions, generateWeeklyMissions } from '../../modules/missions/missionGenerator.service.js';
 import { cleanupStaleLocks } from '../redis/syncLock.service.js';
-import { UserAnalytics, DailyChallenge } from '../../db/models/index.js';
+import { UserAnalytics, DailyChallenge, XpTransaction } from '../../db/models/index.js';
 import { getNotificationQueue } from './queueFactory.js';
 
 let _worker: Worker<SystemMaintenanceJobData, any, string> | null = null;
@@ -235,7 +235,10 @@ async function runUpdateDailyChallengeCount(): Promise<void> {
       return;
     }
 
-    const completionCount = challenge.completedBy?.length ?? 0;
+    const completionCount = await XpTransaction.countDocuments({
+      sourceType: 'challenge_completed',
+      sourceId: challenge._id.toString(),
+    });
 
     await DailyChallenge.updateOne({ _id: challenge._id }, { $set: { completionCount } });
 
