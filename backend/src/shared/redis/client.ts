@@ -49,14 +49,15 @@ export function getRedisClient(): Redis {
     ? {
         lazyConnect: true,
         maxRetriesPerRequest: null,
+        enableOfflineQueue: false,
       }
     : {
         host: env.REDIS_HOST,
         port: env.REDIS_PORT,
         password: env.REDIS_PASSWORD || undefined,
         lazyConnect: true,
-        // BullMQ requires this to be null for blocking connections.
         maxRetriesPerRequest: null,
+        enableOfflineQueue: false,
         retryStrategy(times: number) {
           const delay = Math.min(times * 100, 3000);
           logger.warn('[redis] Reconnecting', { attempt: times, delayMs: delay });

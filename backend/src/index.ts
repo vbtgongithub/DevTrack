@@ -28,6 +28,9 @@ const { version: APP_VERSION } = require('../package.json') as { version: string
 export async function createApp(): Promise<express.Express> {
   const app = express();
 
+  // Trust upstream proxies (Render load balancer, Vercel router)
+  app.set('trust proxy', true);
+
   // Root info endpoint
   app.get('/', (_req, res) => {
     res.json({

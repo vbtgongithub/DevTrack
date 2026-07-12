@@ -11,17 +11,42 @@ export class DistributedIntelligenceCache {
   private redis = getRedisConnection();
 
   async get(key: string): Promise<any | null> {
-    const val = await this.redis.get(key);
-    return val ? JSON.parse(val) : null;
+    if (this.redis.status !== 'ready') {
+      logger.warn('[DistributedCache] Redis not ready, skipping get', { key });
+      return null;
+    }
+    try {
+      const val = await this.redis.get(key);
+      return val ? JSON.parse(val) : null;
+    } catch (err) {
+      logger.warn('[DistributedCache] Redis get failed', { key, error: err instanceof Error ? err.message : String(err) });
+      return null;
+    }
   }
 
   async set(key: string, data: any, ttl: number = 3600): Promise<void> {
-    logger.info(`[DistributedCache] Caching ${key} (TTL: ${ttl}s)`);
-    await this.redis.set(key, JSON.stringify(data), 'EX', ttl);
+    if (this.redis.status !== 'ready') {
+      logger.warn('[DistributedCache] Redis not ready, skipping set', { key });
+      return;
+    }
+    try {
+      logger.info(`[DistributedCache] Caching ${key} (TTL: ${ttl}s)`);
+      await this.redis.set(key, JSON.stringify(data), 'EX', ttl);
+    } catch (err) {
+      logger.warn('[DistributedCache] Redis set failed', { key, error: err instanceof Error ? err.message : String(err) });
+    }
   }
 
   async invalidate(key: string): Promise<void> {
-    await this.redis.del(key);
+    if (this.redis.status !== 'ready') {
+      logger.warn('[DistributedCache] Redis not ready, skipping invalidate', { key });
+      return;
+    }
+    try {
+      await this.redis.del(key);
+    } catch (err) {
+      logger.warn('[DistributedCache] Redis invalidate failed', { key, error: err instanceof Error ? err.message : String(err) });
+    }
   }
 }
 

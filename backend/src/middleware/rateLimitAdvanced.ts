@@ -103,6 +103,18 @@ export function createRateLimiter(endpointType: string) {
 
     const redis = getRedisClient();
     const identifier = getIdentifier(req);
+    
+    // Bypasses rate limiting if Redis is down/degraded
+    if (redis.status !== 'ready') {
+      logger.warn('[rate-limit] Redis not ready, allowing request without advanced rate limit check', {
+        endpointType,
+        identifier,
+        redisStatus: redis.status,
+      });
+      next();
+      return;
+    }
+
     const now = Date.now();
 
     // Build rate limit key
@@ -220,6 +232,14 @@ export async function checkRateLimit(
 ): Promise<RateLimitResult> {
   const config = ENDPOINT_CONFIGS[endpointType] || ENDPOINT_CONFIGS.default;
   const redis = getRedisClient();
+
+  if (redis.status !== 'ready') {
+    return {
+      success: true,
+      remaining: config.maxRequests,
+      resetAt: Date.now() + config.windowMs,
+    };
+  }
 
   const key = `${config.keyPrefix}:${identifier}`;
   const blockKey = `${key}:blocked`;

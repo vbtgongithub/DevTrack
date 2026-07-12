@@ -85,7 +85,7 @@ export const env = {
 
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: getEnvVarNumber('RATE_LIMIT_WINDOW_MS', 900000), // 15 minutes
-  RATE_LIMIT_MAX_REQUESTS: getEnvVarNumber('RATE_LIMIT_MAX_REQUESTS', 100),
+  RATE_LIMIT_MAX_REQUESTS: getEnvVarNumber('RATE_LIMIT_MAX_REQUESTS', 1000),
 
   // Auth-specific rate limiting (stricter for auth endpoints)
   AUTH_RATE_LIMIT_WINDOW_MS: getEnvVarNumber('AUTH_RATE_LIMIT_WINDOW_MS', 900000), // 15 min
