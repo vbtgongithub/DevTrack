@@ -159,6 +159,64 @@ export async function fetchDsaContests(
   return data;
 }
 
+// ---------------------------------------------------------------------------
+// Upcoming Contests — public aggregator (client-side, read-only)
+// ---------------------------------------------------------------------------
+
+export interface UpcomingContest {
+  id: string;
+  platform: string; // 'leetcode' | 'codeforces' | 'codechef'
+  name: string;
+  startTime: number; // epoch ms (UTC)
+  url: string;
+}
+
+interface RawUpcomingContest {
+  site?: string;
+  title?: string;
+  startTime?: number;
+  url?: string;
+}
+
+const UPCOMING_CONTESTS_URL = 'https://competeapi.vercel.app/contests/upcoming/';
+const UPCOMING_PLATFORMS = ['leetcode', 'codeforces', 'codechef'];
+
+/**
+ * Fetch upcoming programming contests across LeetCode, Codeforces and CodeChef
+ * from a public aggregator. Read-only, no auth and no user data transmitted.
+ * Returns [] on any failure so callers can render an empty state gracefully.
+ */
+export async function fetchUpcomingContests(options?: { signal?: AbortSignal }): Promise<UpcomingContest[]> {
+  try {
+    const res = await fetch(UPCOMING_CONTESTS_URL, { signal: options?.signal });
+    if (!res.ok) {
+      console.error(`[dsaService] Upcoming contests request failed: HTTP ${res.status}`);
+      return [];
+    }
+
+    const raw = (await res.json()) as RawUpcomingContest[];
+    if (!Array.isArray(raw)) return [];
+
+    return raw
+      .filter((c) => c && typeof c.site === 'string' && UPCOMING_PLATFORMS.includes(c.site.toLowerCase()))
+      .map((c) => {
+        const platform = (c.site as string).toLowerCase();
+        return {
+          platform,
+          name: c.title ?? 'Untitled Contest',
+          startTime: Number(c.startTime) || 0,
+          url: c.url ?? '',
+          id: `${platform}:${c.url ?? c.title ?? ''}`,
+        };
+      })
+      .filter((c) => c.startTime > 0);
+  } catch (err) {
+    if ((err as Error)?.name === 'AbortError') return [];
+    console.error('[dsaService] Failed to fetch upcoming contests:', err);
+    return [];
+  }
+}
+
 /**
  * Fetch topic analytics with per-difficulty breakdowns.
  */

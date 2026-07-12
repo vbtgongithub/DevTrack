@@ -2,9 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flame } from 'lucide-react';
 import { useDashboardData } from '../hooks/useDashboardData';
-import { fetchDsaContests } from '../services/dsaService';
+import { fetchUpcomingContests } from '../services/dsaService';
 import { useUserStore } from '../store/userStore';
-import { type ApiDsaContestEntry } from '../types/api.types';
 import { DashboardHeader } from '../components/dashboard/DashboardHeader';
 import { StatsGrid } from '../components/dashboard/StatsGrid';
 import { AnnouncementSection } from '../components/dashboard/AnnouncementSection';
@@ -67,28 +66,46 @@ const DashboardPage: React.FC = () => {
   };
 
   React.useEffect(() => {
+    const controller = new AbortController();
+
     const loadContests = async () => {
       try {
-        const response = await fetchDsaContests({ pageSize: 10 });
-        if (response.success) {
-          const allContests = response.data.contests;
-          const sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const upcoming = await fetchUpcomingContests({ signal: controller.signal });
 
-          const recent = allContests
-            .filter((c: ApiDsaContestEntry) => new Date(c.participatedAt) >= sevenDaysAgo)
-            .map((c: ApiDsaContestEntry) => ({
-              name: c.contestName,
-              platform: c.platform,
-              time: new Date(c.participatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-            }));
-          setContests(recent);
-        }
+        const now = Date.now();
+        const sevenDaysLater = now + 7 * 24 * 60 * 60 * 1000;
+        const seen = new Set<string>();
+
+        const withinWeek = upcoming
+          // Only contests starting within the next 7 days (inclusive).
+          .filter((c) => c.startTime >= now && c.startTime <= sevenDaysLater)
+          // Dedupe by platform + contest id.
+          .filter((c) => {
+            const key = `${c.platform}:${c.id}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          })
+          // Earliest first.
+          .sort((a, b) => a.startTime - b.startTime)
+          .slice(0, 5)
+          .map((c) => ({
+            name: c.name,
+            platform: c.platform,
+            time: new Date(c.startTime).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            }),
+          }));
+
+        setContests(withinWeek);
       } catch (err) {
         console.error('Failed to fetch contests:', err);
       }
     };
+
     loadContests();
+    return () => controller.abort();
   }, []);
 
   if (loading) {
