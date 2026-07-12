@@ -30,6 +30,7 @@ import {
 import { cn } from '../../lib/design-system/tokens.css';
 import { useSse } from '../../hooks/useSse';
 import { useUIStore } from '../../store/uiStore';
+import { envConfig } from '../../utils/envCheck';
 import { NotificationBell } from '../../features/notifications/NotificationBell';
 import { NotificationDrawer } from '../../features/notifications/NotificationDrawer';
 import { isFeatureEnabled } from '../../lib/feature-flags';
@@ -78,7 +79,7 @@ export const AppShell = () => {
     const runPing = async () => {
       const start = performance.now();
       try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+        const baseUrl = envConfig.VITE_API_BASE_URL;
         // Health endpoint is at root level, not under API base path
         const healthUrl = baseUrl.replace(/\/api$/, '') + '/health';
         await fetch(healthUrl, {

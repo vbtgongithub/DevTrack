@@ -36,7 +36,11 @@ const defaultEnv = isRender ? 'production' : 'development';
 const NODE_ENV = getEnvVar('NODE_ENV', defaultEnv);
 
 function getCorsOrigin(): string {
-  const origin = getEnvVar('CORS_ORIGIN', 'http://localhost:5173');
+  let origin = getEnvVar('CORS_ORIGIN', 'http://localhost:5173');
+  // Strip trailing slash if present to prevent browser CORS mismatch
+  if (origin.endsWith('/')) {
+    origin = origin.slice(0, -1);
+  }
   const isProd = NODE_ENV === 'production';
 
   // In production, validate it's an HTTPS origin

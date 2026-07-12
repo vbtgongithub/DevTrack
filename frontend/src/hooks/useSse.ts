@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { queryKeys } from '../lib/queryClient';
 import { useUIStore } from '../store/uiStore';
+import { envConfig } from '../utils/envCheck';
 
 const SSE_PATH = '/events';
 const RECONNECT_DELAY_MS = 3_000;
@@ -233,7 +234,7 @@ async function connectGlobalSse(
     urlParams.set('lastEventId', store.lastEventId);
   }
 
-  const envUrl = import.meta.env.VITE_API_BASE_URL || '';
+  const envUrl = envConfig.VITE_API_BASE_URL;
   const url = `${envUrl}${SSE_PATH}?${urlParams.toString()}`;
   const es = new EventSource(url);
   globalEventSource = es;

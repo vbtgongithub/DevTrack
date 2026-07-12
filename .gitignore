@@ -84,3 +84,14 @@ backend/src/scratch-query-v2.ts
 backend/src/test-fallback.ts
 backend/src/test-pdf.ts
 backend/uploads/
+
+# IDE/Agent Tooling and local configuration overrides
+.codex/
+.gemini/
+.kiro/
+.mcp.json
+.zed/
+blackbox_mcp_settings.json
+/config/
+opencode.json
+temp-render-mcp-server/
