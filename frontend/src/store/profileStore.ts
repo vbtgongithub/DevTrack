@@ -10,10 +10,10 @@ import type {
 import { DEFAULT_PROFILE, EMPTY_PLATFORM_STATE } from '../types/profile.types';
 import {
   connectPlatform,
-  syncAllPlatforms as syncAllPlatformsApi,
   getProfile as getProfileApi,
   updateProfile as updateProfileApi
 } from '../services/profileService';
+import { syncAllPlatforms as syncAllPlatformsSequential } from '../services/syncService';
 import type { ApiPlatformStats, ApiUserProfile } from '../types/api.types';
 import { type GithubDashboardStats } from '../services/dashboardService';
 
@@ -341,26 +341,22 @@ export const useProfileStore = create<ProfileStore>((set, get) => ({
     }
 
     try {
-      const response = await syncAllPlatformsApi();
-      const data = response?.data?.data;
-      if (data?.results) {
-        apiResults = data.results;
-        const results = data.results as Array<{ platform: string; success: boolean; error?: string | null }>;
-        const succeeded = results.filter((r) => r.success).length;
-        const failed = results.filter((r) => !r.success);
+      // Sequential, rate-limit-aware sync (concurrency = 1, bounded retries).
+      const results = await syncAllPlatformsSequential(activePlatforms);
+      apiResults = results;
+      const succeeded = results.filter((r) => r.success).length;
+      const failed = results.filter((r) => !r.success);
 
-        if (failed.length === 0) {
-          syncMessage += `All ${succeeded} platform(s) synced successfully`;
-          syncSucceeded = failedConnections.length === 0;
-        } else if (succeeded > 0) {
-          syncMessage += `${succeeded}/${results.length} synced. Failed: ${failed.map((f) => f.platform).join(', ')}`;
-          syncSucceeded = true; // Partial success
-        } else {
-          syncMessage += `Sync failed: ${failed.map((f) => `${f.platform}: ${f.error || 'unknown'}`).join('; ')}`;
-        }
-      } else {
-        syncMessage += 'Sync completed';
+      if (results.length === 0) {
+        syncMessage += 'No connected platforms to sync';
+      } else if (failed.length === 0) {
+        syncMessage += `All ${succeeded} platform(s) synced successfully`;
         syncSucceeded = failedConnections.length === 0;
+      } else if (succeeded > 0) {
+        syncMessage += `${succeeded}/${results.length} synced. Failed: ${failed.map((f) => f.platform).join(', ')}`;
+        syncSucceeded = true; // Partial success
+      } else {
+        syncMessage += `Sync failed: ${failed.map((f) => `${f.platform}: ${f.error || 'unknown'}`).join('; ')}`;
       }
     } catch (err) {
       syncMessage += err instanceof Error ? err.message : 'Platform sync failed';

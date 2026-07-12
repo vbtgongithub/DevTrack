@@ -1,7 +1,8 @@
 // ============================================================================
 // DashboardHeader.tsx — Premium Dashboard Header
 // ============================================================================
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Icon } from '../shared/Icon';
 import { useUserStore } from '../../store/userStore';
 import { useProfileStore } from '../../store/profileStore';
@@ -21,6 +22,8 @@ export const DashboardHeader: React.FC = () => {
   const syncState = useProfileStore((s) => s.syncState);
   const { refetch } = useDashboardData();
   const { insights } = useCoachingStore();
+  const navigate = useNavigate();
+  const isNavigatingRef = useRef(false);
 
   const handleSync = async () => {
     await fetchAllPlatforms();
@@ -60,16 +63,16 @@ export const DashboardHeader: React.FC = () => {
   });
 
   const handleStartFocus = () => {
-    // Smooth scroll to pomodoro
-    const focusSection = document.getElementById('focus-engine-section');
-    if (focusSection) {
-      focusSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    
-    // Dispatch global event after a tiny delay for scroll to start
+    // Ignore extra clicks while a transition is already in-flight.
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+
+    // Small nudge scroll first, then redirect to the dedicated focus page.
+    window.scrollBy({ top: 200, behavior: 'smooth' });
+
     setTimeout(() => {
-      window.dispatchEvent(new Event('start-focus-session'));
-    }, 300);
+      navigate('/focus');
+    }, 400);
   };
 
   const emotionalState = insights?.emotionalState || 'calm';
