@@ -14,6 +14,10 @@ interface SettingsFieldRendererProps {
   field: SettingFieldConfig;
   value: unknown;
   onChange: (val: unknown) => void;
+  /** Invoked for actionable fields ('button' / 'danger'). */
+  onAction?: () => void;
+  /** Disables actionable fields (e.g. while a sync/request is in flight). */
+  actionPending?: boolean;
 }
 
 // === PHASE 2: ELITE TOGGLE WITH SPRING PHYSICS ===
@@ -219,16 +223,19 @@ const PremiumInput: React.FC<{
 };
 
 // === MAIN RENDERER ===
-export const SettingsFieldRenderer: React.FC<SettingsFieldRendererProps> = ({ field, value, onChange }) => {
-  const { type, label, description, options, min, max, step, placeholder, danger, icon } = field;
+export const SettingsFieldRenderer: React.FC<SettingsFieldRendererProps> = ({ field, value, onChange, onAction, actionPending }) => {
+  const { type, label, description, options, min, max, step, placeholder, danger, icon, buttonText } = field;
+
+  // Fields that lay out label-left / control-right on a single row.
+  const isRow = type === 'toggle' || type === 'display';
 
   return (
     <div className={`
-      flex ${type === 'toggle' ? 'items-center justify-between' : 'flex-col gap-2'}
+      flex ${isRow ? 'items-center justify-between' : 'flex-col gap-2'}
       py-3 px-5 rounded-[18px] hover:bg-black/[0.02] transition-all duration-300 group
       ${danger ? 'hover:bg-red-50/50' : ''}
     `}>
-      <div className={`${type === 'toggle' ? 'mr-4' : 'mb-1'} flex-1 flex items-start gap-3`}>
+      <div className={`${isRow ? 'mr-4' : 'mb-1'} flex-1 flex items-start gap-3`}>
         {icon && (
           <div className="w-8 h-8 rounded-xl bg-dt-primary/5 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-dt-primary/10 transition-colors">
             <Icon name={icon} size={14} className="text-dt-primary/70" />
@@ -246,12 +253,35 @@ export const SettingsFieldRenderer: React.FC<SettingsFieldRendererProps> = ({ fi
         </div>
       </div>
 
-      <div className={`${type === 'toggle' ? 'flex-shrink-0' : 'w-full max-w-lg'} flex items-center`}>
+      <div className={`${isRow ? 'flex-shrink-0' : 'w-full max-w-lg'} flex items-center`}>
         {type === 'toggle' && (
           <SpringToggle
             checked={!!value}
             onChange={(checked) => onChange(checked)}
           />
+        )}
+
+        {type === 'display' && (
+          <span className={[
+            'text-[13px] font-bold tabular-nums',
+            value ? 'text-dt-text' : 'text-dt-textMuted/50 italic',
+          ].join(' ')}>
+            {(value as string) || 'Not linked'}
+          </span>
+        )}
+
+        {type === 'button' && (
+          <motion.button
+            type="button"
+            onClick={() => onAction?.()}
+            disabled={actionPending}
+            className="flex items-center gap-2 px-5 py-2.5 bg-dt-primary text-white rounded-[16px] text-[13px] font-black hover:bg-dt-primaryHover transition-all shadow-[0_4px_12px_rgba(124,92,252,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={actionPending ? undefined : { scale: 1.02 }}
+            whileTap={actionPending ? undefined : { scale: 0.98 }}
+          >
+            {icon && <Icon name={icon} size={14} className={actionPending ? 'animate-spin' : ''} />}
+            {actionPending ? 'Working…' : (buttonText || label)}
+          </motion.button>
         )}
 
         {(type === 'input' || type === 'password' || type === 'textarea') && (
@@ -302,10 +332,11 @@ export const SettingsFieldRenderer: React.FC<SettingsFieldRendererProps> = ({ fi
         {type === 'danger' && (
           <motion.button
             type="button"
-            onClick={() => onChange(true)}
-            className="px-6 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-[16px] text-[13px] font-black hover:bg-red-600 hover:text-white transition-all shadow-sm"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            onClick={() => onAction?.()}
+            disabled={actionPending}
+            className="px-6 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-[16px] text-[13px] font-black hover:bg-red-600 hover:text-white transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={actionPending ? undefined : { scale: 1.02 }}
+            whileTap={actionPending ? undefined : { scale: 0.98 }}
           >
             {placeholder || label}
           </motion.button>

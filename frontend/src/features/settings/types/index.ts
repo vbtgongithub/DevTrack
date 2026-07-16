@@ -9,7 +9,11 @@ export type SettingFieldType =
   | 'password'
   | 'button'
   | 'card'
+  | 'display'
   | 'danger';
+
+/** Action key for actionable (button/danger) fields, handled by the workspace. */
+export type SettingActionKey = 'syncNow' | 'resetData' | 'deleteAccount';
 
 export interface SettingOption {
   label: string;
@@ -34,6 +38,8 @@ export interface SettingFieldConfig {
   danger?: boolean;
   dependencies?: { id: string; value: unknown }[];
   experimental?: boolean; // Hidden unless Power User Mode is enabled
+  /** For 'button'/'danger' fields: which workspace action to trigger. */
+  action?: SettingActionKey;
 }
 
 export interface SettingGroupConfig {
