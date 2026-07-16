@@ -93,13 +93,6 @@ function InfrastructureBanner() {
   );
 }
 
-// ─── Connection Status Indicator ──────────────────────────────────────────
-
-function ConnectionBanner() {
-  // Disabled: removed noisy connectivity UI to prevent repeated “system connectivity issue”/reconnect messages.
-  return null;
-}
-
 // ─── Single Toast Item ────────────────────────────────────────────────────
 
 import type { Toast } from '../../store/uiStore';
@@ -186,16 +179,12 @@ const ToastItem: React.FC<{ toast: Toast }> = ({ toast }) => {
 
 export const ToastContainer: React.FC = () => {
   const toasts = useUIStore((s) => s.toasts);
-  const sseStatus = useUIStore((s) => s.sseStatus);
-  const setSseStatus = useUIStore((s) => s.setSseStatus);
 
   return (
     <>
       {/* Infrastructure & connection banners above everything */}
       <InfrastructureBanner />
-      <ConnectionBanner />
-
-      {/* Toast stack — bottom right, above everything */}
+      {/* The connectivity banner and SSE badge are intentionally disabled to avoid noisy system messages. */}
       {toasts.length > 0 && (
         <div className="fixed bottom-4 right-4 z-[200] flex flex-col gap-2 max-w-sm w-full">
           <AnimatePresence mode="popLayout">
@@ -203,25 +192,6 @@ export const ToastContainer: React.FC = () => {
               <ToastItem key={toast.id} toast={toast} />
             ))}
           </AnimatePresence>
-        </div>
-      )}
-
-      {/* SSE disconnected badge — subtle, persistent */}
-      {/* Removed bottom-right connectivity banner to avoid noisy "system connectivity" messages */}
-      {false && sseStatus === 'disconnected' && toasts.length === 0 && (
-        <div className="fixed bottom-4 right-4 z-[200] flex items-center gap-2 px-3 py-2 rounded-xl bg-white/90 backdrop-blur-md border border-dt-primary/10 shadow-md">
-          <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-          <span className="text-[10px] font-bold text-dt-textSecondary uppercase tracking-widest">
-            Live sync offline
-          </span>
-          <button
-            type="button"
-            onClick={() => setSseStatus('reconnecting')}
-            className="flex items-center gap-1 text-[10px] font-bold text-dt-primary hover:text-dt-primaryHover transition-colors"
-          >
-            <Icon name="arrow-path" size={10} />
-            Retry
-          </button>
         </div>
       )}
     </>

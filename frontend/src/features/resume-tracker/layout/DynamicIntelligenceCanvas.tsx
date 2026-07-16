@@ -14,14 +14,15 @@ interface CanvasProps {
   activeSection: string;
 }
 
+const CanvasFallback: React.FC = () => (
+  <div className="w-full h-40 bg-slate-900 border border-slate-800 rounded-xl animate-pulse" />
+);
+
 export const DynamicIntelligenceCanvas: React.FC<CanvasProps> = ({ activeSection }) => {
-  const Fallback = () => (
-    <div className="w-full h-40 bg-slate-900 border border-slate-800 rounded-xl animate-pulse" />
-  );
 
   return (
     <div className="flex-1 min-w-0 flex flex-col gap-6">
-      <Suspense fallback={<Fallback />}>
+      <Suspense fallback={<CanvasFallback />}>
         {activeSection === 'overview' && (
           <div className="flex flex-col gap-6">
             <ATSIntelligenceWorkspace />
