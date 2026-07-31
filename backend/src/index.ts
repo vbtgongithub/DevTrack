@@ -22,6 +22,63 @@ import { orchestrator } from './shared/runtime/index.js';
 import { getInfrastructureState } from './shared/runtime/infrastructureRegistry.js';
 import routes from './routes/index.js';
 
+// ---------------------------------------------------------------------------
+// Inline worker bootstrap (used when ENABLE_WORKERS=true, e.g. Render single-service)
+// ---------------------------------------------------------------------------
+async function startInlineWorkers(): Promise<void> {
+  logger.info('[inline-workers] Starting all BullMQ workers inside API process...');
+
+  const start = async (name: string, fn: () => Promise<void> | void) => {
+    try {
+      await fn();
+      logger.info(`[inline-workers] ${name} started`);
+    } catch (err) {
+      logger.error(`[inline-workers] ${name} failed to start — continuing`, err);
+    }
+  };
+
+  const { startPlatformSyncWorker } = await import('./shared/jobs/platformSyncWorker.js');
+  const { startMaintenanceWorker, scheduleMaintenanceTasks } = await import('./shared/jobs/maintenanceWorker.js');
+  const { startResumeGenerationWorker } = await import('./modules/resume/workers/resume-generation.worker.js');
+  const { startATSAnalysisWorker } = await import('./modules/resume/workers/ats-analysis.worker.js');
+  const { startResumeExportWorker } = await import('./modules/resume/workers/resume-export.worker.js');
+  const { startCredibilityWorker } = await import('./modules/resume/workers/credibility-recalculation.worker.js');
+  const { startVariantGenerationWorker } = await import('./modules/resume/workers/variant-generation.worker.js');
+  const { startEvidenceGraphWorker, startEmbeddingWorker, startGithubAnalysisWorker } = await import('./modules/resume/workers/phase4-workers.js');
+  const { startDatasetIngestionWorker } = await import('./workers/worker-dataset-ingestion.js');
+  const { startResumeUploadWorker } = await import('./workers/worker-resume-upload.js');
+
+  await start('PlatformSyncWorker', startPlatformSyncWorker);
+  await start('MaintenanceWorker', startMaintenanceWorker);
+  await start('MaintenanceTasks', scheduleMaintenanceTasks);
+  await start('ResumeGenerationWorker', startResumeGenerationWorker);
+  await start('ATSAnalysisWorker', startATSAnalysisWorker);
+  await start('ResumeExportWorker', startResumeExportWorker);
+  await start('CredibilityWorker', startCredibilityWorker);
+  await start('VariantGenerationWorker', startVariantGenerationWorker);
+  await start('EvidenceGraphWorker', startEvidenceGraphWorker);
+  await start('EmbeddingWorker', startEmbeddingWorker);
+  await start('GithubAnalysisWorker', startGithubAnalysisWorker);
+  await start('DatasetIngestionWorker', startDatasetIngestionWorker);
+  await start('ResumeUploadWorker', startResumeUploadWorker);
+
+  try {
+    const { startProfileRebuildWorker } = await import('./shared/jobs/profileRebuildWorker.js');
+    await start('ProfileRebuildWorker', startProfileRebuildWorker);
+  } catch {
+    logger.warn('[inline-workers] profileRebuildWorker module not available');
+  }
+
+  try {
+    const { startXpWorker } = await import('./shared/jobs/xpWorker.js');
+    await start('XpWorker', startXpWorker);
+  } catch {
+    logger.warn('[inline-workers] XP worker module not available');
+  }
+
+  logger.info('[inline-workers] All BullMQ workers started inside API process');
+}
+
 const require = createRequire(import.meta.url);
 const { version: APP_VERSION } = require('../package.json') as { version: string };
 
@@ -138,6 +195,17 @@ async function bootstrap() {
   orchestrator.startup(app).catch((err) => {
     logger.error('Orchestrator startup failed (server still running in degraded mode)', err);
   });
+
+  // Phase 6.6: Start inline BullMQ workers when ENABLE_WORKERS=true
+  // Set ENABLE_WORKERS=true on Render (single Web Service) so workers run in-process.
+  // Leave unset (or false) for local dev where worker-entrypoint.ts runs separately.
+  if (process.env.ENABLE_WORKERS === 'true') {
+    startInlineWorkers().catch((err) => {
+      logger.error('[inline-workers] Startup failed — API remains running', err);
+    });
+  } else {
+    logger.info('[inline-workers] ENABLE_WORKERS not set — workers will not start in this process');
+  }
 
   // Phase 7: Graceful shutdown — drain infrastructure before exiting
   const shutdown = async () => {
