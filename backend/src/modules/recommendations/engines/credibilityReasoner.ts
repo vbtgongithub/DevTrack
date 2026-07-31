@@ -9,6 +9,8 @@ export class CredibilityReasoner {
     const claims = await ResumeEvidenceClaim.find({ resumeProfileId });
     if (!claims || claims.length === 0) return;
 
+    const effectiveUserId = userId || resumeProfileId;
+
     let hasDistributedSystems = false;
     let hasDeploymentEvidence = false;
     let hasObservability = false;
@@ -38,7 +40,7 @@ export class CredibilityReasoner {
          const confidence = claim.provenance.length === 0 ? 95 : 75;
          
          await IntelligenceRecommendation.create({
-          userId,
+          userId: effectiveUserId,
           resumeProfileId,
           category: 'credibility',
           title: `Unsupported Claim Detected`,
@@ -60,7 +62,7 @@ export class CredibilityReasoner {
       const confidence = totalInfraClaims === 0 ? 98 : 85;
 
       await IntelligenceRecommendation.create({
-        userId,
+        userId: effectiveUserId,
         resumeProfileId,
         category: 'infrastructure',
         title: `Missing Infrastructure Validation`,
@@ -78,7 +80,7 @@ export class CredibilityReasoner {
       const confidence = hasDeploymentEvidence ? 90 : 70; // if they don't even have deployment, observability is a secondary gap
 
       await IntelligenceRecommendation.create({
-        userId,
+        userId: effectiveUserId,
         resumeProfileId,
         category: 'infrastructure',
         title: `Missing Observability Instrumentation`,

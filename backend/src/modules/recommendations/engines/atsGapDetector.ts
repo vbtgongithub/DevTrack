@@ -9,11 +9,13 @@ export class ATSGapDetectionEngine {
     const analysis = await ATSAnalysis.findOne({ resumeProfileId }).sort({ createdAt: -1 });
     if (!analysis) return;
 
+    const effectiveUserId = userId || resumeProfileId;
+
     // Detect missing keywords
     for (const keyword of analysis.keywordCoverage) {
       if (!keyword.found) {
         await IntelligenceRecommendation.create({
-          userId,
+          userId: effectiveUserId,
           resumeProfileId,
           category: 'ats',
           title: `Missing Critical Keyword: ${keyword.keyword}`,

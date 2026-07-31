@@ -101,7 +101,7 @@ export class ATSCompatibilityEngine {
     );
 
     const analysis = await ATSAnalysis.create({
-      userId: input.userId,
+      userId: input.userId || input.resumeProfileId,
       resumeProfileId: input.resumeProfileId,
       variantId: input.variantId || null,
       exportId: input.exportId || null,

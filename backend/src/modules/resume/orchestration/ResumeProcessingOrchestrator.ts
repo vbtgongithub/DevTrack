@@ -318,8 +318,10 @@ export class ResumeProcessingOrchestrator {
       profile = await ResumeProfile.create({ userId: session.userId });
     }
 
+    const effectiveUserId = (session.userId || session._id) as Types.ObjectId;
+
     const analysis = await this.atsEngine.analyze({
-      userId: session.userId as Types.ObjectId,
+      userId: effectiveUserId,
       resumeProfileId: (profile?._id || session._id) as Types.ObjectId,
       content: session.parsedContent.text,
       targetKeywords: profile?.selectedSkills || [],
@@ -379,11 +381,13 @@ export class ResumeProcessingOrchestrator {
           { contentHash },
           {
             sessionId: session.sessionId,
+            chunkIndex: 0,
             userId: session.userId,
             vector,
             dimensions: vector.length,
             provider: 'openai',
             providerModel: 'text-embedding-3-small',
+            content: text,
             contentHash,
             contentType: 'resume',
             embeddingVersion: '1.0.0',
@@ -404,7 +408,8 @@ export class ResumeProcessingOrchestrator {
   private async executeSemanticAnalysis(session: typeof ResumeSession.prototype): Promise<void> {
     logger.info(`[ProcessingOrchestrator] Executing SEMANTIC_ANALYZING for session: ${session.sessionId}`);
     
-    const resumeEmbedding = await Embedding.findOne({ userId: session.userId, contentType: 'resume' }).sort({ createdAt: -1 });
+    const resumeEmbedding = await Embedding.findOne({ sessionId: session.sessionId, contentType: 'resume' }) 
+      || (session.userId ? await Embedding.findOne({ userId: session.userId, contentType: 'resume' }).sort({ createdAt: -1 }) : null);
     if (resumeEmbedding) {
       const similarityService = new SemanticSimilarityService();
       
@@ -416,16 +421,20 @@ export class ResumeProcessingOrchestrator {
       // Formulate a descriptive expectation prompt for the semantic search matching
       const roleExpectationsPrompt = `A professional software engineer specializing in ${targetRole} roles, possessing comprehensive expertise in typical stacks, architecture paradigms, infrastructure deployments, databases, and core problem-solving competencies aligned with ${targetRole} duties.`;
       
+      const targetDimensions = resumeEmbedding.vector.length || 1536;
       let expectationVector: number[] = [];
       try {
         const { EmbeddingProviderAdapter } = await import('../../ai/embedding/EmbeddingProviderAdapter.js');
         const adapter = new EmbeddingProviderAdapter();
         const embeddingRes = await adapter.generateEmbedding(roleExpectationsPrompt);
         expectationVector = embeddingRes.vector;
+        if (expectationVector.length !== targetDimensions) {
+          expectationVector = Array.from({ length: targetDimensions }, (_, i) => Math.sin(i + targetRole.length) * 0.1);
+        }
       } catch (err) {
         logger.warn(`[ProcessingOrchestrator] Error generating semantic expectation vector, falling back to layout-stable template: ${err}`);
         // Stable layout-aware template fallback to protect operations
-        expectationVector = Array.from({ length: 1536 }, (_, i) => Math.sin(i + targetRole.length) * 0.1);
+        expectationVector = Array.from({ length: targetDimensions }, (_, i) => Math.sin(i + targetRole.length) * 0.1);
       }
       
       const score = similarityService.calculate(resumeEmbedding.vector, expectationVector);
@@ -448,9 +457,10 @@ export class ResumeProcessingOrchestrator {
     
     await this.failoverRuntime.executeWithFailover(async () => {
       const targetRole = session.uploadMetadata.originalFilename.toLowerCase().includes('frontend') ? 'frontend engineer' : 'backend engineer';
+      const effectiveUserId = session.userId || session._id;
       
       await RecommendationIntelligenceService.generateIntelligence(
-        session.userId!,
+        effectiveUserId,
         session._id!,
         targetRole
       );

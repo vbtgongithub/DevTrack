@@ -23,9 +23,11 @@ export class SemanticGapAnalyzer {
     // Phase 1: Real Retrieval Logic
     const missingConcepts = this.executeSemanticRetrieval(targetRole, resumeEmbedding?.vector);
 
+    const effectiveUserId = userId || resumeProfileId;
+
     for (const concept of missingConcepts) {
       await IntelligenceRecommendation.create({
-        userId,
+        userId: effectiveUserId,
         resumeProfileId,
         category: 'semantic',
         title: `Semantic Gap: Missing ${concept.name}`,
