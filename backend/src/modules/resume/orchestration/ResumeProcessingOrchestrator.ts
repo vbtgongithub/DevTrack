@@ -455,36 +455,38 @@ export class ResumeProcessingOrchestrator {
   private async executeRecommendation(session: typeof ResumeSession.prototype): Promise<void> {
     logger.info(`[ProcessingOrchestrator] Executing RECOMMENDING for session: ${session.sessionId}`);
     
-    await this.failoverRuntime.executeWithFailover(async () => {
-      const targetRole = session.uploadMetadata.originalFilename.toLowerCase().includes('frontend') ? 'frontend engineer' : 'backend engineer';
-      const effectiveUserId = session.userId || session._id;
-      
-      await RecommendationIntelligenceService.generateIntelligence(
-        effectiveUserId,
-        session._id!,
-        targetRole
-      );
-      
-      const activeRecs = await RecommendationIntelligenceService.getActiveRecommendations(session._id!);
-      const recTitles = activeRecs.map(r => r.title);
-      
-      let credibilityScore = 85;
-      const semanticGaps = activeRecs.filter(r => r.category === 'semantic');
-      if (semanticGaps.length > 0) {
-        credibilityScore -= (semanticGaps.length * 15);
-      }
-      
-      session.recommendationState = {
-        generated: true,
-        recommendations: recTitles,
-        credibilityScore: Math.max(30, credibilityScore),
-        generatedAt: new Date(),
-      };
-      await session.save();
+    const targetRole = session.uploadMetadata.originalFilename.toLowerCase().includes('frontend') ? 'frontend engineer' : 'backend engineer';
+    const effectiveUserId = session.userId || session._id;
+    
+    const { ResumeProfile } = await import('../../../db/models/resumeProfile.model.js');
+    const profile = session.userId ? await ResumeProfile.findOne({ userId: session.userId }) : null;
+    const profileId = (profile?._id || session._id) as Types.ObjectId;
 
-      // Perform Cross-System Consistency Validation
-      await this.runConsistencyValidation(session);
-    });
+    await RecommendationIntelligenceService.generateIntelligence(
+      effectiveUserId,
+      profileId,
+      targetRole
+    );
+    
+    const activeRecs = await RecommendationIntelligenceService.getActiveRecommendations(profileId);
+    const recTitles = activeRecs.map(r => r.title);
+    
+    let credibilityScore = 85;
+    const semanticGaps = activeRecs.filter(r => r.category === 'semantic');
+    if (semanticGaps.length > 0) {
+      credibilityScore -= (semanticGaps.length * 15);
+    }
+    
+    session.recommendationState = {
+      generated: true,
+      recommendations: recTitles,
+      credibilityScore: Math.max(30, credibilityScore),
+      generatedAt: new Date(),
+    };
+    await session.save();
+
+    // Perform Cross-System Consistency Validation
+    await this.runConsistencyValidation(session);
   }
 
   /**

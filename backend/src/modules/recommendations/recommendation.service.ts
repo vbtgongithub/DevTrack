@@ -1,5 +1,5 @@
 // src/modules/recommendations/recommendation.service.ts
-import { Schema } from 'mongoose';
+import { Schema, Types } from 'mongoose';
 import { ATSGapDetectionEngine } from './engines/atsGapDetector.js';
 import { SemanticGapAnalyzer } from './engines/semanticGapAnalyzer.js';
 import { CredibilityReasoner } from './engines/credibilityReasoner.js';
@@ -13,7 +13,7 @@ export class RecommendationIntelligenceService {
    * Generates or updates the intelligence recommendations for a given resume.
    * This is an idempotent operation that drops active recommendations and regenerates them based on current evidence.
    */
-  static async generateIntelligence(userId: string | Schema.Types.ObjectId, resumeProfileId: string | Schema.Types.ObjectId, targetRole: string = 'Backend Engineer'): Promise<void> {
+  static async generateIntelligence(userId: string | Types.ObjectId | any, resumeProfileId: string | Types.ObjectId | any, targetRole: string = 'Backend Engineer'): Promise<void> {
     // 1. Clear existing active recommendations to regenerate
     await IntelligenceRecommendation.deleteMany({ resumeProfileId, state: 'active' });
 
@@ -34,13 +34,13 @@ export class RecommendationIntelligenceService {
   /**
    * Retrieves all active recommendations for a resume, sorted by impact and dependencies.
    */
-  static async getActiveRecommendations(resumeProfileId: string | Schema.Types.ObjectId) {
+  static async getActiveRecommendations(resumeProfileId: string | Types.ObjectId | any) {
     const recs = await IntelligenceRecommendation.find({ resumeProfileId, state: 'active' })
       .populate('dependencies')
       .lean();
 
     // Sort by impact score (descending)
-    return recs.sort((a, b) => (b.impact.scoreImprovement || 0) - (a.impact.scoreImprovement || 0));
+    return recs.sort((a, b) => ((b.impact?.scoreImprovement || 0) - (a.impact?.scoreImprovement || 0)));
   }
 
   /**
