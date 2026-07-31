@@ -28,7 +28,7 @@ import routes from './routes/index.js';
 async function startInlineWorkers(): Promise<void> {
   logger.info('[inline-workers] Starting all BullMQ workers inside API process...');
 
-  const start = async (name: string, fn: () => Promise<void> | void) => {
+  const start = async (name: string, fn: () => unknown) => {
     try {
       await fn();
       logger.info(`[inline-workers] ${name} started`);
