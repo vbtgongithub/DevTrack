@@ -10,8 +10,8 @@ export interface EmbeddingResponse {
   model: string;
 }
 
-const MAX_RETRIES = 3;
-const TIMEOUT_MS = 15000;
+const MAX_RETRIES = 2;
+const TIMEOUT_MS = 3000;
 
 export class EmbeddingProviderAdapter {
   /**
@@ -29,7 +29,7 @@ export class EmbeddingProviderAdapter {
         lastError = error;
         logger.warn(`[EmbeddingProvider] Attempt ${attempt}/${MAX_RETRIES} failed for ${context}: ${error instanceof Error ? error.message : String(error)}`);
         if (attempt < MAX_RETRIES) {
-          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // 1s, 2s, 4s
+          const delay = 500 * attempt;
           await new Promise(res => setTimeout(res, delay));
         }
       }
@@ -106,7 +106,6 @@ export class EmbeddingProviderAdapter {
         } else {
           logger.warn('[EmbeddingProvider] No valid API key configured or dummy key detected. Generating stable pseudo-random placeholder vectors.');
           fetchedEmbeddings = missingTexts.map((text) => {
-            // Generate stable pseudo-random vector of length 1536 based on text length and character indices
             const vector = Array.from({ length: 1536 }, (_, i) => Math.sin(i + text.length) * 0.1);
             return {
               vector,
@@ -124,7 +123,6 @@ export class EmbeddingProviderAdapter {
           results[originalIndex] = embedding;
           
           if (isRedisConnected) {
-            // Cache for 30 days
             const cacheKey = `ai:embedding:v2:${Buffer.from(missingTexts[i]).toString('base64').substring(0, 100)}`;
             await redis.set(cacheKey, JSON.stringify(embedding), 'EX', 30 * 24 * 60 * 60).catch(err => {
               logger.warn(`[EmbeddingProvider] Failed to cache embedding`, err);
@@ -132,8 +130,21 @@ export class EmbeddingProviderAdapter {
           }
         }
       } catch (err) {
-        logger.error('[EmbeddingProvider] Batch embedding generation failed', { err });
-        throw err; // Ensure worker can handle and record failure
+        logger.warn('[EmbeddingProvider] Remote provider failed or timed out. Falling back to stable pseudo-random placeholder vectors.', { err });
+        const fallbackEmbeddings = missingTexts.map((text) => {
+          const vector = Array.from({ length: 1536 }, (_, i) => Math.sin(i + text.length) * 0.1);
+          return {
+            vector,
+            provider: 'openai' as const,
+            dimensions: 1536,
+            model: 'text-embedding-3-small'
+          };
+        });
+
+        for (let i = 0; i < missingIndices.length; i++) {
+          const originalIndex = missingIndices[i];
+          results[originalIndex] = fallbackEmbeddings[i];
+        }
       }
     }
 

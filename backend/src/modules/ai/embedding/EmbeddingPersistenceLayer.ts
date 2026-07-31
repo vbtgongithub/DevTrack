@@ -20,24 +20,26 @@ export class EmbeddingPersistenceLayer {
     const contentHash = this.generateContentHash(content);
     const embeddingVersion = '1.0.0';
 
+    const updateFields: Record<string, any> = {
+      sessionId,
+      chunkIndex,
+      vector,
+      dimensions: vector.length,
+      provider,
+      providerModel,
+      content,
+      contentType,
+      embeddingVersion,
+      generatedAt: new Date(),
+    };
+    if (userId) updateFields.userId = userId;
+    if (contentId) updateFields.contentId = contentId;
+
     try {
       await Embedding.findOneAndUpdate(
         { contentHash },
         {
-          $set: {
-            sessionId,
-            chunkIndex,
-            userId,
-            vector,
-            dimensions: vector.length,
-            provider,
-            providerModel,
-            content,
-            contentType,
-            contentId,
-            embeddingVersion,
-            generatedAt: new Date(),
-          },
+          $set: updateFields,
           $inc: { accessCount: 1 },
         },
         { upsert: true, new: true, setDefaultsOnInsert: true }
