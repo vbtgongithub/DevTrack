@@ -18,10 +18,14 @@ interface SystemStatus {
 
 interface SystemHealthBarProps {
   onSettingsChange?: (status: SystemStatus[]) => void;
+  /** Triggered when the user clicks Refresh; should re-sync live data. */
+  onRefresh?: () => void | Promise<void>;
+  /** Externally controlled busy state (e.g. a sync already in flight). */
+  refreshing?: boolean;
 }
 
 // Simulated system status - in production, this would come from actual API
-export const SystemHealthBar: React.FC<SystemHealthBarProps> = ({ onSettingsChange }) => {
+export const SystemHealthBar: React.FC<SystemHealthBarProps> = ({ onSettingsChange, onRefresh, refreshing }) => {
   const [statuses, setStatuses] = useState<SystemStatus[]>([
     { id: 'sync', label: 'Sync', status: 'healthy', detail: 'Connected', icon: 'cloud' },
     { id: 'github', label: 'GitHub', status: 'healthy', detail: 'Synced 14s ago', icon: 'brand-github' },
@@ -30,6 +34,22 @@ export const SystemHealthBar: React.FC<SystemHealthBarProps> = ({ onSettingsChan
   ]);
 
   const [expanded, setExpanded] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const busy = refreshing || isRefreshing;
+
+  const handleRefresh = async () => {
+    if (busy) return;
+    setIsRefreshing(true);
+    setStatuses((prev) => prev.map((s) => ({ ...s, status: 'syncing', detail: 'Refreshing…' })));
+    try {
+      await onRefresh?.();
+      setStatuses((prev) => prev.map((s) => ({ ...s, status: 'healthy', detail: 'Synced just now' })));
+    } catch {
+      setStatuses((prev) => prev.map((s) => ({ ...s, status: 'error', detail: 'Sync failed' })));
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Simulate periodic status updates
   useEffect(() => {
@@ -157,8 +177,14 @@ export const SystemHealthBar: React.FC<SystemHealthBarProps> = ({ onSettingsChan
               <span className="text-[11px] font-medium text-dt-textMuted/50">
                 Last updated just now
               </span>
-              <button className="text-[11px] font-black text-dt-primary uppercase tracking-wider hover:underline">
-                Refresh
+              <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={busy}
+                className="flex items-center gap-1 text-[11px] font-black text-dt-primary uppercase tracking-wider hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {busy && <Icon name="arrow-path" size={11} className="animate-spin" />}
+                {busy ? 'Syncing' : 'Refresh'}
               </button>
             </div>
           </motion.div>

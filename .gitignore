@@ -95,3 +95,8 @@ blackbox_mcp_settings.json
 /config/
 opencode.json
 temp-render-mcp-server/
+
+# Auric continuity artifacts
+.auric/
+*.auric.*
+auric-*.tgz

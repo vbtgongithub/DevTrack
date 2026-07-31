@@ -7,20 +7,39 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { useClerk } from '@clerk/clerk-react';
 import { Icon } from '../../components/shared/Icon';
 import { SETTINGS_SCHEMA } from './schemas';
 import { useSettingsStore } from '../../store/settingsStore';
 import { SettingsFieldRenderer } from './components/SettingsFieldRenderer';
-import { updateSettings } from '../../services/settingsService';
+import { ConfirmDangerModal } from './components/ConfirmDangerModal';
+import { updateSettings, resetWorkspaceData, deleteAccount } from '../../services/settingsService';
 import { useUIStore } from '../../store/uiStore';
+import { useProfileStore } from '../../store/profileStore';
+import { useUserStore } from '../../store/userStore';
 import { CommandPalette } from './components/CommandPalette';
 import { SystemHealthBar } from './components/SystemHealthBar';
 import { generateRecommendations, getSettingHint } from './types/recommendations';
+import type { SettingActionKey } from './types';
+
+// Only these top-level sections are persisted via PUT /settings. Account
+// platform usernames are read-only (managed on the Profile page) and workspace
+// actions are handled imperatively, so neither is included in the save payload.
+const PERSISTED_PREFIXES = ['notifications.', 'appearance.'];
 
 export const SettingsWorkspace: React.FC = () => {
   const settings = useSettingsStore((s) => s.settings);
   const fetchSettings = useSettingsStore((s) => s.fetchSettings);
   const addToast = useUIStore((s) => s.addToast);
+
+  // Read-only platform usernames come from the profile (single source of truth).
+  const profile = useProfileStore((s) => s.profile);
+  const fetchProfile = useProfileStore((s) => s.fetchProfile);
+  const fetchAllPlatforms = useProfileStore((s) => s.fetchAllPlatforms);
+  const logoutCleanup = useUserStore((s) => s.logoutCleanup);
+  const navigate = useNavigate();
+  const { signOut } = useClerk();
 
   const [activeSection, setActiveSection] = useState(SETTINGS_SCHEMA[0].id);
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,6 +48,11 @@ export const SettingsWorkspace: React.FC = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(true);
+
+  // Imperative workspace actions
+  const [syncPending, setSyncPending] = useState(false);
+  const [dangerAction, setDangerAction] = useState<'resetData' | 'deleteAccount' | null>(null);
+  const [dangerPending, setDangerPending] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -64,7 +88,9 @@ export const SettingsWorkspace: React.FC = () => {
     };
 
     Object.entries(localValues).forEach(([key, value]) => {
-      setNestedValue(payload, key, value);
+      if (PERSISTED_PREFIXES.some((prefix) => key.startsWith(prefix))) {
+        setNestedValue(payload, key, value);
+      }
     });
 
     try {
@@ -111,6 +137,24 @@ export const SettingsWorkspace: React.FC = () => {
       fetchSettings();
     }
   }, [settings, fetchSettings]);
+
+  // Load the profile so read-only platform usernames can be displayed.
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  // Read-only platform usernames sourced from the profile store.
+  const displayValues = useMemo<Record<string, string>>(() => {
+    const githubUsername = profile.githubUrl
+      ? profile.githubUrl.replace(/\/+$/, '').split('/').pop() ?? ''
+      : '';
+    return {
+      'display.github': githubUsername,
+      'display.leetcode': profile.leetcodeUsername || '',
+      'display.codeforces': profile.codeforcesUsername || '',
+      'display.codechef': profile.codechefUsername || '',
+    };
+  }, [profile]);
 
   // Flatten settings into local values
   useEffect(() => {
@@ -159,6 +203,82 @@ export const SettingsWorkspace: React.FC = () => {
     setHasChanges(true);
   };
 
+  // === WORKSPACE ACTIONS ===
+  const handleSyncNow = useCallback(async () => {
+    if (syncPending) return;
+    setSyncPending(true);
+    try {
+      const result = await fetchAllPlatforms();
+      addToast({
+        type: result.success ? 'success' : 'error',
+        title: result.success ? 'Sync complete' : 'Sync failed',
+        message: result.message,
+      });
+    } catch (err: unknown) {
+      addToast({
+        type: 'error',
+        title: 'Sync failed',
+        message: err instanceof Error ? err.message : 'Could not sync platform data.',
+      });
+    } finally {
+      setSyncPending(false);
+    }
+  }, [syncPending, fetchAllPlatforms, addToast]);
+
+  const handleFieldAction = useCallback((action?: SettingActionKey) => {
+    switch (action) {
+      case 'syncNow':
+        void handleSyncNow();
+        break;
+      case 'resetData':
+        setDangerAction('resetData');
+        break;
+      case 'deleteAccount':
+        setDangerAction('deleteAccount');
+        break;
+      default:
+        break;
+    }
+  }, [handleSyncNow]);
+
+  const handleDangerConfirm = useCallback(async () => {
+    if (!dangerAction) return;
+    setDangerPending(true);
+    try {
+      if (dangerAction === 'resetData') {
+        const { cleared } = await resetWorkspaceData();
+        const total = Object.values(cleared).reduce((sum, n) => sum + n, 0);
+        setDangerAction(null);
+        addToast({
+          type: 'success',
+          title: 'Content erased',
+          message: `Removed ${total} record${total === 1 ? '' : 's'}. Your account is still active.`,
+        });
+        // Reflect the cleared state in the UI.
+        await Promise.all([fetchSettings(), fetchProfile()]);
+      } else {
+        await deleteAccount();
+        setDangerAction(null);
+        addToast({ type: 'success', title: 'Account deleted', message: 'Your account and data have been removed.' });
+        await logoutCleanup();
+        try {
+          await signOut();
+        } catch {
+          // Session may already be invalidated by the account deletion.
+        }
+        navigate('/');
+      }
+    } catch (err: unknown) {
+      addToast({
+        type: 'error',
+        title: dangerAction === 'resetData' ? 'Erase failed' : 'Delete failed',
+        message: err instanceof Error ? err.message : 'The action could not be completed.',
+      });
+    } finally {
+      setDangerPending(false);
+    }
+  }, [dangerAction, addToast, fetchSettings, fetchProfile, logoutCleanup, signOut, navigate]);
+
   const handleCommandPaletteNavigate = (sectionId: string, fieldId?: string) => {
     setActiveSection(sectionId);
     if (fieldId) {
@@ -201,7 +321,7 @@ export const SettingsWorkspace: React.FC = () => {
 
         <div className="flex items-center gap-4">
           {/* PHASE 5: System Health Bar */}
-          <SystemHealthBar />
+          <SystemHealthBar onRefresh={handleSyncNow} refreshing={syncPending} />
 
           {/* Search with Command Palette trigger */}
           <div className="relative group">
@@ -367,8 +487,10 @@ export const SettingsWorkspace: React.FC = () => {
                         <div key={field.id} id={`field-${field.id}`}>
                           <SettingsFieldRenderer
                             field={field}
-                            value={localValues[field.id]}
+                            value={field.type === 'display' ? displayValues[field.id] : localValues[field.id]}
                             onChange={(val) => handleFieldChange(field.id, val)}
+                            onAction={() => handleFieldAction(field.action)}
+                            actionPending={field.action === 'syncNow' ? syncPending : dangerPending}
                           />
                           {/* Contextual hint */}
                           <AnimatePresence>
@@ -487,6 +609,28 @@ export const SettingsWorkspace: React.FC = () => {
         onNavigate={handleCommandPaletteNavigate}
         onUpdateSetting={handleCommandPaletteUpdate}
         currentSettings={localValues}
+      />
+
+      {/* DANGER ZONE — type-to-confirm */}
+      <ConfirmDangerModal
+        open={dangerAction === 'resetData'}
+        title="Erase all content?"
+        message="This permanently deletes all your tracked activity, DSA progress, projects, and stats. Your account, profile, and settings stay intact. This action cannot be undone."
+        confirmPhrase="ERASE"
+        confirmLabel="Erase Everything"
+        pending={dangerPending}
+        onConfirm={handleDangerConfirm}
+        onCancel={() => setDangerAction(null)}
+      />
+      <ConfirmDangerModal
+        open={dangerAction === 'deleteAccount'}
+        title="Permanently delete account?"
+        message="This permanently deletes your account and every piece of associated data, and signs you out. This cannot be undone."
+        confirmPhrase="DELETE"
+        confirmLabel="Delete My Account"
+        pending={dangerPending}
+        onConfirm={handleDangerConfirm}
+        onCancel={() => setDangerAction(null)}
       />
     </div>
   );

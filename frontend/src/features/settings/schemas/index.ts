@@ -7,20 +7,15 @@ export const SETTINGS_SCHEMA: SettingSectionConfig[] = [
     icon: 'user',
     groups: [
       {
-        title: 'Profile Information',
+        title: 'Linked Platforms',
+        description: 'Connected coding profiles. Edit these on your Profile page.',
         fields: [
-          { id: 'platforms.github.username', label: 'GitHub Username', type: 'input', placeholder: 'Enter GitHub username' },
-          { id: 'platforms.codeforces.handle', label: 'Codeforces Handle', type: 'input', placeholder: 'Enter Codeforces handle' },
-          { id: 'platforms.leetcode.username', label: 'LeetCode Username', type: 'input', placeholder: 'Enter LeetCode username' },
-          { id: 'platforms.codechef.username', label: 'CodeChef Username', type: 'input', placeholder: 'Enter CodeChef username' },
+          { id: 'display.github', label: 'GitHub', type: 'display', icon: 'brand-github' },
+          { id: 'display.leetcode', label: 'LeetCode', type: 'display', icon: 'code-bracket' },
+          { id: 'display.codeforces', label: 'Codeforces', type: 'display', icon: 'code-bracket' },
+          { id: 'display.codechef', label: 'CodeChef', type: 'display', icon: 'code-bracket' },
         ],
       },
-      {
-        title: 'Developer Identity',
-        fields: [
-          { id: 'account.powerUserMode', label: 'Power User Mode', description: 'Unlock advanced developer capabilities and experimental features', type: 'toggle' }
-        ]
-      }
     ],
   },
   {
@@ -28,26 +23,6 @@ export const SETTINGS_SCHEMA: SettingSectionConfig[] = [
     title: 'Appearance',
     icon: 'sparkles',
     groups: [
-      {
-        title: 'Theme & Layout',
-        fields: [
-          {
-            id: 'appearance.theme',
-            label: 'Theme',
-            type: 'select',
-            options: [
-              { label: 'Light', value: 'light' },
-              { label: 'Dark', value: 'dark' },
-              { label: 'System', value: 'system' },
-            ],
-          },
-          {
-            id: 'appearance.accentColor',
-            label: 'Accent Color',
-            type: 'color',
-          },
-        ],
-      },
       {
         title: 'Workspace Density',
         fields: [
@@ -65,13 +40,8 @@ export const SETTINGS_SCHEMA: SettingSectionConfig[] = [
           {
             id: 'appearance.showHeatmap',
             label: 'Show Heatmap',
-            description: 'Display activity heatmap on dashboard',
+            description: 'Display the activity heatmap on your dashboard',
             type: 'toggle',
-          },
-          {
-            id: 'appearance.heatmapColor',
-            label: 'Heatmap Color',
-            type: 'color',
           },
         ],
       },
@@ -102,130 +72,49 @@ export const SETTINGS_SCHEMA: SettingSectionConfig[] = [
     ],
   },
   {
-    id: 'privacy',
-    title: 'Data & Privacy',
-    icon: 'database',
-    groups: [
-      {
-        title: 'Profile Visibility',
-        fields: [
-          {
-            id: 'privacy.profileVisibility',
-            label: 'Profile Visibility',
-            type: 'select',
-            options: [
-              { label: 'Public', value: 'public' },
-              { label: 'Private', value: 'private' },
-              { label: 'Friends Only', value: 'friends_only' },
-            ],
-          },
-        ],
-      },
-      {
-        title: 'Public Elements',
-        fields: [
-          { id: 'privacy.showActivity', label: 'Show Activity', description: 'Display your activity history publicly', type: 'toggle' },
-          { id: 'privacy.showStreak', label: 'Show Streak', description: 'Display your coding streak publicly', type: 'toggle' },
-          { id: 'privacy.showProjects', label: 'Show Projects', description: 'Display your public projects', type: 'toggle' },
-          { id: 'privacy.showDsaProgress', label: 'Show DSA Progress', description: 'Display your Data Structures & Algorithms progress', type: 'toggle' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'ai',
-    title: 'AI Preferences',
-    icon: 'cpu-chip',
-    groups: [
-      {
-        title: 'AI Assistant Behavior',
-        description: 'Configure how DevTrack AI interacts with you',
-        fields: [
-          {
-            id: 'ai.recommendationLevel',
-            label: 'Recommendation Intensity',
-            description: 'How frequently the AI should suggest topics',
-            type: 'slider',
-            min: 0,
-            max: 100,
-            step: 10,
-          },
-          { id: 'ai.autoSummaries', label: 'Auto Summaries', description: 'Automatically summarize complex problems', type: 'toggle' },
-          { id: 'ai.debuggingAssistant', label: 'Smart Debugging', description: 'Enable AI-driven bug detection in history', type: 'toggle' },
-          { id: 'ai.personalizedRoadmap', label: 'Personalized Roadmap', description: 'Allow AI to adjust your learning path', type: 'toggle' },
-        ],
-      },
-      {
-        title: 'AI Settings Insights',
-        description: 'Predictive configuration recommendations based on your usage',
-        fields: [
-          { id: 'ai.enableInsights', label: 'Enable AI Insights', description: 'Allow AI to suggest workflow improvements', type: 'toggle' },
-        ]
-      }
-    ],
-  },
-  {
-    id: 'developer',
-    title: 'Developer Experience',
-    icon: 'code-bracket',
-    groups: [
-      {
-        title: 'API Tokens',
-        description: 'Manage personal access tokens for API integrations',
-        fields: [
-          { id: 'developer.apiToken', label: 'Personal Access Token', type: 'password', placeholder: 'dt_prod_xxxxxxxxxxxx' }
-        ]
-      },
-      {
-        title: 'Webhooks & Extensibility',
-        fields: [
-          { id: 'developer.enableWebhooks', label: 'Enable Webhooks', description: 'Fire events to external services', type: 'toggle', experimental: true },
-          { 
-            id: 'developer.webhookUrl', 
-            label: 'Webhook Endpoint', 
-            type: 'input', 
-            placeholder: 'https://...',
-            dependencies: [{ id: 'developer.enableWebhooks', value: true }],
-            experimental: true
-          }
-        ]
-      },
-      {
-        title: 'Experimental',
-        fields: [
-          { id: 'developer.experimentalFlags', label: 'Opt-in to Betas', description: 'Get early access to unreleased features', type: 'toggle', experimental: true }
-        ]
-      }
-    ]
-  },
-  {
     id: 'workspace',
     title: 'Workspace Management',
     icon: 'building-office',
     groups: [
       {
-        title: 'Team Settings',
+        title: 'System Health',
+        description: 'Sync your connected platforms and refresh live status',
         fields: [
-          { id: 'workspace.teamName', label: 'Team Name', type: 'input', placeholder: 'Enter team name' },
-          { id: 'workspace.defaultRole', label: 'Default Role for Invites', type: 'select', options: [{ label: 'Member', value: 'member' }, { label: 'Admin', value: 'admin' }] }
-        ]
-      },
-      {
-        title: 'Sync System Health',
-        description: 'Monitor real-time data sync status from integrations',
-        fields: [
-          { id: 'workspace.liveSync', label: 'Live Sync Pulse', description: 'Show sync indicators on dashboard', type: 'toggle' },
-          { id: 'workspace.autoReconnect', label: 'Auto-Reconnect', description: 'Automatically retry failed connections', type: 'toggle' }
-        ]
+          {
+            id: 'workspace.syncNow',
+            label: 'Sync Platform Data',
+            description: 'Fetch the latest stats from all connected platforms',
+            type: 'button',
+            buttonText: 'Sync Now',
+            icon: 'arrow-path',
+            action: 'syncNow',
+          },
+        ],
       },
       {
         title: 'Danger Zone',
-        description: 'Destructive workspace actions',
+        description: 'Irreversible actions. Proceed with caution.',
         fields: [
-          { id: 'workspace.resetData', label: 'Reset Workspace Data', type: 'danger', placeholder: 'Erase All Content', danger: true },
-          { id: 'workspace.deleteAccount', label: 'Delete Account', type: 'danger', placeholder: 'Permanently Delete Account', danger: true }
-        ]
-      }
-    ]
-  }
+          {
+            id: 'workspace.resetData',
+            label: 'Erase All Content',
+            description: 'Permanently delete all your tracked activity, DSA progress, projects, and stats. Your account stays active.',
+            type: 'danger',
+            placeholder: 'Erase All Content',
+            danger: true,
+            action: 'resetData',
+          },
+          {
+            id: 'workspace.deleteAccount',
+            label: 'Delete Account',
+            description: 'Permanently delete your account and all associated data. This cannot be undone.',
+            type: 'danger',
+            placeholder: 'Permanently Delete Account',
+            danger: true,
+            action: 'deleteAccount',
+          },
+        ],
+      },
+    ],
+  },
 ];

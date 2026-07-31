@@ -102,3 +102,31 @@ export async function syncGithub(): Promise<SyncGithubResponse> {
   const { data } = await axiosClient.post<ApiResponse<SyncGithubResponse>>(`${SYNC_PATH}/github`);
   return data.data;
 }
+
+export interface DangerActionResult {
+  cleared: Record<string, number>;
+}
+
+/**
+ * Erase all tracked content for the current user. The account, profile and
+ * settings are preserved. Requires the exact confirmation phrase "ERASE".
+ */
+export async function resetWorkspaceData(): Promise<DangerActionResult> {
+  const { data } = await axiosClient.post<ApiResponse<DangerActionResult>>(
+    `${SETTINGS_PATH}/reset-data`,
+    { confirmation: 'ERASE' },
+  );
+  return data.data;
+}
+
+/**
+ * Permanently delete the current user's account and all associated data.
+ * Requires the exact confirmation phrase "DELETE".
+ */
+export async function deleteAccount(): Promise<DangerActionResult> {
+  const { data } = await axiosClient.delete<ApiResponse<DangerActionResult>>(
+    `${SETTINGS_PATH}/account`,
+    { data: { confirmation: 'DELETE' } },
+  );
+  return data.data;
+}
