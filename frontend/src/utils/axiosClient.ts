@@ -37,6 +37,7 @@ export function setOnAuthInvalid(handler: AuthInvalidHandler) {
 const axiosClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: TIMEOUT,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',

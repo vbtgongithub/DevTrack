@@ -31,31 +31,33 @@ export async function fetchMe(): Promise<ApiUser> {
   return data.data;
 }
 
-export async function logout(refreshToken: string): Promise<void> {
-  await axiosClient.post('/auth/logout', { refreshToken }, {
+export async function logout(_refreshToken?: string): Promise<void> {
+  clearTokens();
+  await axiosClient.post('/auth/logout', {}, {
     _skipToast: true,
   } as never);
 }
 
-export function storeTokens(accessToken: string, refreshToken: string): void {
-  // Store atomically — if access succeeds, refresh should too
-  // Access token first (primary auth signal for multi-tab sync)
-  localStorage.setItem('devtrack_access_token', accessToken);
-  localStorage.setItem('devtrack_refresh_token', refreshToken);
+export function storeTokens(_accessToken?: string, _refreshToken?: string): void {
+  // Tokens are now stored securely in HttpOnly cookies by the backend.
+  // Clean up legacy localStorage entries if present.
+  localStorage.removeItem('devtrack_access_token');
+  localStorage.removeItem('devtrack_refresh_token');
 }
 
 export function clearTokens(): void {
-  // Clear atomically — both must go together
   localStorage.removeItem('devtrack_access_token');
   localStorage.removeItem('devtrack_refresh_token');
 }
 
 export function getAccessToken(): string | null {
-  return localStorage.getItem('devtrack_access_token');
+  // Tokens are managed in HttpOnly cookies
+  return null;
 }
 
 export function getRefreshToken(): string | null {
-  return localStorage.getItem('devtrack_refresh_token');
+  // Tokens are managed in HttpOnly cookies
+  return null;
 }
 
 export async function getSSEHandshakeTicket(): Promise<string> {

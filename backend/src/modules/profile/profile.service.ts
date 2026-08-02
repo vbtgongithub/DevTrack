@@ -1,6 +1,6 @@
 // src/modules/profile/profile.service.ts
 import { Types } from 'mongoose';
-import { User, UserProfile, ConnectedPlatform, PlatformStats } from '../../db/models/index.js';
+import { User, UserProfile, ConnectedPlatform, PlatformStats, UserSettings } from '../../db/models/index.js';
 import { PLATFORMS } from '../../config/constants.js';
 import type { ApiUserProfile, ApiConnectedPlatform, ApiSocialLinks, ApiProfileUpdatePayload, ApiPlatformStatsResponse } from '../../types/api.types.js';
 
@@ -51,7 +51,20 @@ export async function updateProfile(userId: string, payload: ApiProfileUpdatePay
   if (payload.roleTitle !== undefined) profileUpdate.roleTitle = payload.roleTitle;
   if (payload.targetRole !== undefined) profileUpdate.targetRole = payload.targetRole;
   if (payload.targetCompanies !== undefined) profileUpdate.targetCompanies = payload.targetCompanies;
-  if (payload.socialLinks !== undefined) profileUpdate.socialLinks = payload.socialLinks;
+
+  // Check if social links are updated
+  if (payload.socialLinks !== undefined) {
+    // Also sync to UserSettings and ConnectedPlatform!
+    const platformUpdates: any = {};
+    if (payload.socialLinks.leetcode !== undefined) platformUpdates.leetcode = payload.socialLinks.leetcode;
+    if (payload.socialLinks.codeforces !== undefined) platformUpdates.codeforces = payload.socialLinks.codeforces;
+    if (payload.socialLinks.github !== undefined) platformUpdates.github = payload.socialLinks.github;
+    if (payload.socialLinks.codechef !== undefined) platformUpdates.codechef = payload.socialLinks.codechef;
+
+    if (Object.keys(platformUpdates).length > 0) {
+      await syncPlatformConfiguration(userId, platformUpdates);
+    }
+  }
 
   if (Object.keys(profileUpdate).length > 0) {
     await UserProfile.findOneAndUpdate(
@@ -120,36 +133,110 @@ export async function addTechStack(userId: string, tag: string): Promise<string[
   return profile?.techStack || [];
 }
 
+export async function syncPlatformConfiguration(
+  userId: string,
+  platformUpdates: {
+    leetcode?: string | null;
+    codeforces?: string | null;
+    github?: string | null;
+    codechef?: string | null;
+  }
+): Promise<void> {
+  const settingsUpdates: Record<string, any> = {};
+  const profileUpdates: Record<string, any> = {};
+
+  for (const [platform, value] of Object.entries(platformUpdates)) {
+    if (value === undefined) continue;
+    const username = value !== null ? value.trim() : '';
+
+    // Build UserProfile updates
+    profileUpdates[`socialLinks.${platform}`] = username || null;
+
+    // Build UserSettings updates
+    if (platform === 'leetcode') {
+      settingsUpdates['platforms.leetcode.username'] = username || '';
+    } else if (platform === 'codeforces') {
+      settingsUpdates['platforms.codeforces.handle'] = username || '';
+    } else if (platform === 'github') {
+      settingsUpdates['platforms.github.username'] = username || '';
+    } else if (platform === 'codechef') {
+      settingsUpdates['platforms.codechef.username'] = username || '';
+    }
+
+    // Build or update ConnectedPlatform record
+    const platformKey = platform.toUpperCase() as keyof typeof PLATFORMS;
+    const platformConfig = PLATFORMS[platformKey];
+    if (platformConfig) {
+      if (username) {
+        const profileUrl = platformConfig.profileUrl(username);
+        await ConnectedPlatform.findOneAndUpdate(
+          {
+            userId: new Types.ObjectId(userId),
+            platformName: platform.toLowerCase() as any,
+          },
+          {
+            $set: {
+              username,
+              profileUrl,
+              isConnected: true,
+              syncStatus: 'idle',
+              syncError: null,
+            },
+          },
+          { upsert: true, new: true }
+        );
+      } else {
+        // Disconnect platform if username cleared
+        await ConnectedPlatform.findOneAndUpdate(
+          {
+            userId: new Types.ObjectId(userId),
+            platformName: platform.toLowerCase() as any,
+          },
+          {
+            $set: {
+              isConnected: false,
+              username: '',
+            },
+          }
+        );
+      }
+    }
+  }
+
+  // Perform updates
+  if (Object.keys(settingsUpdates).length > 0) {
+    await UserSettings.findOneAndUpdate(
+      { userId: new Types.ObjectId(userId) },
+      { $set: settingsUpdates },
+      { upsert: true, new: true }
+    );
+  }
+
+  if (Object.keys(profileUpdates).length > 0) {
+    await UserProfile.findOneAndUpdate(
+      { userId: new Types.ObjectId(userId) },
+      { $set: profileUpdates },
+      { upsert: true, new: true }
+    );
+  }
+}
+
 export async function connectPlatform(
   userId: string,
   platformName: string,
   username: string
 ): Promise<ApiConnectedPlatform> {
-  const platformKey = platformName.toUpperCase() as keyof typeof PLATFORMS;
-  const platformConfig = PLATFORMS[platformKey];
+  const platformNameLower = platformName.toLowerCase();
+  await syncPlatformConfiguration(userId, { [platformNameLower]: username });
 
-  if (!platformConfig) {
-    throw new Error(`Invalid platform: ${platformName}`);
+  const platform = await ConnectedPlatform.findOne({
+    userId: new Types.ObjectId(userId),
+    platformName: platformNameLower as any,
+  });
+
+  if (!platform) {
+    throw new Error(`Failed to retrieve connected platform for ${platformName}`);
   }
-
-  const profileUrl = platformConfig.profileUrl(username);
-
-  const platform = await ConnectedPlatform.findOneAndUpdate(
-    {
-      userId: new Types.ObjectId(userId),
-      platformName: platformName.toLowerCase() as any,
-    },
-    {
-      $set: {
-        username,
-        profileUrl,
-        isConnected: true,
-        syncStatus: 'idle',
-        syncError: null,
-      },
-    },
-    { upsert: true, new: true }
-  );
 
   return {
     id: platform._id.toString(),

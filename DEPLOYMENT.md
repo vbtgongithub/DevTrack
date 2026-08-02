@@ -215,6 +215,18 @@ Health check: `GET /health`
 
 ---
 
+## Automated Deployments
+
+### 1. Cloud Deployments (Vercel + Render)
+- **Frontend (Vercel)**: Automatically deploys on every push to `main` via Vercel's native GitHub integration.
+- **Backend & Workers (Render)**: Set up Render Deploy Hooks under **Settings → Deploy Hook** for each service (`devtrack-api`, `devtrack-sync`, `devtrack-xp`, `devtrack-orch`, `devtrack-maint`), and add secret `RENDER_BACKEND_DEPLOY_HOOK` in GitHub Actions. Alternatively, set **Watched Paths** to `backend/**` in Render dashboard.
+
+### 2. Self-Hosted VPS Deployments (Docker Compose)
+- **Push Deployment (GitHub Actions)**: Create `.github/workflows/deploy-vps.yml` using `appleboy/ssh-action` with `VPS_HOST`, `VPS_USERNAME`, and `VPS_SSH_KEY`.
+- **Pull Deployment (Cron Script)**: Set up a cron script on VPS running `git fetch && git pull && ./deploy.sh` every 5 minutes.
+
+---
+
 ## CI/CD
 
 Workflows in `.github/workflows/`:

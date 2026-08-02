@@ -53,6 +53,7 @@ cursor/
 !SECURITY.md
 !PHASE2_EXECUTION_PLAN.md
 !RELEASE_MANIFEST.md
+!AGENTS.md
 
 # Local documentation (not needed for production)
 docs/

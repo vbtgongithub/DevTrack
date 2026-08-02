@@ -7,5 +7,6 @@ const router = Router();
 
 router.get('/me', authMiddleware, asyncHandler(controller.getMe));
 router.post('/sse-handshake', authMiddleware, asyncHandler(controller.sseHandshake));
+router.post('/logout', asyncHandler(controller.logout));
 
 export default router;

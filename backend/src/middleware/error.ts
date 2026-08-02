@@ -26,11 +26,13 @@ export function errorHandler(
     },
   });
 
+  const isProduction = process.env.NODE_ENV === 'production';
+
   // Handle Zod validation errors
   if (err instanceof ZodError) {
     const details: Record<string, string[]> = {};
     err.errors.forEach((error) => {
-      const path = error.path.join('.');
+      const path = error.path.join('.') || 'root';
       if (!details[path]) {
         details[path] = [];
       }
@@ -42,9 +44,13 @@ export function errorHandler(
 
   // Handle MongoDB duplicate key error
   if (err.name === 'MongoServerError' && (err as unknown as { code: number }).code === 11000) {
-    const keyValue = (err as unknown as { keyValue: Record<string, unknown> }).keyValue;
-    const field = Object.keys(keyValue)[0];
-    commonErrors.conflict(res, `${field} already exists`);
+    if (isProduction) {
+      commonErrors.conflict(res, 'Resource already exists');
+    } else {
+      const keyValue = (err as unknown as { keyValue: Record<string, unknown> }).keyValue || {};
+      const field = Object.keys(keyValue)[0] || 'Resource';
+      commonErrors.conflict(res, `${field} already exists`);
+    }
     return;
   }
 
@@ -54,7 +60,7 @@ export function errorHandler(
       errors: Record<string, { message: string }>;
     };
     const details: Record<string, string[]> = {};
-    Object.entries(validationError.errors).forEach(([field, error]) => {
+    Object.entries(validationError.errors || {}).forEach(([field, error]) => {
       details[field] = [error.message];
     });
     commonErrors.validationError(res, details);
@@ -67,16 +73,22 @@ export function errorHandler(
     return;
   }
 
-
-
   // Handle custom AppErrors
   if (err.statusCode) {
-    errorResponse(res, err.message, err.code || 'ERROR', err.statusCode, err.details);
+    if (err.statusCode >= 500 && isProduction) {
+      errorResponse(res, 'Internal server error', err.code || 'INTERNAL_ERROR', err.statusCode);
+    } else {
+      errorResponse(res, err.message, err.code || 'ERROR', err.statusCode, err.details, isProduction ? undefined : err.stack);
+    }
     return;
   }
 
   // Default to internal server error
-  commonErrors.internalError(res);
+  if (isProduction) {
+    commonErrors.internalError(res, 'Internal server error');
+  } else {
+    errorResponse(res, err.message || 'Internal server error', 'INTERNAL_ERROR', 500, undefined, err.stack);
+  }
 }
 
 // Not found middleware

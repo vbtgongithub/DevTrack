@@ -10,6 +10,7 @@ import { successResponse, commonErrors } from '../../shared/response.js';
 import type { AuthenticatedRequest } from '../../middleware/auth.js';
 import { logger } from '../../shared/logger.js';
 import { z } from 'zod';
+import { syncPlatformConfiguration } from '../profile/profile.service.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -131,30 +132,25 @@ export async function updateSettings(
     return;
   }
 
-  const parseResult = updateSettingsSchema.safeParse(req.body);
-  if (!parseResult.success) {
-    commonErrors.validationError(res, mapZodErrors(parseResult.error));
-    return;
-  }
-
-  const { platforms } = parseResult.data;
+  const { platforms } = req.body as SettingsUpdateInput;
 
   if (!platforms || Object.keys(platforms).length === 0) {
     commonErrors.badRequest(res, 'No valid fields provided for update');
     return;
   }
 
-  const updateData = buildDotNotationUpdate(platforms);
-  if (Object.keys(updateData).length === 0) {
-    commonErrors.badRequest(res, 'No valid fields provided for update');
-    return;
+  // Sync these platform updates across settings, profile, and connected platform records
+  const platformUpdates: any = {};
+  if (platforms.leetcode?.username !== undefined) platformUpdates.leetcode = platforms.leetcode.username;
+  if (platforms.codeforces?.handle !== undefined) platformUpdates.codeforces = platforms.codeforces.handle;
+  if (platforms.github?.username !== undefined) platformUpdates.github = platforms.github.username;
+  if (platforms.codechef?.username !== undefined) platformUpdates.codechef = platforms.codechef.username;
+
+  if (Object.keys(platformUpdates).length > 0) {
+    await syncPlatformConfiguration(userId, platformUpdates);
   }
 
-  const updatedSettings = await UserSettings.findOneAndUpdate(
-    { userId },
-    { $set: updateData },
-    { upsert: true, new: true, runValidators: true },
-  );
+  const updatedSettings = await UserSettings.findOne({ userId });
 
   const activityDescription = describeChanges(platforms);
   ActivityEvent.create({

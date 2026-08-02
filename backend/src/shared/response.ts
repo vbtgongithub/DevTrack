@@ -52,9 +52,10 @@ export function errorResponse(
   message: string,
   code: string,
   statusCode = 500,
-  details?: Record<string, string[]>
+  details?: Record<string, string[]>,
+  stack?: string
 ): void {
-  const response: ApiError = {
+  const response: ApiError & { stack?: string } = {
     success: false,
     message,
     code,
@@ -62,6 +63,9 @@ export function errorResponse(
     timestamp: new Date().toISOString(),
     details,
   };
+  if (process.env.NODE_ENV !== 'production' && stack) {
+    response.stack = stack;
+  }
   res.status(statusCode).json(response);
 }
 

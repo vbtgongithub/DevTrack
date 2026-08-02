@@ -1,6 +1,7 @@
 // src/modules/settings/routes.ts
 import { Router } from 'express';
-import { authMiddleware, asyncHandler } from '../../middleware/index.js';
+import { authMiddleware, asyncHandler, validateBody } from '../../middleware/index.js';
+import { updateSettingsSchema } from './settings.validation.js';
 import * as controller from './controller.js';
 
 const router = Router();
@@ -17,6 +18,6 @@ router.get('/', authMiddleware, asyncHandler(controller.getSettings));
  * @desc    Update platform settings
  * @access  Private
  */
-router.put('/', authMiddleware, asyncHandler(controller.updateSettings));
+router.put('/', authMiddleware, validateBody(updateSettingsSchema), asyncHandler(controller.updateSettings));
 
 export default router;

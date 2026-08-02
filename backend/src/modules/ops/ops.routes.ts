@@ -1,6 +1,8 @@
 // src/modules/ops/ops.routes.ts — Operational routes (admin)
 import { Router } from 'express';
 import { authMiddleware, adminMiddleware, opsAuditorMiddleware } from '../../middleware/auth.js';
+import { validateBody } from '../../middleware/validation.js';
+import { setLogLevelSchema } from './ops.validation.js';
 import opsController from './ops.controller.js';
 
 const router = Router();
@@ -23,7 +25,7 @@ router.get('/public/cache-health', authMiddleware, opsAuditorMiddleware, opsCont
 router.delete('/cache/users/:userId', authMiddleware, adminMiddleware, opsController.clearUserCache);
 
 // Logging (admin only)
-router.post('/logging', authMiddleware, adminMiddleware, opsController.setLogLevel);
+router.post('/logging', authMiddleware, adminMiddleware, validateBody(setLogLevelSchema), opsController.setLogLevel);
 
 // Trust & Verification
 router.get('/trust/scores', authMiddleware, opsAuditorMiddleware, opsController.getTrustScores);

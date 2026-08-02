@@ -40,8 +40,8 @@ const globalRateLimit = rateLimit({
 // Apply global rate limiting to all routes
 router.use(globalRateLimit);
 
-// Auth routes (no auth required for login/register)
-router.use('/auth', authRoutes);
+// Auth routes (no auth required for login/register) — strict rate limit
+router.use('/auth', rateLimiters.auth, authRoutes);
 
 // SSE endpoint — auth via ?token= query param (EventSource limitation)
 router.get('/events', handleSseRequest);

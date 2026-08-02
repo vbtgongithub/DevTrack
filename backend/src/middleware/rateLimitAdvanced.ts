@@ -4,6 +4,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { getRedisClient } from '../shared/redis/client.js';
 import { logger } from '../shared/logger.js';
+import { env } from '../config/index.js';
 
 interface RateLimitConfig {
   windowMs: number;
@@ -85,6 +86,13 @@ const ENDPOINT_CONFIGS: Record<string, RateLimitConfig> = {
     keyPrefix: 'rl:analytics',
     blockDurationMs: 60_000,
     enableBurstHandling: true,
+  },
+  auth: {
+    windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS, // 15 minutes default
+    maxRequests: env.AUTH_RATE_LIMIT_MAX_REQUESTS, // 5 attempts default
+    keyPrefix: 'rl:auth',
+    blockDurationMs: env.AUTH_RATE_LIMIT_WINDOW_MS, // Block for same duration as window
+    enableBurstHandling: false,
   },
 };
 
@@ -222,6 +230,7 @@ export const rateLimiters = {
   embedding: createRateLimiter('embedding'),
   resume: createRateLimiter('resume'),
   analytics: createRateLimiter('analytics'),
+  auth: createRateLimiter('auth'),
   default: createRateLimiter('default'),
 };
 

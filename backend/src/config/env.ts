@@ -35,21 +35,31 @@ const isRender = process.env.RENDER === 'true';
 const defaultEnv = isRender ? 'production' : 'development';
 const NODE_ENV = getEnvVar('NODE_ENV', defaultEnv);
 
-function getCorsOrigin(): string {
-  let origin = getEnvVar('CORS_ORIGIN', 'http://localhost:5173');
-  // Strip trailing slash if present to prevent browser CORS mismatch
-  if (origin.endsWith('/')) {
-    origin = origin.slice(0, -1);
-  }
+function getCorsOrigin(): string[] {
+  const raw = getEnvVar('CORS_ORIGIN', 'http://localhost:5173');
   const isProd = NODE_ENV === 'production';
 
-  // In production, validate it's an HTTPS origin
+  // Support comma-separated origins, e.g.:
+  //   CORS_ORIGIN=https://devtrack-kohl.vercel.app,http://localhost:5173
+  const origins = raw
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean)
+    .map((o) => (o.endsWith('/') ? o.slice(0, -1) : o));
+
+  if (origins.length === 0) {
+    throw new Error('CORS_ORIGIN must contain at least one origin');
+  }
+
+  // In production, every origin must use HTTPS
   if (isProd) {
-    if (!origin.startsWith('https://')) {
-      throw new Error(`CORS_ORIGIN must use HTTPS in production. Got: ${origin}`);
+    for (const origin of origins) {
+      if (!origin.startsWith('https://')) {
+        throw new Error(`CORS_ORIGIN must use HTTPS in production. Got: ${origin}`);
+      }
     }
   }
-  return origin;
+  return origins;
 }
 
 const IS_PROD = NODE_ENV === 'production';

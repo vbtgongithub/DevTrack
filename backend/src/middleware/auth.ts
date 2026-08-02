@@ -18,16 +18,28 @@ export interface AuthenticatedRequest extends Request {
   user?: AuthUser;
 }
 
+function extractToken(req: Request): string | null {
+  // 1. Check HttpOnly cookies first
+  if (req.cookies) {
+    if (req.cookies.__session) return req.cookies.__session;
+    if (req.cookies.devtrack_access_token) return req.cookies.devtrack_access_token;
+    if (req.cookies.token) return req.cookies.token;
+  }
+
+  // 2. Fallback to Authorization header
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.split(' ')[1] || null;
+  }
+
+  return null;
+}
+
 // Intercept the clerk requireAuth to also inject our Mongo user
 export const authMiddleware = [
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return commonErrors.unauthorized(res);
-      }
-      
-      const token = authHeader.split(' ')[1];
+      const token = extractToken(req);
       if (!token) {
         return commonErrors.unauthorized(res);
       }
@@ -78,13 +90,8 @@ export const authMiddleware = [
 export const optionalAuthMiddleware = [
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
-        if (!token || !process.env.CLERK_SECRET_KEY) {
-          next();
-          return;
-        }
+      const token = extractToken(req);
+      if (token && process.env.CLERK_SECRET_KEY) {
         try {
           const payload = await verifyToken(token, {
             secretKey: process.env.CLERK_SECRET_KEY,

@@ -8,28 +8,28 @@ import { momentumEngine } from './momentumEngine.service.js';
 import { retentionEngine } from './retentionEngine.service.js';
 import { logger } from '../../shared/logger.js';
 
+import { validateBody } from '../../middleware/validation.js';
+import { sessionStartSchema, sessionEndSchema, telemetryEventsSchema } from './observation.validation.js';
+
 const router = Router();
 
 // Start UX tracking session
 router.post(
   '/session/start',
   authMiddleware,
+  validateBody(sessionStartSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { sessionId, deviceInfo } = req.body;
-      if (!sessionId || !deviceInfo) {
-        res.status(400).json({ error: 'sessionId and deviceInfo are required' });
-        return;
-      }
 
       await sessionReplay.startSession({
         sessionId,
         userId: new mongoose.Types.ObjectId(req.user!.id),
         startTime: new Date(),
         deviceInfo: {
-          userAgent: deviceInfo.userAgent || '',
-          viewport: deviceInfo.viewport || { width: 1280, height: 800 },
-          deviceType: deviceInfo.deviceType || 'desktop',
+          userAgent: deviceInfo?.userAgent || '',
+          viewport: deviceInfo?.viewport || { width: 1280, height: 800 },
+          deviceType: deviceInfo?.deviceType || 'desktop',
         },
       });
 
@@ -45,13 +45,10 @@ router.post(
 router.post(
   '/session/end',
   authMiddleware,
+  validateBody(sessionEndSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { sessionId } = req.body;
-      if (!sessionId) {
-        res.status(400).json({ error: 'sessionId is required' });
-        return;
-      }
 
       await sessionReplay.endSession(sessionId);
       res.status(200).json({ success: true });
@@ -66,13 +63,10 @@ router.post(
 router.post(
   '/events',
   authMiddleware,
+  validateBody(telemetryEventsSchema),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { sessionId, events } = req.body;
-      if (!sessionId || !Array.isArray(events)) {
-        res.status(400).json({ error: 'sessionId and events array are required' });
-        return;
-      }
 
       for (const event of events) {
         const timestamp = event.timestamp ? new Date(event.timestamp) : new Date();

@@ -49,82 +49,53 @@ function serializeZodError(error: ZodError): Record<string, string[]> {
   return details;
 }
 
-export function validateBody<T>(schema: ZodSchema<T>) {
+export function validateRequest(schemas: { body?: ZodSchema<any>; query?: ZodSchema<any>; params?: ZodSchema<any> }) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    try {
-      req.body = schema.parse(req.body);
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        commonErrors.validationError(res, serializeZodError(error));
-      } else {
-        next(error);
+    if (schemas.body) {
+      const result = schemas.body.safeParse(req.body);
+      if (!result.success) {
+        commonErrors.validationError(res, serializeZodError(result.error));
+        return;
+      }
+      req.body = result.data;
+    }
+
+    if (schemas.query) {
+      const result = schemas.query.safeParse(req.query);
+      if (!result.success) {
+        commonErrors.validationError(res, serializeZodError(result.error));
+        return;
+      }
+      if (req.query) {
+        Object.keys(req.query).forEach((k) => delete req.query[k]);
+        Object.assign(req.query, result.data);
       }
     }
+
+    if (schemas.params) {
+      const result = schemas.params.safeParse(req.params);
+      if (!result.success) {
+        commonErrors.validationError(res, serializeZodError(result.error));
+        return;
+      }
+      if (req.params) {
+        Object.keys(req.params).forEach((k) => delete req.params[k]);
+        Object.assign(req.params, result.data);
+      }
+    }
+
+    next();
   };
+}
+
+export function validateBody<T>(schema: ZodSchema<T>) {
+  return validateRequest({ body: schema });
 }
 
 export function validateQuery<T>(schema: ZodSchema<T>) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    try {
-      const parsed = schema.parse(req.query);
-      // Copy properties back to avoid re-assigning req.query getter
-      if (req.query) {
-        Object.keys(req.query).forEach(k => delete req.query[k]);
-        Object.assign(req.query, parsed);
-      }
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        commonErrors.validationError(res, serializeZodError(error));
-      } else {
-        next(error);
-      }
-    }
-  };
+  return validateRequest({ query: schema });
 }
 
 export function validateParams<T>(schema: ZodSchema<T>) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    try {
-      const parsed = schema.parse(req.params);
-      // Copy properties back to avoid re-assigning req.params getter
-      if (req.params) {
-        Object.keys(req.params).forEach(k => delete req.params[k]);
-        Object.assign(req.params, parsed);
-      }
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        commonErrors.validationError(res, serializeZodError(error));
-      } else {
-        next(error);
-      }
-    }
-  };
-}
-
-export function validateRequest(schemas: { body?: ZodSchema<any>, query?: ZodSchema<any>, params?: ZodSchema<any> }) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    try {
-      if (schemas.body) req.body = schemas.body.parse(req.body);
-      if (schemas.query) {
-        const parsed = schemas.query.parse(req.query);
-        Object.keys(req.query).forEach(k => delete req.query[k]);
-        Object.assign(req.query, parsed);
-      }
-      if (schemas.params) {
-        const parsed = schemas.params.parse(req.params);
-        Object.keys(req.params).forEach(k => delete req.params[k]);
-        Object.assign(req.params, parsed);
-      }
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        commonErrors.validationError(res, serializeZodError(error));
-      } else {
-        next(error);
-      }
-    }
-  };
+  return validateRequest({ params: schema });
 }

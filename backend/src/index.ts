@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 import { env, API_BASE_PATH } from './config/index.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
@@ -85,8 +86,9 @@ const { version: APP_VERSION } = require('../package.json') as { version: string
 export async function createApp(): Promise<express.Express> {
   const app = express();
 
-  // Trust upstream proxies (Render load balancer, Vercel router)
-  app.set('trust proxy', true);
+  // Trust exactly one upstream proxy hop (Render's load balancer)
+  // Using `1` instead of `true` prevents X-Forwarded-For header spoofing
+  app.set('trust proxy', 1);
 
   // Root info endpoint
   app.get('/', (_req, res) => {
@@ -123,15 +125,27 @@ export async function createApp(): Promise<express.Express> {
     } : undefined,
   }));
 
+  const allowedOrigins = new Set(env.CORS_ORIGIN);
   app.use(cors({
-    origin: env.CORS_ORIGIN,
+    origin(requestOrigin, callback) {
+      // Allow requests with no origin (server-to-server, curl, health checks)
+      if (!requestOrigin || allowedOrigins.has(requestOrigin)) {
+        callback(null, true);
+      } else {
+        logger.warn('[cors] Blocked request from unrecognised origin', { requestOrigin });
+        callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    exposedHeaders: ['Content-Length', 'X-Request-ID'],
+    exposedHeaders: ['Content-Length', 'X-Request-ID', 'Retry-After', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
+    maxAge: 7200, // Cache preflight responses for 2 hours
+    optionsSuccessStatus: 200, // Legacy browser compatibility
   }));
 
   app.use(morgan(env.IS_DEV ? 'dev' : 'combined'));
+  app.use(cookieParser());
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(sanitizeRequest);

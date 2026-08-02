@@ -28,3 +28,20 @@ export async function sseHandshake(req: AuthenticatedRequest, res: Response): Pr
   logger.info('[sse] Generated secure short-lived handshake ticket', { userId: req.user.id, ticket });
   successResponse(res, { ticket }, 'SSE Handshake ticket generated');
 }
+
+export async function logout(_req: Request, res: Response): Promise<void> {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? ('none' as const) : ('lax' as const),
+    path: '/',
+  };
+
+  res.clearCookie('__session', cookieOptions);
+  res.clearCookie('devtrack_access_token', cookieOptions);
+  res.clearCookie('devtrack_refresh_token', cookieOptions);
+  res.clearCookie('token', cookieOptions);
+
+  successResponse(res, { loggedOut: true }, 'Logged out successfully');
+}

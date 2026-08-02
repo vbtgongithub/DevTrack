@@ -14,6 +14,6 @@ export {
   type AuthenticatedRequest,
 } from './auth.js';
 
-export { validateBody, validateQuery, validateParams } from './validation.js';
+export { validateBody, validateQuery, validateParams, validateRequest, sanitizeRequest } from './validation.js';
 
 export { rateLimit } from './rateLimit.js';

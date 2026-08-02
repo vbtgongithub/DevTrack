@@ -78,15 +78,7 @@ export const useSseStore = create<SseStore>((set, get) => ({
     }
 
     const baseUrl = import.meta.env.VITE_API_BASE_URL ?? '';
-    const token = localStorage.getItem('devtrack_access_token');
     const lastId = get().lastEventId;
-
-    if (!token) {
-      set((state) => ({
-        connectionState: { ...state.connectionState, error: 'No auth token' },
-      }));
-      return;
-    }
 
     set((state) => ({
       connectionState: { ...state.connectionState, reconnecting: true },

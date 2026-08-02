@@ -1,6 +1,8 @@
 // src/modules/streak/streak.routes.ts — Streak API routes
 import { Router } from 'express';
 import { authMiddleware, type AuthenticatedRequest } from '../../middleware/auth.js';
+import { validateBody } from '../../middleware/validation.js';
+import { recordActivitySchema } from './streak.validation.js';
 import { streakController } from './index.js';
 
 const router = Router();
@@ -18,7 +20,7 @@ router.get('/history', streakController.getHistory);
 router.get('/:type', streakController.getStreakByType);
 
 // POST /streak/record - Record activity (internal/triggered by other systems)
-router.post('/record', streakController.recordActivity);
+router.post('/record', validateBody(recordActivitySchema), streakController.recordActivity);
 
 // POST /streak/freeze - Activate streak freeze
 router.post('/freeze', streakController.activateFreeze);

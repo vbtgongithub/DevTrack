@@ -60,7 +60,7 @@ class TelemetryManager {
   }
 
   private hasToken(): boolean {
-    return !!localStorage.getItem('devtrack_access_token');
+    return !!(typeof window !== 'undefined' && window.Clerk && window.Clerk.session);
   }
 
   async initialize() {

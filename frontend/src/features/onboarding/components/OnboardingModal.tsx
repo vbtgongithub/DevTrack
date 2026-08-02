@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOnboarding } from '../../../hooks/useOnboarding';
 import { useUIStore } from '../../../store/uiStore';
+import { connectPlatform } from '../../../services/profileService';
 import { 
   Zap, 
   Terminal, 
@@ -69,6 +70,24 @@ export const OnboardingModal: React.FC = () => {
   const handleNext = async () => {
     const currentStepId = steps[currentStepIdx].id;
     
+    // Automatically link platform usernames if the user moves next without linking them manually
+    if (currentStepId === 'connect') {
+      const linkPromises = [];
+      if (leetcodeUser.trim() && leetcodeStatus !== 'connected' && leetcodeStatus !== 'syncing') {
+        linkPromises.push(handleConnectPlatform('leetcode', leetcodeUser));
+      }
+      if (codeforcesUser.trim() && codeforcesStatus !== 'connected' && codeforcesStatus !== 'syncing') {
+        linkPromises.push(handleConnectPlatform('codeforces', codeforcesUser));
+      }
+      if (githubUser.trim() && githubStatus !== 'connected' && githubStatus !== 'syncing') {
+        linkPromises.push(handleConnectPlatform('github', githubUser));
+      }
+      
+      if (linkPromises.length > 0) {
+        await Promise.all(linkPromises);
+      }
+    }
+
     // Trigger step completion on backend
     completeStep(currentStepId);
 
@@ -98,27 +117,38 @@ export const OnboardingModal: React.FC = () => {
     });
   };
 
-  const handleConnectPlatform = (platform: 'leetcode' | 'codeforces' | 'github', username: string) => {
+  const handleConnectPlatform = async (platform: 'leetcode' | 'codeforces' | 'github', username: string) => {
     if (!username.trim()) return;
 
-    if (platform === 'leetcode') {
-      setLeetcodeStatus('syncing');
-      setTimeout(() => {
-        setLeetcodeStatus('connected');
-        addToast({ type: 'success', title: 'LeetCode Connected', message: `Telemetry linked to ${username}` });
-      }, 1200);
-    } else if (platform === 'codeforces') {
-      setCodeforcesStatus('syncing');
-      setTimeout(() => {
-        setCodeforcesStatus('connected');
-        addToast({ type: 'success', title: 'Codeforces Connected', message: `Telemetry linked to ${username}` });
-      }, 1200);
-    } else if (platform === 'github') {
-      setGithubStatus('syncing');
-      setTimeout(() => {
-        setGithubStatus('connected');
-        addToast({ type: 'success', title: 'GitHub Connected', message: `Repository sync active for ${username}` });
-      }, 1200);
+    const setStatus = platform === 'leetcode' 
+      ? setLeetcodeStatus 
+      : platform === 'codeforces' 
+        ? setCodeforcesStatus 
+        : setGithubStatus;
+
+    const platformLabel = platform === 'leetcode' 
+      ? 'LeetCode' 
+      : platform === 'codeforces' 
+        ? 'Codeforces' 
+        : 'GitHub';
+
+    setStatus('syncing');
+    try {
+      await connectPlatform(platform, username);
+      setStatus('connected');
+      addToast({ 
+        type: 'success', 
+        title: `${platformLabel} Connected`, 
+        message: `Telemetry linked to ${username}` 
+      });
+    } catch (err: any) {
+      setStatus('idle');
+      const message = err.response?.data?.message || err.message || `Failed to link ${platformLabel}`;
+      addToast({ 
+        type: 'error', 
+        title: 'Connection Failed', 
+        message 
+      });
     }
   };
 
