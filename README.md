@@ -140,7 +140,7 @@ DevTrack/
 
 ```bash
 # Clone the repository
-git clone https://github.com/VarshithReddy2006/DevTrack.git
+git clone https://github.com/vbtgongithub/DevTrack.git
 cd DevTrack
 
 # Install all dependencies (backend + frontend)
